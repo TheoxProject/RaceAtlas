@@ -1,9 +1,9 @@
 # Point de reprise RaceAtlas
 
-- Horodatage : **2026-11-10T15:31:28Z** — livraison développeur lot3, revue indépendante requise.
+- Horodatage : **2026-11-10T20:24:03Z** — correction lot3 cycle1 livrée, nouvelle revue requise.
 - Branche `feature/auditable-sync`, worktree `C:/Users/theop/.codex/worktrees/add4/RaceAtlas`.
-- Base `origin/main` vérifiée `f33d837844abdc51ebcafc066da3c16cb4982f34`. Parent avant livraison finale : `7a52a826416d225ada98e58719250aa933288e96`. Le commit contenant ce checkpoint est le candidat ; relever `git rev-parse HEAD` après commit/push et comparer au head PR.
-- Draft PR https://github.com/TheoxProject/RaceAtlas/pull/5 ; CI finale à observer sur le nouveau SHA. Aucun verdict Tester lot3 acquis.
+- Base `origin/main` vérifiée `f33d837844abdc51ebcafc066da3c16cb4982f34`. Parent avant correction cycle1 : `92059d36cd9e3e39fbe31e89e4aa721ca94ee2d4`. Le commit contenant ce checkpoint est le candidat ; relever `git rev-parse HEAD` après commit/push et comparer au head PR.
+- Draft PR https://github.com/TheoxProject/RaceAtlas/pull/5 ; CI finale à observer sur le nouveau SHA. Ancien verdict Tester REQUEST CHANGES sur92059d3 ; aucun APPROVE lot3 acquis.
 - Mission `docs/lot-3/mission.md`, handoff `docs/lot-3/developer-handoff.md`, usage `docs/lot-3/local-development.md`.
 
 ## Intégration précédente confirmée
@@ -15,7 +15,8 @@ Lot2 DONE : PR https://github.com/TheoxProject/RaceAtlas/pull/4, Tester APPROVE 
 | L3-01 cadrage/checkpoint/Draft PR | Coordinator | DONE |
 | L3-02 import/audit/identité | Developer | DONE |
 | L3-03 communes/cache/intégration/handoff | Developer | DONE |
-| L3-04 revue indépendante SHA figé | Tester | TODO |
+| L3-04 revue indépendante SHA figé | Tester | REQUEST CHANGES sur92059d3 |
+| L3-C1 conflits entre alias résolus | Developer | DONE ; nouvelle revue TODO |
 | L3-05 CI/fusion/bilan | Coordinator | TODO |
 
 ## Livré et validation développeur
@@ -24,7 +25,7 @@ Six tables/migration statique audit/cache/révisions/alias ; empreintes métier 
 
 **160pytest PASS en44,71s**, aucun skip (65lot3+95précédents dont3Chromium), migrations aller-retour/drift/contraintes SQL et API JSON Schema comprises. Ruff lint/format25fichiers PASS,26contrats PASS, pipcheck PASS. Frontend inchangé : ESLint PASS, Vitest3/3PASS, build29modulesPASS par binaires locaux après échec de résolution pnpm en réseau restreint. Diff-check PASS. Premier fullrun119PASS/41FAIL : chaîne française du helper de test réencodée cp1252/UTF8, réparée ; passage final160PASS. Lectures/écritures UTF8 explicites, scan UTF8/mojibake PASS. Preuves LocationFact et fournisseur/version auditées durablement ; suite finale rejouée après ce dernier ajout.
 
-WIP publiés/CI vertes : ff351d9 https://github.com/TheoxProject/RaceAtlas/actions/runs/42841269435 ; 7a52a826 https://github.com/TheoxProject/RaceAtlas/actions/runs/42842980835. Ces CI ne valent pas validation du futur SHA final. Aucun risque fonctionnel non résolu confirmé à la livraison développeur ; revue indépendante et CI finale requises.
+WIP publiés/CI vertes : ff351d9 https://github.com/TheoxProject/RaceAtlas/actions/runs/42841269435 ; 7a52a826 https://github.com/TheoxProject/RaceAtlas/actions/runs/42842980835. Ces CI ne valent pas validation du futur SHA final. Tester REQUEST CHANGES sur92059d36cd9e3e39fbe31e89e4aa721ca94ee2d4 : F1/P1, contradictions entre alias d'une même race.id. **Correction1 terminée :180pytest PASS en50,78s**, aucun skip (85lot3+95précédents dont3Chromium), Ruff lint/format25fichiers PASS,26contrats PASS et diff-check PASS. Vingt régressions ajoutées. Précontrôle sous verrou par identité persistante/baseline des preuves avant mutation ; conflits audités needs_review, aucune révision ou inférence d'absence indue, fenêtres positives indépendantes conservées. Alias identiques idempotents, fraîcheur maximale préservée ; périmé isolé refusé. Nouvelles décisions concurrentes de référence principale mises en revue, aucun choix par ordre. CI92059d3 verte (run42845875238), **périmée pour le nouveau candidat**. Nouvelle revue et CI exactes requises avant fusion. Rapport ancien archivé `.local-tools/tester-report-lot3-92059d3.md`, détails du correctif et commandes dans handoff. Avant fix10FAIL/2PASS sur12variantes ; après fix56tests sync ciblésPASS, puis suite globale180PASS. Un setup de nouveau test corrigé sans effet produit. Aucun test développeur actif.
 
 ## Décisions et restrictions
 
@@ -42,4 +43,4 @@ Ne pas relancer initdb ; ancien `.local-tools/pgdata-lot2` incomplet à ignorer,
 
 ## Prochaine action sûre
 
-Après commit/push final : **figer le résultat de `git rev-parse HEAD`, confirmer le head PR#5 et demander Tester sur ce SHA exact et sa base locale isolée raceatlas_lot2_review**. Suivre CI du même SHA ; publier preuves finales dans PR sans modifier le candidat. Ne pas fusionner ni commencer lot4 avant gates intégration, TesterAPPROVE et CI verte du même SHA.
+Après commit/push correctif cycle1 : **figer le résultat de `git rev-parse HEAD`, confirmer le head PR#5 et demander Tester sur ce SHA exact et sa base locale isolée raceatlas_lot2_review**. Suivre CI du même SHA ; publier preuves finales dans PR sans modifier le candidat. Ne pas fusionner ni commencer lot4 avant gates intégration, TesterAPPROVE et CI verte du même SHA.

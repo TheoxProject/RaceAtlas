@@ -5,7 +5,7 @@ entirely successful run may mark absent races to_verify, after global key dedupl
 """
 
 import re
-from dataclasses import replace
+from dataclasses import dataclass, replace
 from datetime import datetime, timezone
 
 from sqlalchemy import select, text
@@ -121,7 +121,7 @@ def _lookup(session, key):
     return session.get(Race, race_id) if race_id else None, alias
 
 
-def _alias_target(session, observation, proof, now):
+def _alias_target(session, observation, proof, now, *, approved_target=None):
     existing, alias = _lookup(session, observation.key)
     if proof is None:
         return existing, False
@@ -142,22 +142,39 @@ def _alias_target(session, observation, proof, now):
     if (
         target is None
         or target.source.provider != "ffc"
-        or SourceKey(target.source.source_season, target.source.race_number) != proof.expected_key
-        or target.revision != proof.expected_revision
+        or approved_target is not None
+        and target.id != approved_target
+        or approved_target is None
+        and (
+            SourceKey(target.source.source_season, target.source.race_number) != proof.expected_key
+            or target.revision != proof.expected_revision
+        )
     ):
         _error("stale_alias_proof")
     return target, True
 
 
 def _apply(
-    session, observation, run_id, now, *, alias=None, identity=None, grouping=None, commune=None
+    session,
+    observation,
+    run_id,
+    now,
+    *,
+    alias=None,
+    identity=None,
+    grouping=None,
+    commune=None,
+    approved_alias=None,
+    alias_consensus=False,
 ):
     if observation.checked_at.tzinfo is None or observation.checked_at > now:
         _error("invalid_timestamp")
-    existing, new_alias = _alias_target(session, observation, alias, now)
+    existing, new_alias = _alias_target(
+        session, observation, alias, now, approved_target=approved_alias
+    )
     previous_revision = existing.revision if existing else 0
-    if existing and observation.checked_at < existing.source.checked_at:
-        _error("stale_observation")
+    previous_checked_at = existing.source.checked_at if existing else None
+    stale = existing is not None and observation.checked_at < previous_checked_at
     if existing and existing.commune_id and existing.department != observation.department:
         _error("location_identity_needs_review")
     competition_id = existing.competition_id if existing else None
@@ -191,6 +208,8 @@ def _apply(
     facts["competition_id"] = competition_id
     facts["location"] = _location(commune or (existing.commune if existing else None))
     current = _model_facts(existing) if existing else None
+    if stale and not (alias_consensus and fingerprint(current) == fingerprint(facts)):
+        _error("stale_observation")
     if existing and (
         observation.diagnostics
         or existing.organizer is not None
@@ -228,7 +247,8 @@ def _apply(
             "department",
             "status",
         ):
-            setattr(model, field, getattr(effective, field))
+            if not stale:
+                setattr(model, field, getattr(effective, field))
         # Type replacement is safe only within the same discipline. Other changes need review.
         if {item.code for item in existing.types} != set(observation.types):
             _error("sport_identity_needs_review")
@@ -261,10 +281,11 @@ def _apply(
     if new_alias:
         model.source.source_season = observation.key.season
         model.source.race_number = observation.key.race_number
-    model.source.checked_at, model.source.source_url = (
-        observation.checked_at,
-        observation.source_url,
-    )
+    if not stale:
+        model.source.checked_at, model.source.source_url = (
+            observation.checked_at,
+            observation.source_url,
+        )
     model.source_presence = "present"
     if action != "unchanged":
         session.add(
@@ -299,7 +320,98 @@ def _window_valid(calendar, now):
     )
 
 
-def _import_window(session, batch, run_id, now, provider, conflicts):
+@dataclass
+class _Preflight:
+    conflicts: set
+    errors: dict
+    targets: dict
+    approved_aliases: dict
+    consensus_keys: set
+
+
+def _preflight(session, batches, now):
+    """Resolve all identities against one baseline before the first catalogue mutation.
+
+    A proof can introduce a reference to an existing ID, but neither names nor ordering
+    create identity. Proofs valid only after another window mutates the baseline are refused.
+    """
+    groups, key_groups, targets, approved, errors = {}, {}, {}, {}, {}
+    new_aliases = {}
+    for batch in batches:
+        locations = {fact.key: fact for fact in batch.locations}
+        groupings = {proof.key: proof for proof in batch.competitions}
+        aliases = {proof.key: proof for proof in batch.aliases}
+        identities = {proof.key: proof for proof in batch.identities}
+        for observation in batch.details:
+            key = observation.key
+            target = None
+            try:
+                target, _ = _lookup(session, key)
+                if key in aliases:
+                    target, is_new = _alias_target(session, observation, aliases[key], now)
+                    approved[key] = target.id
+                    if is_new:
+                        new_aliases.setdefault(target.id, set()).add(key)
+            except AdapterError as error:
+                errors[key] = error.diagnostic.code
+            location, grouping = locations.get(key), groupings.get(key)
+            identity_proof = identities.get(key)
+            scope_ids = dict(identity_proof.scope_ids) if identity_proof else {}
+            rule_ids = dict(identity_proof.rule_ids) if identity_proof else {}
+            signature = fingerprint(
+                {
+                    "facts": observation_facts(observation),
+                    "location": {
+                        "name": clean_text(location.commune_name).casefold()
+                        if isinstance(location.commune_name, str)
+                        else None,
+                        "insee_code": location.insee_code,
+                        "department": location.department,
+                    }
+                    if location
+                    else None,
+                    "group": grouping.competition_id
+                    if grouping
+                    else target.competition_id
+                    if target
+                    else None,
+                    "identity_assignment": [
+                        [
+                            scope_ids.get(scope.token),
+                            [rule_ids.get(rule.token) for rule in scope.rules],
+                        ]
+                        for scope in observation.scopes
+                    ]
+                    if identity_proof
+                    else None,
+                }
+            )
+            identity = ("race", target.id) if target else ("source", key)
+            groups.setdefault(identity, []).append((key, signature))
+            key_groups.setdefault(key, set()).add((identity, signature))
+            if target:
+                targets[key] = target.id
+    conflicts = {key for key, signatures in key_groups.items() if len(signatures) > 1}
+    for key, entries in key_groups.items():
+        if len({identity for identity, _ in entries}) > 1:
+            # Conflicting identity claims must not make the audit assert an arbitrary owner.
+            targets.pop(key, None)
+            approved.pop(key, None)
+    consensus = set()
+    for identity, entries in groups.items():
+        keys = {key for key, _ in entries}
+        if len({signature for _, signature in entries}) > 1:
+            conflicts.update(keys)
+        elif identity[0] == "race" and len(keys) > 1:
+            consensus.update(keys)
+        if identity[0] == "race" and len(new_aliases.get(identity[1], ())) > 1:
+            # Each new alias proof also changes the primary source reference. Competing
+            # primary-reference decisions cannot be selected by window processing order.
+            conflicts.update(keys)
+    return _Preflight(conflicts, errors, targets, approved, consensus)
+
+
+def _import_window(session, batch, run_id, now, provider, preflight):
     calendar = batch.calendar
     window = ImportWindow(
         run_id=run_id,
@@ -352,8 +464,12 @@ def _import_window(session, batch, run_id, now, provider, conflicts):
         code, race_id, action = None, None, "error"
         if observation is None:
             code = failures[key].code if key in failures else "missing_detail"
-        elif key in conflicts:
+        elif key in preflight.conflicts:
             code = "conflicting_details"
+            race_id, action = preflight.targets.get(key), "review"
+        elif key in preflight.errors:
+            code, action = preflight.errors[key], "review"
+            race_id = preflight.targets.get(key)
         elif observation.normalization_version != NORMALIZATION_VERSION:
             code = "unsupported_normalization"
         elif observation.checked_at < calendar.checked_at:
@@ -383,6 +499,8 @@ def _import_window(session, batch, run_id, now, provider, conflicts):
                         identity=identities.get(key),
                         grouping=groupings.get(key),
                         commune=resolution.commune,
+                        approved_alias=preflight.approved_aliases.get(key),
+                        alias_consensus=key in preflight.consensus_keys,
                     )
                 present.add(race_id)
                 if resolution.status == "error":
@@ -448,34 +566,6 @@ def synchronize(engine, batches, *, checked_at=None, provider=None, synthetic=Tr
     if not isinstance(now, datetime) or now.tzinfo is None or now.utcoffset() is None:
         _error("invalid_timestamp")
     batches = tuple(batches)
-    conflicts, signatures = set(), {}
-    for batch in batches:
-        locations = {fact.key: fact for fact in batch.locations}
-        groupings = {proof.key: proof for proof in batch.competitions}
-        aliases = {proof.key: proof for proof in batch.aliases}
-        for observation in batch.details:
-            location = locations.get(observation.key)
-            grouping = groupings.get(observation.key)
-            alias = aliases.get(observation.key)
-            signature = fingerprint(
-                {
-                    "facts": observation_facts(observation),
-                    "location": {
-                        "name": clean_text(location.commune_name).casefold()
-                        if isinstance(location.commune_name, str)
-                        else None,
-                        "insee_code": location.insee_code,
-                        "department": location.department,
-                    }
-                    if location
-                    else None,
-                    "group": grouping.competition_id if grouping else None,
-                    "alias_target": alias.race_id if alias else None,
-                }
-            )
-            if observation.key in signatures and signatures[observation.key] != signature:
-                conflicts.add(observation.key)
-            signatures[observation.key] = signature
     with engine.connect() as connection:
         locked = connection.scalar(text("SELECT pg_try_advisory_lock(:key)"), {"key": LOCK_KEY})
         connection.commit()
@@ -483,6 +573,7 @@ def synchronize(engine, batches, *, checked_at=None, provider=None, synthetic=Tr
             _error("import_busy")
         try:
             with Session(connection) as session:
+                preflight = _preflight(session, batches, now)
                 run = ImportRun(
                     started_at=now,
                     status="running",
@@ -494,7 +585,7 @@ def synchronize(engine, batches, *, checked_at=None, provider=None, synthetic=Tr
                 session.commit()
                 run_id, statuses, present = run.id, [], set()
                 for batch in batches:
-                    status, seen = _import_window(session, batch, run_id, now, provider, conflicts)
+                    status, seen = _import_window(session, batch, run_id, now, provider, preflight)
                     statuses.append(status)
                     present.update(seen)
                     session.commit()

@@ -518,3 +518,179 @@ def test_no_windows_is_audited_as_failed_without_missing_inference(session, data
     assert result.status == "failed" and result.missing_marked == 0
     assert session.scalar(select(Race)).source_presence == "present"
     assert session.get(ImportRun, result.run_id).status == "failed"
+
+
+@pytest.mark.parametrize("reverse", [False, True])
+@pytest.mark.parametrize("introduce_alias", [False, True])
+@pytest.mark.parametrize("later_minutes", [0, 1])
+def test_contradictory_aliases_quarantine_same_race_independently_of_order(
+    session, database, reverse, introduce_alias, later_minutes
+):
+    original = observation("ALIAS_ORIGINAL")
+    synchronize(database, [batch(original)], checked_at=NOW)
+    stored = session.scalar(select(Race))
+    race_id, scope_ids = stored.id, [scope.id for scope in stored.scopes]
+    corrected = observation("ALIAS_CORRECTED")
+    proof = AliasProof(corrected.key, race_id, original.key, 1, "reviewed-alias-proof", NOW)
+    if not introduce_alias:
+        assert (
+            synchronize(database, [batch(corrected, aliases=(proof,))], checked_at=NOW).status
+            == "success"
+        )
+    original_changed = observation("ALIAS_ORIGINAL", html=HTML.replace("collines", "Alpha"))
+    later = NOW + timedelta(minutes=later_minutes)
+    alias_changed = observation(
+        "ALIAS_CORRECTED", html=HTML.replace("collines", "Beta"), checked=later
+    )
+    inputs = [
+        batch(original_changed),
+        batch(alias_changed, checked=later, aliases=(proof,) if introduce_alias else ()),
+    ]
+    if reverse:
+        inputs.reverse()
+    result = synchronize(database, inputs, checked_at=later)
+    session.expire_all()
+    stored = session.get(Race, race_id)
+    assert result.status == "failed" and result.missing_marked == 0
+    assert stored.name.endswith("collines") and stored.revision == 1
+    assert stored.source_presence == "present"
+    assert [scope.id for scope in stored.scopes] == scope_ids
+    assert count(session, Race) == count(session, SourceRevision) == 1
+    assert count(session, SourceAlias) == (1 if introduce_alias else 2)
+    items = session.scalars(
+        select(ImportItem).join(ImportWindow).where(ImportWindow.run_id == result.run_id)
+    ).all()
+    assert len(items) == 2
+    assert all(
+        item.diagnostic == "conflicting_details" and item.status == "review" for item in items
+    )
+
+
+@pytest.mark.parametrize("reverse", [False, True])
+@pytest.mark.parametrize("introduce_alias", [False, True])
+def test_identical_alias_facts_with_different_check_times_are_idempotent(
+    session, database, reverse, introduce_alias
+):
+    original = observation("SAME_ORIGINAL")
+    synchronize(database, [batch(original)], checked_at=NOW)
+    stored = session.scalar(select(Race))
+    corrected = observation("SAME_CORRECTED")
+    proof = AliasProof(corrected.key, stored.id, original.key, 1, "same-alias-proof", NOW)
+    if not introduce_alias:
+        synchronize(database, [batch(corrected, aliases=(proof,))], checked_at=NOW)
+    later = NOW + timedelta(minutes=1)
+    original_changed = observation(
+        "SAME_ORIGINAL", html=HTML.replace("collines", "Updated"), checked=later
+    )
+    alias_changed = observation("SAME_CORRECTED", html=HTML.replace("collines", "Updated"))
+    inputs = [
+        batch(original_changed, checked=later),
+        batch(alias_changed, aliases=(proof,) if introduce_alias else ()),
+    ]
+    if reverse:
+        inputs.reverse()
+    result = synchronize(database, inputs, checked_at=later)
+    session.expire_all()
+    assert result.status == "success" and result.missing_marked == 0
+    stored = session.get(Race, stored.id)
+    assert stored.name.endswith("Updated") and stored.revision == 2
+    assert stored.source.checked_at == later
+    assert count(session, SourceRevision) == 2
+    assert count(session, SourceAlias) == 2
+    assert synchronize(database, inputs, checked_at=later).status == "success"
+    assert count(session, SourceRevision) == 2
+
+
+def test_alias_conflict_preserves_independent_positive_window_and_prevents_absence(
+    session, database
+):
+    original, missing = observation("CONFLICT_ORIGINAL"), observation("UNSEEN")
+    synchronize(database, [batch(original, missing)], checked_at=NOW)
+    target = session.scalar(select(Race).where(Race.source.has(race_number="CONFLICT_ORIGINAL")))
+    corrected = observation("CONFLICT_CORRECTED")
+    proof = AliasProof(corrected.key, target.id, original.key, 1, "conflict-alias-proof", NOW)
+    synchronize(database, [batch(corrected, missing, aliases=(proof,))], checked_at=NOW)
+    inputs = [
+        batch(observation("CONFLICT_ORIGINAL", html=HTML.replace("collines", "Alpha"))),
+        batch(observation("CONFLICT_CORRECTED", html=HTML.replace("collines", "Beta"))),
+        batch(observation("INDEPENDENT")),
+    ]
+    result = synchronize(database, inputs, checked_at=NOW)
+    session.expire_all()
+    assert result.status == "partial" and result.missing_marked == 0
+    assert count(session, Race) == count(session, SourceRevision) == 3
+    assert session.get(Race, target.id).name.endswith("collines")
+    assert all(race.source_presence == "present" for race in session.scalars(select(Race)))
+
+
+@pytest.mark.parametrize("reverse", [False, True])
+@pytest.mark.parametrize("same_facts", [False, True])
+def test_two_new_proven_aliases_resolve_to_one_baseline_before_any_mutation(
+    session, database, reverse, same_facts
+):
+    original = observation("BASELINE")
+    synchronize(database, [batch(original)], checked_at=NOW)
+    stored = session.scalar(select(Race))
+    left = observation("NEW_LEFT", html=HTML.replace("collines", "Alpha"))
+    right = observation(
+        "NEW_RIGHT", html=HTML.replace("collines", "Alpha" if same_facts else "Beta")
+    )
+    left_proof = AliasProof(left.key, stored.id, original.key, 1, "left-proof", NOW)
+    right_proof = AliasProof(right.key, stored.id, original.key, 1, "right-proof", NOW)
+    inputs = [batch(left, aliases=(left_proof,)), batch(right, aliases=(right_proof,))]
+    if reverse:
+        inputs.reverse()
+    result = synchronize(database, inputs, checked_at=NOW)
+    session.expire_all()
+    assert result.status == "failed" and result.missing_marked == 0
+    assert session.get(Race, stored.id).name.endswith("collines")
+    assert count(session, SourceAlias) == count(session, SourceRevision) == 1
+
+
+@pytest.mark.parametrize("reverse", [False, True])
+def test_attested_identical_scope_changes_through_aliases_compare_persistent_bindings(
+    session, database, reverse
+):
+    original = observation("SCOPE_ORIGINAL")
+    synchronize(database, [batch(original)], checked_at=NOW)
+    stored = session.scalar(select(Race))
+    corrected = observation("SCOPE_CORRECTED")
+    alias_proof = AliasProof(corrected.key, stored.id, original.key, 1, "scope-alias-proof", NOW)
+    synchronize(database, [batch(corrected, aliases=(alias_proof,))], checked_at=NOW)
+    later = NOW + timedelta(minutes=1)
+    body = HTML.replace("Restriction fictive A", "Restriction fictive B")
+    left = observation("SCOPE_ORIGINAL", html=body, checked=later)
+    right = observation("SCOPE_CORRECTED", html=body)
+    inputs = [
+        batch(left, checked=later, identities=(identities(left, stored),)),
+        batch(right, identities=(identities(right, stored),)),
+    ]
+    if reverse:
+        inputs.reverse()
+    result = synchronize(database, inputs, checked_at=later)
+    session.expire_all()
+    assert result.status == "success"
+    assert session.get(Race, stored.id).revision == 2
+    assert count(session, SourceRevision) == 2
+
+
+def test_competing_proofs_for_one_new_key_do_not_assert_an_arbitrary_audit_owner(session, database):
+    left, right = observation("OWNER_LEFT"), observation("OWNER_RIGHT")
+    synchronize(database, [batch(left, right)], checked_at=NOW)
+    races = {race.source.race_number: race for race in session.scalars(select(Race))}
+    new = observation("AMBIGUOUS_NEW_KEY")
+    proofs = (
+        AliasProof(new.key, races["OWNER_LEFT"].id, left.key, 1, "claim-left", NOW),
+        AliasProof(new.key, races["OWNER_RIGHT"].id, right.key, 1, "claim-right", NOW),
+    )
+    result = synchronize(
+        database, [batch(new, aliases=(proof,)) for proof in proofs], checked_at=NOW
+    )
+    assert result.status == "failed" and result.missing_marked == 0
+    assert (
+        count(session, SourceAlias) == count(session, SourceRevision) == count(session, Race) == 2
+    )
+    items = session.scalars(
+        select(ImportItem).join(ImportWindow).where(ImportWindow.run_id == result.run_id)
+    ).all()
+    assert all(item.race_id is None and item.diagnostic == "conflicting_details" for item in items)

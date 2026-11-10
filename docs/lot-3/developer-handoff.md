@@ -48,3 +48,22 @@ Le dialecte HTML et les données restent synthétiques, droits et compatibilité
 Décision propriétaire résolue pour futur lot5 : **Altitude2.5D initial par défaut ; Summit3D à la demande**. Aucun choix produit en attente pour ce lot. Autonomie technique maintenue, silence jamais accord.
 
 Contrôle final de provenance : preuves LocationFact et nom/version du fournisseur persistés dans audit item, avec assertion dédiée. Après cet ajout final, suite globale rejouée :160/160PASS en44,71s. Scan UTF8/mojibake de tous fichiers modifiés/nouveaux PASS.
+
+
+## Correction cycle 1 — conflit entre références d'une identité résolue
+
+SHA refusé par Tester : `92059d36cd9e3e39fbe31e89e4aa721ca94ee2d4`, verdict **REQUEST CHANGES F1/P1**. Rapport archivé `.local-tools/tester-report-lot3-92059d3.md`, repro `.local-tools/tester-adversarial-lot3.py`. CI de ce SHA verte https://github.com/TheoxProject/RaceAtlas/actions/runs/42845875238 ; elle ne valide pas le nouveau candidat.
+
+Reproduction : deux références déjà attestées comme alias de la même race.id pouvaient proposer Alpha/Beta dans le même run ; le catalogue et les révisions dépendaient de l'ordre des fenêtres. Détection initiale limitée à SourceKey. Avant correction,12 nouvelles variantes ont produit10échecs/2succès, reproduisant aussi l'ordre problématique pour des observations identiques mais datées différemment.
+
+Correctif : précontrôle global sous verrou PostgreSQL, avant toute mutation métier, résolvant les clés canoniques/alias et les nouvelles preuves valides vers l'ID interne persistant. Signatures comparées par cette identité et par clé source ; contradictions placées en revue avec diagnostic `conflicting_details`, graphe/IDs/révisions préservés et toute inférence d'absence empêchée. Des fenêtres positives indépendantes restent importables. Une identité revendiquée contradictoirement ne donne pas de propriétaire arbitraire à l'audit.
+
+Les preuves sont validées sur une baseline unique : une preuve périmée ne devient pas valide grâce à une fenêtre antérieure. Une preuve valide dans cette baseline reste applicable après un changement identique provenant d'un autre alias. Deux nouvelles décisions concurrentes de référence principale pour la même course sont mises en revue, même si les autres faits sont égaux, car le service ne choisit pas une clé principale par ordre de traitement.
+
+Des faits strictement identiques provenant d'alias concordants restent idempotents, sans révision doublée ni recul de la fraîcheur. La tolérance à une observation plus ancienne est limitée à ce consensus prouvé dans le même run et à une égalité complète des faits effectifs ; l'observation périmée isolée reste refusée. Les attributions explicites de scopes comparent les IDs persistants, jamais les tokens aléatoires.
+
+Vingt régressions ajoutées : alias existants/preuves nouvelles, deux ordres, dates égales/différentes, nouveaux alias concurrents, alias identiques et replay, scopes attestés concordants, fenêtre indépendante positive et propriétaires concurrents. Un échec de setup d'un nouveau test a été corrigé (la phase de préparation avait déjà marqué UNSEEN absent), sans changement de produit pour ce setup.
+
+Résultat final correction1 : **180 pytest PASS en50,78s**, aucun skip (85lot3+95précédents dont3Chromium), sur **raceatlas_lot2_test uniquement**. Migrations aller-retour/drift, intégration Flask/PostgreSQL/API et contraintes comprises. Ruff lint/format25fichiers PASS,26contrats PASS, diff-check PASS. Frontend et dépendances inchangés/non réexécutés dans ce cycle ; la revue précédente avait vérifié3tests React avec `--pool=threads --maxWorkers=1` après timeout du runner fork local, sans changement produit/config.
+
+Fichiers de correction : `raceatlas/sync/service.py`, `tests/backend/test_sync.py`, ce handoff et `docs/coordination/CURRENT_STATE.md`. Parent avant correctif :92059d36cd9e3e39fbe31e89e4aa721ca94ee2d4. Le commit contenant cette section est le nouveau candidat ; relever HEAD puis nouvelle revue Tester et CI du même SHA. Pas de changement de schéma/contrats/source réseau/déploiement. Aucun test développeur actif ; cluster local laissé actif pour Tester. Éditions suivies arrêtées après commit/push.
