@@ -2,9 +2,11 @@
 
 Découvrir et organiser les compétitions cyclistes d'Auvergne-Rhône-Alpes, avec carte Altitude/Summit, calendrier et filtres d'admissibilité.
 
-## État du projet
+## Démarrage du lot 1
 
-Lot 0 : qualification des sources et contrats de conception. Aucune application ni collecte planifiée n'est implémentée. Les inconnues de complétude et les droits FFC restent des conditions distinctes de l'utilisation des fixtures synthétiques.
+Le socle React/Vite → Flask/SQLAlchemy → PostgreSQL est lançable sur des données synthétiques. L'accueil est une démonstration technique ; carte, calendrier, filtres, comptes et import FFC restent réservés aux lots suivants. Aucune collecte ni aucun déploiement n'est activé.
+
+Les [instructions Windows et de validation](docs/lot-1/local-development.md) décrivent l'installation, les migrations, le seed et le serveur Waitress. [Cadrage et critères lot 1](docs/lot-1/mission.md).
 
 - [Dossier versionné du lot 0](docs/lot-0/README.md)
 - [Contrat JSON Schema](contracts/catalog.schema.json)

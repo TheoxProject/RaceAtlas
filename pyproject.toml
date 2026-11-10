@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools==80.9.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "raceatlas"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+  "Flask==3.1.2", "SQLAlchemy==2.0.44", "alembic==1.17.2",
+  "psycopg[binary]==3.2.12", "waitress==3.0.2",
+]
+
+[tool.setuptools.packages.find]
+include = ["raceatlas*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests/backend"]
+markers = ["e2e: compiled React through Flask and PostgreSQL"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]

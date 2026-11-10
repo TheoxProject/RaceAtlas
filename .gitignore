@@ -218,3 +218,12 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# RaceAtlas frontend and disposable development tools
+.local-tools/
+node_modules/
+frontend/dist/
+.env.*
+!.env.example
+test-results/
+playwright-report/
