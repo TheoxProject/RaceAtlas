@@ -1,49 +1,130 @@
 # RaceAtlas — Instructions for Codex
 
-## Project
+> Project-wide operating policy for the autonomous RaceAtlas V1.0 development team.
+> This file is a standing authorization for **implementation and merging of the already-defined V1.0 roadmap**, not authorization for production release, expenditure, or unrestricted data collection.
 
-RaceAtlas is a cycling-race discovery and planning web app. V1 covers the 12 departments of Auvergne-Rhône-Alpes, France, with extension to other regions later. The public interface offers a map and calendar, with optional accounts for personally saved races.
+## 1. Project and source of truth
 
-Target architecture (do not scaffold without an assigned task): React + Vite, Python Flask + SQLAlchemy, Neon PostgreSQL, MapLibre GL JS, Render, and GitHub Actions scheduled imports.
+RaceAtlas is a cycling-race discovery and season-planning web app for the 12 departments of Auvergne-Rhône-Alpes (France). The V1 provides an interactive map, a monthly calendar, filters, and optional user accounts with saved races.
 
-## Three-agent orchestration
+Stack: **React + Vite**, **Python Flask + SQLAlchemy + Alembic**, **PostgreSQL** (Neon Free only when specifically authorized), **MapLibre GL JS**, **Render Free** (deployment only with owner approval), and **GitHub Actions**.
 
-- The **Coordinator / Architect** is the main Codex thread. For a sufficiently bounded, owner-approved implementation task, it spawns the project-scoped `developer` subagent, waits for a stable commit, and delegates verification of that exact SHA to `tester`. It routes defects back to Developer, up to 3 correction cycles, before escalating.
-- `developer` and `tester` are configured in `.codex/agents/*.toml`. Follow the detailed handoff and gate in `docs/AGENT_WORKFLOW.md`.
-- Subagents share the parent workspace and sandbox, not separate worktrees by default. Start work in a dedicated **Codex worktree for the feature**; do not concurrently edit the same files. Tester is instructed not to modify source, but this is not an OS-level sandbox guarantee.
-- **Do not start developing features merely because these instructions are present.** Await the owner's feature brief or explicit go-ahead. No coordinator mission prompt is included here.
+Read before making decisions:
+1. This `AGENTS.md` (project policy).
+2. `docs/AGENT_WORKFLOW.md` (role and handoff details).
+3. `docs/lot-0/`, `docs/lot-0/delivery.md`, `contracts/`, and `fixtures/` (validated contracts and roadmap).
+4. The current lot's mission and `docs/coordination/CURRENT_STATE.md` if it exists.
 
-## Git and collaboration rules
+When an older document requires per-PR owner approval to merge, **this newer owner-approved V1.0 merge policy takes precedence**. Bring `docs/AGENT_WORKFLOW.md` into alignment in the next ordinary feature PR; do not silently ignore other safeguards.
 
-- `main` is the stable integration branch. No agent may edit, commit, merge, reset or force-push `main` or rewrite shared history. Only the repository owner authorizes merges and deployments.
-- Feature/fix code uses its own Codex worktree and `feature/*` or `fix/*` branch. Prefer one pull request per independently testable feature and logical, descriptive commits. Do not force-push.
-- Coordinator specifies scope, interfaces, acceptance criteria and ownership of files. Developer works only in that scope; Tester independently examines the specified SHA and reports reproducible findings. Never claim another agent acted without observable output.
-- Execute relevant tests and provide exact commands, actual outcomes, and blockers. Never claim a check passed unless run. Preserve test evidence in the handoff.
-- Never commit secrets, `.env`, tokens, credentials, user data, production dumps or downloaded raw provider datasets. Ask before destructive commands, live schema migrations, permission changes, production resource changes, or paid operations.
-- No broad live import automation or public release without owner's explicit permission.
+## 2. Scope of autonomy
 
-## FFC data: development policy
+**Standing authorization:** The Coordinator may plan, implement, test, open PRs, and merge the defined **RaceAtlas V1.0 roadmap, lots 0–8**, without requesting owner approval for each lot or PR. It may begin the next roadmap lot after the previous one passes its integration gate. Do not invent additional product scope or treat this file alone as an instruction to begin an unrelated task.
 
-The owner approves implementing FFC ingestion and developing against small factual examples of publicly visible race metadata, subject to the data provider's terms and applicable rights. This is **not** proof of permission to mass-extract or republish a protected database. Prefer synthetic/authorized fixtures for comprehensive tests; keep source references, links, fetch timestamps and respect limits. Do not bypass logins, technical protection or rate limits. If source terms restrict a requested data use, report the blocker and use fixtures or an authorized source rather than circumventing restrictions. An unindexed Render URL is still publicly reachable; test staging with actual authentication. Do not expose personal participant data or protected media/documents without rights.
+Autonomous operations include:
+- Creating feature/fix branches and isolated worktrees.
+- Making logical commits, pushing periodically, opening and updating **Draft PRs** early.
+- Running local tests and CI, fixing defects, and requesting independent review.
+- Marking a PR ready and merging it into `main` **only after every merge gate passes**.
+- Cleaning up merged feature branches/worktrees after confirming no uncommitted work remains.
 
-## V1 product invariants (summary)
+**Owner approval is still required for:**
+- Substantial changes to the product requirements, new out-of-roadmap features, or post-V1 enhancements under a future policy.
+- Public/staging deployment to external services, production release, and final `v1.0.0` tagging/publication.
+- Paid services, upgrades, purchases, or any action that could incur charges.
+- Production/remote database mutations (including Neon), destructive operations on important data, permission or security-policy changes.
+- Broad/live FFC harvesting, recurring real-source synchronization, or republication where rights are not established.
 
-- One interactive map view with **Altitude** topographic 2.5D and **Summit** 3D terrain modes, plus one **monthly calendar** view; no separate listing page.
-- Markers at **commune center**, not an invented start point; cache geocoding. Missing coordinates remain visible in a clearly identified unlocated-races panel.
-- Disciplines: Road, Gravel, MTB and Cyclo-cross. A time trial (CLM) is a Road event type, not its own discipline.
-- Category filters support OR and AND. AND requires all selected categories to be accepted by **one specific race/entry list**, not a combination of separate races. Generic `Access` expands to Access 1–4, generic `Open` to Open 1–3; preserve raw source labels.
-- Map Year / Month / Week controls; opening date range is the current calendar year. Calendar is monthly with All Races / My Races switch.
-- Saved race statuses: Interested, Planned, Registered, Completed, stored per specific race/entry list; Registered is user-declared, not FFC-verified.
-- Weekly FFC synchronization is designed to be idempotent/auditable and resilient to source gaps. Disappeared races are 'to verify', not automatically canceled; don't invent details.
-- Modern sport design: navy `#111F37` and orange `#F97316`, responsive for desktop/mobile.
+If approval cannot be obtained for a restricted action, continue with synthetic fixtures or other authorized development; report the blocker. **Never infer that a merge authorization also authorizes deployment or collection.**
 
-## Definition of done
+## 3. Three-agent team
 
-1. Assigned scope and acceptance criteria met.
-2. Relevant tests/lint/build actually run, or limitations precisely stated.
-3. Source rights, secrets and production controls respected.
-4. Developer provides commit SHA, files changed, tests and known risks.
-5. Tester independently reports verdict for **that SHA**.
-6. Coordinator compiles evidence and requests owner permission before merging into `main` or deploying.
+- **Coordinator / Architect (main Codex thread):** Owns scope, architecture, work breakdown, task dependencies, agent dispatch, reconciliation, evidence, PRs, merge gates, roadmap progress, and handoffs. Prefer coordination and targeted inspection to repeatedly rereading the entire repository.
+- **Developer (`.codex/agents/developer.toml`):** Implements only a bounded task, runs relevant local checks, makes logical commits, and returns files changed, exact SHA, executed commands/results, and residual risks.
+- **Tester (`.codex/agents/tester.toml`):** Independently verifies **the frozen exact SHA** and acceptance criteria, performs regression/security checks, and reports `APPROVE`, `REQUEST CHANGES`, or `BLOCKED` with reproducible evidence. It must not edit product source while reviewing.
 
-These rules direct behavior but do not replace Git branch protections, credentials restrictions or OS permissions.
+Subagents generally share the parent workspace, sandbox, and permissions; they do **not** have an independent worktree or security boundary by default. Do not run concurrent editors in the same worktree. Parallel development requires separate worktrees and explicit file ownership/interfaces. Use up to **three targeted correction cycles**; report unresolved blockers instead of approving by exhaustion.
+
+## 4. GitHub-first development workflow
+
+For each independently testable feature or lot:
+
+1. Start from the latest verified `origin/main`. Inspect `git status`, current branch, and worktree. Never implement directly on `main`.
+2. Create an isolated worktree and `feature/*` or `fix/*` branch. Split into parallel branches only when independence genuinely reduces integration risk.
+3. Publish the branch early and open a **Draft PR** linked to the lot and acceptance criteria. A pushed branch and Draft PR are visible publicly in this repository; do not expose secrets or private data.
+4. Make coherent **Conventional Commits**; push at meaningful checkpoints so GitHub reflects progress. Do not force-push or rewrite shared history.
+5. Run appropriate checks as development progresses. CI supplements, but does not replace, independent Tester review and real integration tests.
+6. Stop source edits; record the exact head SHA; request Tester review of that SHA. If source or tracked checkpoint files change later, the verdict is stale and must be renewed for the new SHA.
+7. Require all merge gates below, then mark the PR ready and merge autonomously. Prefer **merge commits for substantial lots** and squash only for small fixes/docs when suitable.
+8. Confirm the resulting `main` SHA, CI/health checks where applicable, and record the integration result. Start the next approved lot from updated `main`.
+
+**Merge gate (all mandatory):**
+- Acceptance criteria met and integrated behavior actually exercised.
+- Tester returns `APPROVE` for the exact current PR head SHA.
+- Required GitHub Actions checks are green **for that SHA**; no required check is merely pending, skipped without justification, or stale.
+- No unresolved critical/major bug, security issue, contract regression, or source-rights violation.
+- PR is mergeable and its base is current. If a base change affects the candidate, update and revalidate before merge.
+- No restricted operation (deployment, paid action, live collection, etc.) is smuggled into the PR workflow.
+
+If GitHub integration returns `403`, report the tool permission failure. An already-authorized Git CLI or GitHub UI workflow may be used within its actual permissions, with a final head-SHA check; **never bypass security prompts, permissions, or approval boundaries**. Do not claim a merge occurred until GitHub confirms it.
+
+## 5. Continuity across Codex quota windows and interruptions
+
+**The repository, not the chat transcript, is the durable project memory.** Maintain `docs/coordination/CURRENT_STATE.md` on the active feature branch as a concise, operational checkpoint. Create it during the next active lot if absent. It must include:
+
+- Current lot, acceptance criteria, task IDs and their status (`TODO`, `IN_PROGRESS`, `BLOCKED`, `DONE`).
+- Branch/worktree, local and remote SHA, active PR and CI status.
+- Developer handoff, exact SHA reviewed by Tester, verdict, outstanding findings.
+- Changes completed, decisions and blockers, pending commands/processes, test environment details.
+- Next **one concrete safe action** and the checks required to confirm completion.
+- Last checkpoint timestamp (UTC), and anything that must **not** be rerun blindly.
+
+**Checkpoint policy:**
+- Update after each meaningful completed subtask, before lengthy/risky operations, after failed tests, and before any anticipated interruption.
+- Commit and push coherent checkpoints and code regularly. A checkpoint may mark work **WIP**; it must never claim that WIP is reviewed or mergeable.
+- Do not alter the frozen review SHA merely to update progress text: once validation begins, prefer a PR description/comment or another non-code status surface. If the branch SHA changes for any reason, request renewed review and CI.
+- Preserve uncommitted changes if interrupted. Never reset/clean/discard them just to make a resume easier.
+
+**Quota awareness:**
+- When reliable usage data is available, reduce task size as the 5-hour or weekly quota approaches its limit; reserve capacity for saving a checkpoint. Suggested operational trigger: around 15–20% remaining, not an official Codex threshold.
+- If quota usage is unavailable, do not guess. Checkpoint at every bounded task boundary and keep tool output focused.
+- A 5-hour window is a usage-quota window, **not five hours of guaranteed compute time**. Do not assume that quotas, timers, or agents automatically resume when it resets.
+
+**Resume protocol (new or existing conversation):**
+1. Read this file, current workflow, mission, and checkpoint; do not replay the whole prior conversation.
+2. Inspect `git status`, `git worktree list`, `git branch --show-current`, `git rev-parse HEAD`, and the corresponding remote branch/PR/CI.
+3. Reconcile discrepancies between recorded state and actual Git/CI. Treat Git and executed test evidence as authoritative over stale narrative notes.
+4. Detect whether prior commands, agents, migrations or tests are still running. Do not launch a competing writer or repeat non-idempotent actions blindly.
+5. Reuse compatible local Python/Node caches, environments and disposable PostgreSQL when available, while preserving test isolation. Do not reinstall or reseed without checking.
+6. Restart only the necessary subagents; resume the first unfinished bounded task. Re-test any unverified new SHA before merging.
+
+**Automatic restart is NOT promised.** If Codex cannot schedule/resume a session or the quota is exhausted, checkpoint and stop cleanly; resume only via an explicitly supported scheduler/orchestrator or when a user starts/continues a session. Do not claim to be doing background work when execution has stopped.
+
+## 6. Quality, privacy, provider rights, and cost controls
+
+- Use synthetic/authorized fixtures as the default test data. The owner allows limited development-oriented inspection of publicly visible FFC facts, subject to actual terms and law, **not bulk extraction or public redistribution**. Respect robots/rate limits and access controls; do not bypass them.
+- Keep FFC provenance and uncertainty. Missing source entries are `to_verify`, never silently marked cancelled. Do not invent eligibility, entry-list identities, locations, or source fields.
+- Never commit credentials, `.env`, tokens, private participant data, production dumps, raw provider databases, or browser secrets. Never expose secrets in logs or PR descriptions.
+- Use free-tier-compatible designs; do not enable a billable plan or paid usage. An unavailable feature is preferable to an unexpected charge.
+- No remote migrations, unprotected staging deployments, or public releases without explicit owner approval. An unindexed URL is not private.
+- Run relevant lint, formatting, unit, API/integration, PostgreSQL, browser, migration and build checks according to the lot. Log **actual** outcomes; no fabricated passes.
+- Keep Windows/PowerShell development instructions and reproducible setup current. Avoid huge tool logs when a concise failure excerpt suffices.
+
+## 7. V1 product invariants
+
+- Interactive map with **Altitude** (topographic 2.5D) and **Summit** (3D terrain), plus a **monthly calendar**; no separate list-view page.
+- Commune-center markers only; never invented race start coordinates. Cache geocoding and show unlocated races distinctly.
+- Disciplines: Road, Gravel, MTB and Cyclo-cross. CLM/time trial is a Road type, not a fifth discipline.
+- Category filters support OR and AND. AND requires every selected category to be accepted by the **same race/entry scope**, never by combining separate scopes or races. Expand generic `Access`/`Open` only when source-confirmed; retain raw labels and restrictions.
+- Map Year/Month/ISO Week controls start at the **current civil calendar year** (Europe/Paris). Map and calendar share selection logic; temporal filtering does not reset the camera.
+- Saved race statuses: Interested, Planned, Registered and Completed, for the specific race/entry scope. `Registered` is user-declared, not FFC-verified.
+- Weekly synchronization must be idempotent, auditable and resilient to missing/partial source windows, **but must not be enabled against live FFC without separate authorization**.
+- Responsive sport UI: navy `#111F37`, orange `#F97316`; Render Free/Neon Free only when approved.
+
+## 8. Definition of done and reporting
+
+A lot is complete only when its acceptance criteria pass, code is integrated, independent SHA-specific Tester approval and green CI are recorded, the merge is confirmed on `main`, and outstanding risks/blockers are honestly documented. Do not confuse a Draft PR, a passing unit suite, or a checkpoint with completion.
+
+After each lot, report briefly: PR URL, reviewed head SHA, merge SHA, CI and Tester verdict, functional demonstration/tests, remaining blockers, and next planned lot. After lot 8, prepare full V1 validation and a release candidate; **do not deploy or publish/tag the final V1.0 without owner approval**.
+
+These instructions guide agents but do not grant tools, elevated permissions, uninterrupted execution, or the ability to override GitHub branch protections or service quotas.
