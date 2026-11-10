@@ -1,0 +1,18 @@
+services:
+  postgres:
+    image: postgres:17.11
+    environment:
+      POSTGRES_USER: raceatlas
+      POSTGRES_PASSWORD: raceatlas
+      POSTGRES_DB: raceatlas_dev
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - raceatlas_local_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U raceatlas -d raceatlas_dev"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+volumes:
+  raceatlas_local_data:
