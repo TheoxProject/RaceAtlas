@@ -9,7 +9,7 @@ from datetime import date, datetime, timedelta
 from urllib.parse import urljoin, urlsplit, urlunsplit
 from uuid import uuid4
 
-from .html import Node, by_id, labeled_fields, read_html, single
+from .html import by_id, labeled_fields, plain_text, read_html, single, structural_children
 from .types import (
     DEPARTMENTS,
     AdapterError,
@@ -118,7 +118,12 @@ def parse_calendar(html, *, source_url, checked_at, requested):
     duration = _selection(root, "nbjours")
     if not re.fullmatch(r"[0-9]{1,2}", duration) or not 1 <= int(duration) <= 14:
         raise AdapterError("invalid_window", "nbjours", "Effective duration must be 1–14 days")
-    end = start + timedelta(days=int(duration) - 1)
+    try:
+        end = start + timedelta(days=int(duration) - 1)
+    except OverflowError:
+        raise AdapterError(
+            "invalid_window", "effective_end", "Effective window exceeds supported civil dates"
+        ) from None
     department = _selection(root, "departement") or None
     if department is not None and department not in DEPARTMENTS:
         raise AdapterError("invalid_department", "effective_department", "Department outside AURA")
@@ -281,27 +286,23 @@ def parse_race(html, *, source_url, checked_at):
     if "statut" in fields and status == "unknown":
         diagnostics.append(Diagnostic("unknown_status", "status", "Unconfirmed source status"))
     container = by_id(root, "epreuvesContenu")
-    lists = [
-        child
-        for child in container.children
-        if isinstance(child, Node) and child.has_class("epreuve")
-    ]
-    if any(
-        isinstance(child, Node) and not child.has_class("epreuve") for child in container.children
-    ):
-        raise AdapterError("layout_changed", "epreuvesContenu", "Unexpected source list container")
+    lists = structural_children(
+        container, lambda child: child.has_class("epreuve"), "epreuvesContenu"
+    )
     scopes = []
     for entry in lists:
-        if any(
-            isinstance(child, Node)
-            and not (child.tag == "h3" or child.tag == "dl" and child.has_class("regle"))
-            for child in entry.children
-        ):
-            raise AdapterError("layout_changed", "scope", "Unrecognized eligibility structure")
-        label = single(entry.all(lambda item: item.tag == "h3"), "scope_label").text
+        children = structural_children(
+            entry,
+            lambda child: child.tag == "h3" or child.tag == "dl" and child.has_class("regle"),
+            "scope",
+        )
+        label = plain_text(
+            single([child for child in children if child.tag == "h3"], "scope_label"),
+            "scope_label",
+        )
         if not label:
             raise AdapterError("missing_field", "scope_label", "Empty scope label")
-        rule_nodes = entry.all(lambda item: item.tag == "dl" and item.has_class("regle"))
+        rule_nodes = [child for child in children if child.tag == "dl"]
         rules, errors = [], []
         for node in rule_nodes:
             rule, found = _rule(node)

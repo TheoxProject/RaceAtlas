@@ -414,3 +414,64 @@ def test_rule_attestation_cannot_transfer_rules_between_scopes():
     )
     with pytest.raises(AdapterError, match="Rules cannot move across scopes"):
         project_race(observation, existing=existing, attestation=crossed)
+
+
+@pytest.mark.parametrize(
+    "anchor",
+    [
+        "<h3>Liste fictive A</h3>",
+        '<dl class="regle">',
+        '<dl id="raceDetails">',
+        '<div id="epreuvesContenu">',
+    ],
+)
+@pytest.mark.parametrize(
+    "restriction",
+    [
+        "Réservé aux titulaires de la licence spéciale X",
+        "<p>Réservé aux titulaires de la licence spéciale X</p>",
+        "<div><p>Réservé aux titulaires de la licence spéciale X</p></div>",
+    ],
+)
+def test_unrecognized_restrictions_in_semantic_containers_fail_before_confirmation(
+    anchor, restriction
+):
+    with pytest.raises(AdapterError) as error:
+        race(RACE_HTML.replace(anchor, anchor + restriction, 1))
+    assert error.value.diagnostic.code == "layout_changed"
+    assert "licence spéciale" not in str(error.value)
+
+
+@pytest.mark.parametrize("tag", ["span", "p", "div", "script"])
+def test_nested_unrecognized_fact_markup_fails_conservatively(tag):
+    html = RACE_HTML.replace("<dd>Hommes</dd>", f"<dd>Hommes<{tag}>restriction X</{tag}></dd>")
+    with pytest.raises(AdapterError, match="layout_changed"):
+        race(html)
+
+
+def test_whitespace_comments_and_external_scripts_do_not_change_source_facts():
+    html = RACE_HTML.replace('<dl class="regle">', '<dl class="regle">  \n<!-- comment -->')
+    html = html.replace(
+        "</body>", '<script>const private_value = "PRIVATE_EXTERNAL";</script></body>'
+    )
+    observation = race(html)
+    assert not observation.diagnostics
+    assert observation.scopes[0].eligibility_status == "confirmed"
+    assert "PRIVATE_EXTERNAL" not in repr(observation)
+
+
+def test_calendar_end_beyond_date_max_is_structured_error():
+    html = CALENDAR_HTML.replace("2026-11-10", "9999-12-31")
+    with pytest.raises(AdapterError) as error:
+        calendar(html)
+    assert error.value.diagnostic.code == "invalid_window"
+    assert error.value.diagnostic.field == "effective_end"
+
+
+def test_calendar_window_ending_exactly_date_max_is_supported():
+    html = CALENDAR_HTML.replace("2026-11-10", "9999-12-25")
+    requested = WindowRequest(date(9999, 12, 25), date.max, "26")
+    observation = calendar(html, requested=requested)
+    assert observation.effective_end == date.max
+    assert observation.status == "consistent_sample"
+    validate(observation.window_document(), "Window")

@@ -41,3 +41,16 @@ Tester : confirmer SHA exact et worktree propre ; lire diff/limites ; refaire te
 Le dialecte de fiche est synthétique : sélecteurs live complets non établis au lot 0. Aucune réussite live revendiquée. Avant branchement source autorisé, qualifier les champs réels et leurs droits de façon bornée. Structures inconnues en échec explicite. Synchronisation large/récurrente désactivée ; ni ordonnanceur, géocodage ou filtre catalogue applicatif dans ce lot.
 
 Opérations natives PostgreSQL/Chromium exécutées hors sandbox autorisées ; aucun achat, déploiement, scraping ou mutation production. Connecteur création PR 403, fallback Git local autorisé réussi par Coordinator, sans contournement de protection.
+
+
+## Correction cycle 1 — revue indépendante REQUEST CHANGES
+
+SHA refusé : `692b0a802fb309c80d0b1450d70a15a1707cac4e`. Rapport archivé `.local-tools/tester-report-lot2-692b0a8.md`. La CI de ce SHA était verte ; elle ne vaut pas validation du nouveau candidat.
+
+F1 P1 reproduit avant correction : texte direct de restriction dans `.epreuve`, `dl.regle`, `raceDetails` et `epreuvesContenu` ignoré silencieusement. F2 P2 reproduit : date effective `9999-12-31` avec fenêtre 7 jours causant OverflowError. Les nouvelles régressions ont montré cinq échecs attendus avant correction.
+
+Correctif : contrôle central des enfants structurels sans abandon de texte non blanc ; éléments/wrappers non reconnus et balisage imbriqué de faits refusés en `AdapterError(layout_changed)`. Les paires dt/dd et titres restent dans le dialecte explicitement supporté. Aucun parse partiel affirmatif ni erreur contenant le contenu de restriction. Indentation/commentaires autorisés ; sections externes scripts/participants toujours exclues. Le calcul de fin de fenêtre convertit OverflowError en `AdapterError(invalid_window, effective_end)`. Une fenêtre finissant exactement à `date.max` reste acceptée.
+
+Dix-neuf nouveaux cas de régression : texte brut/p/div dans quatre conteneurs, balisage factuel imbriqué inconnu, espaces/commentaires/scripts externes, borne de date invalide et borne valide. Résultats finaux : **95 pytest PASS en 23,77 s**, aucun skip (72 tests adaptateur + 23 socle dont trois Chromium), Ruff lint/format PASS (16 fichiers), contrats Node 26/26 PASS et diff-check PASS. Même environnement et mêmes commandes ; base développeur `raceatlas_lot2_test` uniquement. Aucune source/modèle/contrat/migration/frontend hors périmètre modifié.
+
+Le prochain commit contenant ce paragraphe est le candidat correctif ; relever son SHA avec `git rev-parse HEAD`, puis nouvelle revue indépendante et CI de ce SHA. Le précédent verdict reste REQUEST CHANGES pour son ancien SHA. Aucun processus de test encore actif à la livraison ; le cluster PostgreSQL reste actif pour Tester. Éditions arrêtées après commit/push.

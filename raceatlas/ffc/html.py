@@ -96,18 +96,39 @@ def by_id(root, identifier):
     return single(root.all(lambda node: node.attrs.get("id") == identifier), identifier)
 
 
+def structural_children(node, allowed, field):
+    """Never discard source text/unknown elements inside a semantic fact container."""
+    children = []
+    for child in node.children:
+        if isinstance(child, Node):
+            if not allowed(child):
+                raise AdapterError("layout_changed", field, "Unrecognized semantic element")
+            children.append(child)
+        elif child.strip():
+            raise AdapterError("layout_changed", field, "Unrecognized semantic text")
+    return children
+
+
+def plain_text(node, field):
+    if any(isinstance(child, Node) for child in node.children):
+        raise AdapterError("layout_changed", field, "Unrecognized nested fact markup")
+    return node.text
+
+
 def labeled_fields(node):
     """Direct dt/dd pairs only: nested lists cannot donate facts to their parent."""
     fields = {}
-    children = [child for child in node.children if isinstance(child, Node)]
+    children = structural_children(node, lambda child: child.tag in {"dt", "dd"}, "fields")
     if len(children) % 2:
         raise AdapterError("layout_changed", "fields", "Expected paired labels and values")
     for index in range(0, len(children), 2):
         label, value = children[index : index + 2]
-        if label.tag != "dt" or value.tag != "dd" or not label.text or not value.text:
+        label_text = plain_text(label, "label")
+        value_text = plain_text(value, "value")
+        if label.tag != "dt" or value.tag != "dd" or not label_text or not value_text:
             raise AdapterError("layout_changed", "fields", "Invalid label/value pair")
-        key = label.text.casefold()
+        key = label_text.casefold()
         if key in fields:
             raise AdapterError("duplicate_field", key, "Repeated source fact")
-        fields[key] = value.text
+        fields[key] = value_text
     return fields
