@@ -1,44 +1,39 @@
 # Point de reprise RaceAtlas
 
-- Horodatage : **2026-11-10T14:56:58Z** — correction cycle 1 livrée, revue renouvelée requise.
-- Lot actif : 2, adaptateur FFC isolé. Mission `docs/lot-2/mission.md` ; handoff `docs/lot-2/developer-handoff.md`.
-- Worktree `C:/Users/theop/.codex/worktrees/add4/RaceAtlas` ; branche `feature/ffc-adapter`.
-- Base `origin/main` vérifiée : `2e03cd83931d2297df0b3be830c35974f588fbb8`.
-- Parent local/distant avant correction cycle 1 : `692b0a802fb309c80d0b1450d70a15a1707cac4e` ; le commit contenant ce checkpoint produit le candidat. Exécuter `git rev-parse HEAD` et comparer au head distant/PR pour obtenir le SHA final. Ne plus éditer pendant revue.
-- PR https://github.com/TheoxProject/RaceAtlas/pull/4, **Draft**, CI finale à observer après push ; aucun SHA lot 2 approuvé par Tester.
-- Lots 0 et 1 DONE, PR #1/#2 fusionnées ; politique agents PR #3 fusionnée. Aucun audit complet à rejouer.
+- Horodatage : 2026-11-10T15:03:30Z (initialisation lot 3).
+- Lot 3 : synchronisation auditable et communes ; mission `docs/lot-3/mission.md`.
+- Worktree `C:/Users/theop/.codex/worktrees/add4/RaceAtlas` ; branche `feature/auditable-sync`.
+- Base locale/distante après fetch : `f33d837844abdc51ebcafc066da3c16cb4982f34` (`origin/main`). PR/branche distante lot 3 à publier. Aucun candidat lot 3 validé.
+
+## Intégration précédente confirmée
+
+Lot 2 DONE : https://github.com/TheoxProject/RaceAtlas/pull/4. Tester **APPROVE** au SHA **511208b7d5142f708106a3d4a8f51d170fb3e148** ; CI https://github.com/TheoxProject/RaceAtlas/actions/runs/42839321426 **success**. Merge GitHub **f33d837844abdc51ebcafc066da3c16cb4982f34** confirmé, arbre identique au SHA testé (`git diff --exit-code` réussi). Workflow sur PR, pas de CI push main distincte attendue.
+
+Preuves : 95 pytest (72 adaptateur, 23 socle dont 3 Chromium), 26 contrats, 3 React, lint/format/build/pip et 18 probes indépendantes PASS. Deux défauts de la première revue corrigés en un cycle. Rapport final dans PR #4 et `.local-tools/tester-report-lot2.md`. Lots 0/1 et politique PR #3 déjà fusionnés. Limite : dialecte HTML synthétique, qualification live et droits FFC encore ouverts avant exploitation.
 
 | Tâche | Responsable | État |
 |---|---|---|
-| L2-01 mission/checkpoint/Draft PR/environnement | Coordinator | DONE |
-| L2-02 adaptateur et projection | Developer | DONE |
-| L2-03 tests et handoff | Developer | DONE |
-| L2-04 revue exacte et régression | Tester | REQUEST CHANGES sur 692b0a8 |
-| L2-C1 restrictions HTML et borne calendrier | Developer | DONE, nouvelle revue TODO |
-| L2-05 CI/fusion/bilan | Coordinator | TODO |
+| L3-01 cadrage/checkpoint/Draft PR | Coordinator | IN_PROGRESS |
+| L3-02 import/audit/identité | Developer | TODO |
+| L3-03 communes/cache/intégration/handoff | Developer | TODO |
+| L3-04 revue indépendante SHA figé | Tester | TODO |
+| L3-05 CI/fusion/bilan | Coordinator | TODO |
 
-## Livré / validation
+## Politique et restrictions
 
-Parseur hors réseau strict/borné, observations typées, fenêtres effectives et diagnostics ; règles/restrictions par scope ; aucun fait dérivé du slug ni ID source de liste inventé. Projection ORM détachée, nouvelles identités opaques, révisions sous attestation complète et sans effacement de faits connus. HTML complet/participants exclus. Dialecte synthétique et absence de qualification live explicités dans `fixtures/ffc/README.md`.
+Autonomie technique documentée ; fonctionnel mineur conforme aux contrats ; consultation pour choix produit majeurs/alternatives visibles, question précise avec 2–3 options et recommandation. Silence jamais considéré comme accord ; seules tâches indépendantes d'une décision en attente continuent. Aucun arbitrage majeur en attente. Aucun déploiement, achat, collecte FFC live/régionale, mutation distante/production ni publication finale autorisé.
 
-Développeur : **76 pytest PASS en 31,99 s** au passage final (53 adaptateur, 23 socle dont 3 Chromium), migrations PostgreSQL aller-retour et API JSON Schema compris. Ruff lint/format PASS, 26 contrats Node PASS, `git diff --check` PASS. Coordinator : frontend ESLint PASS, Vitest 3/3 PASS, build PASS et pip check PASS (préliminaires). Aucun verdict Tester ni CI finale déclaré. Tester REQUEST CHANGES sur `692b0a802fb309c80d0b1450d70a15a1707cac4e` : F1 P1 restriction textuelle non balisée ignorée dans les conteneurs sémantiques ; F2 P2 OverflowError sur fenêtre effective au-delà de date.max. CI précédente verte mais périmée pour le prochain SHA. Correction cycle 1 terminée : conteneurs sémantiques stricts (texte non blanc et éléments non reconnus refusés), aucun résultat affirmatif après dérive ; dépassement date.max structuré en AdapterError invalid_window. Dix-neuf tests de régression ajoutés. **95 pytest PASS en 23,77 s** (72 adaptateur + 23 socle), Ruff lint/format PASS, contrats 26/26 PASS, diff-check PASS. Aucune fusion autorisée avant nouvelle revue et CI du nouveau SHA. Rapport archivé `.local-tools/tester-report-lot2-692b0a8.md`. Limites live/FFC non levées.
+## Environnement et processus
 
-## Décisions et contraintes
+Python 3.12.14/paquets : `C:/Users/theop/.codex/worktrees/1a1e/RaceAtlas/.venv/Scripts/python.exe`. Pip via runtime Python `C:/Users/theop/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/python.exe -m pip --python <venvpython> check`. Node/pnpm cache Codex ; frontend installé offline/build prêt. pnpm CLI `C:/Users/theop/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/pnpm/bin/pnpm.cjs`.
 
-Politique propriétaire : autonomie technique ; fonctionnel mineur conforme aux contrats ; consultation pour choix produit majeurs/alternatives visibles (2–3 options, recommandation). Le silence ne vaut jamais accord. Seules les tâches indépendantes d'une décision en attente continuent. Aucun arbitrage majeur identifié au lot 2.
+PostgreSQL 17.11 actif uniquement `127.0.0.1:55434`, cluster `.local-tools/pgdata-lot2-native`, log `.local-tools/postgres-lot2.log`. Bases jetables distinctes `raceatlas_lot2_test` (Developer) / `raceatlas_lot2_review` (Tester), utilisateur `raceatlas_local`, URL `postgresql+psycopg://raceatlas_local@127.0.0.1:55434/<base>`, opt-in `RACEATLAS_DISPOSABLE_DB=1`. Réutilisables après migrations ; jamais tests concurrents sur même base. Browser `PLAYWRIGHT_BROWSERS_PATH=C:/Users/theop/.codex/worktrees/1a1e/RaceAtlas/.local-tools/browsers`. Aucun test/agent écrivain actif après lot 2.
 
-Fixtures synthétiques uniquement. Pas de collecte FFC, déploiement, Neon, achat ou mutation production. Contrats lot 0 conservés. Phrase historique d'approbation du merge dans `docs/lot-0/delivery.md` alignée sur `AGENTS.md` dans commit initial. Droits FFC et futures opérations source soumis aux gates existants.
+Ne pas relancer initdb du cluster actif ; `.local-tools/pgdata-lot2` est un ancien initdb sandbox incomplet à ignorer. Copie deps partielle `.local-tools/frontend-deps-partial` à ignorer. Processus natifs DB/Chromium hors sandbox ; Git nécessite autorisation pour métadonnées partagées hors worktree. Aucun rejet auto-review.
 
-## Environnement / processus / précautions
-
-Python 3.12.14 et paquets : `C:/Users/theop/.codex/worktrees/1a1e/RaceAtlas/.venv/Scripts/python.exe`. Python système est un alias Windows, ne pas l'utiliser aveuglément. Node/pnpm : cache Codex ; dépendances frontend installées offline dans ce worktree.
-
-PostgreSQL 17.11 préparé par Coordinator : `.local-tools/pgdata-lot2-native`, log `.local-tools/postgres-lot2.log`, écoute **127.0.0.1:55434**. Bases locales jetables : `raceatlas_lot2_test` (Developer) et `raceatlas_lot2_review` (Tester), utilisateur local `raceatlas_local`. URL développeur `postgresql+psycopg://raceatlas_local@127.0.0.1:55434/raceatlas_lot2_test` ; remplacer uniquement nom de base par `_review` pour Tester. `RACEATLAS_DISPOSABLE_DB=1` obligatoire ; les tests réinitialisent cette base. Chromium `PLAYWRIGHT_BROWSERS_PATH=C:/Users/theop/.codex/worktrees/1a1e/RaceAtlas/.local-tools/browsers`.
-
-**Ne pas réinitialiser** le cluster actif ni tester simultanément sur même base. Premier initdb sandbox `.local-tools/pgdata-lot2` **incomplet**, processus arrêtés : ne pas utiliser. Copie frontend partielle parquée `.local-tools/frontend-deps-partial`, à ignorer. Aucun test développeur actif à la livraison ; PostgreSQL reste actif pour Tester.
-
-Fetch/branche/commit/push nécessitent autorisation sandbox pour métadonnées Git partagées hors worktree. Création PR connecteur : **403 Resource not accessible by integration** ; fallback local Git credential autorisé réussi, script ignoré `.local-tools/lot2-pr.py`, aucune exposition d'identifiant ni contournement de protection. Processus natifs PostgreSQL/Chromium hors sandbox nécessaires (enfants natifs pouvant bloquer sous sandbox).
+Connecteur création PR : 403 Resource not accessible by integration ; fallback accès Git local configuré réussi, sans secrets affichés ni contournement. `.local-tools/lot2-pr.py` est limité à PR 4 et ancienne base : **ne pas lancer pour lot 3 sans adaptation et contrôle des SHA**.
 
 ## Prochaine action sûre
 
-Après commit/push correctif cycle 1 : **figer `git rev-parse HEAD`, vérifier head PR #4 et demander la revue indépendante Tester de ce SHA exact**, sur `raceatlas_lot2_review`. Suivre CI du même SHA. Ne pas modifier ce checkpoint pendant revue ; utiliser description PR pour preuves finales. Sans Tester et CI verts au même SHA, garder Draft et ne pas commencer lot 3.
+Commit/push du cadrage et ouverture Draft PR lot 3, puis délégation bornée au Developer. Confirmer URL PR, SHA distant et absence d'autre écrivain. Aucun test lot 3 exécuté ni verdict acquis. Preuves finales dans la description PR sans altérer le SHA en revue.
+
