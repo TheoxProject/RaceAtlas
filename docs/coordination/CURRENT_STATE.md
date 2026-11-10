@@ -1,10 +1,10 @@
 # Point de reprise RaceAtlas
 
-- Horodatage : **2026-11-10T20:49:44Z**, lot3 correction2 WIP après tests sync ciblés.
+- Horodatage : **2026-11-10T20:53:56Z**, lot3 correction2 livrée, nouveau gel/revue requis.
 - Branche `feature/auditable-sync`, worktree `C:/Users/theop/.codex/worktrees/add4/RaceAtlas`.
-- Base `origin/main` vérifiée `f33d837844abdc51ebcafc066da3c16cb4982f34`. Parent avant correction2 : `228074c231b8ed5c41c1f24602de5eff0cce9679` ; relever HEAD après ce commit/push de checkpoint.
-- Draft PR https://github.com/TheoxProject/RaceAtlas/pull/5. Dernier Tester : **REQUEST CHANGES F2/P1 sur228074c** (F1 résolu). CI228074c verte mais périmée après modification ; aucune approbation du nouveau SHA.
-- Mission `docs/lot-3/mission.md`, usage/handoff à aligner avant gel final.
+- Base `origin/main` vérifiée `f33d837844abdc51ebcafc066da3c16cb4982f34`. Parent avant livraison documentaire finale : `9467f30ea3ae599892b904fb514a175b952b1f3d` ; le commit contenant ce checkpoint est le candidat, relever HEAD après commit/push et comparer à PR#5.
+- Draft PR https://github.com/TheoxProject/RaceAtlas/pull/5. Dernier Tester : **REQUEST CHANGES F2/P1 sur228074c** (F1 résolu). CI source WIP9467f30e verte https://github.com/TheoxProject/RaceAtlas/actions/runs/42899106770 ; elle ne valide pas le nouveau SHA documentaire final. Aucune approbation du nouveau candidat.
+- Mission `docs/lot-3/mission.md`, usage et handoff finaux `docs/lot-3/local-development.md` / `docs/lot-3/developer-handoff.md` alignés sur le périmètre réel.
 
 ## Intégration précédente
 
@@ -15,7 +15,7 @@ Lot2 DONE : PR https://github.com/TheoxProject/RaceAtlas/pull/4, Tester APPROVE 
 | L3-01 cadrage/PR/checkpoint | Coordinator | DONE |
 | L3-02 import/audit/identité | Developer | DONE, F1 corrigé |
 | L3-03 communes/cache/intégration | Developer | DONE |
-| L3-C2 fraîcheur présence/absence | Developer | IN_PROGRESS ;86sync ciblés PASS |
+| L3-C2 fraîcheur présence/absence | Developer | DONE ;205tests globaux PASS |
 | L3-04 revue indépendante exacte | Tester | REQUEST CHANGES ancien228074c ; nouvelle revue TODO |
 | L3-05 CI/fusion/bilan | Coordinator | TODO |
 
@@ -27,7 +27,7 @@ Repère interne **source_record.presence_checked_at** essentiel pour séparer de
 
 Baseline immuable par course au début du run ; historique rejeté avant géocodeur/preuves. Aucun consensus planifié ne donne de fraîcheur. Après succès effectif d'un item frais du run, un doublon historique strictement identique peut être audité **historical_duplicate** sans aucune mutation. Sinon reste stale/error. Égalité de timestamp avec absence : aucune présence réputée plus récente. Absences répétées avancent le repère même déjà to_verify ; dernière fiche et révision métier conservées. Erreur fournisseur : cache/diagnostic conservés mais aucun remplacement de l'item ; fenêtres indépendantes positives toujours autorisées.
 
-**86tests sync ciblés PASS en62,97s**, comprenant migration aller-retour/drift, vrais scénarios de backfill antérieur/égal, positifs via alias, répétition d'absence, échecs futur/fournisseur/stockage et25nouvelles régressions. Ruff lint/format26fichiers PASS ;205tests globaux collectés, **suite complète encore à exécuter**. SQL initial a échoué sur alias réservé `window` (transaction annulée), corrigé ; tests ont ensuite révélé l'alignement nécessaire avant flush de scopes et le replay historique, corrigés avant ces86PASS. Aucun PASS global du nouveau SHA revendiqué.
+**205/205pytest PASS en118,24s**, aucun skip (110lot3+95antérieurs dont3Chromium) ;86sync ciblés PASS en62,97s. Migration aller-retour/drift, backfills réels antérieur/égal et présence via alias, répétition d'absence, échecs futur/fournisseur/stockage et25nouvelles régressions compris. Ruff lint/format26fichiers PASS,26contrats PASS, diff-check PASS. SQL initial a échoué sur alias réservé (rollback), corrigé ; alignement avant flush des scopes et replay historique corrigés avant86PASS puis205PASS. Frontend/dépendances inchangés, non réexécutés localement en C2 ; CI source WIP verte inclut leur vérification. Aucun défaut non résolu confirmé à la remise développeur ; Tester/CI du SHA final toujours requis.
 
 ## Décisions et restrictions
 
@@ -45,4 +45,4 @@ Ne pas réinitialiser le cluster ni utiliser ancien `.local-tools/pgdata-lot2` i
 
 ## Prochaine action sûre
 
-Exécuter la **suite globale205tests** sur base Developer, puis contrats/lint/format et aligner usage/handoff/checkpoint sur le vrai périmètre final. Publier candidat complet, figer HEAD et demander nouvelle revue Tester +CI exactes. Ne pas lancer lot4 ni fusionner avant gates. Ce WIP ciblé n'est pas fusionnable.
+Après commit/push documentaire final : **figer le résultat de git rev-parse HEAD, confirmer le head PR#5 puis demander la nouvelle revue Tester de ce SHA exact sur sa base locale raceatlas_lot2_review**. Suivre la CI du même SHA ; preuves finales dans PR sans modifier le candidat. Aucun test développeur actif, cluster laissé actif. Ne pas fusionner ni commencer lot4 avant tous les gates. Cette livraison correspond au cycle2/3 maximum ; aucune approbation par épuisement.
