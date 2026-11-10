@@ -101,6 +101,28 @@ test('Filtres invalides rejetés : modes géographiques simultanés, rayon et da
   f.geography={mode:'radius',center:[4,45],radius_km:0};assert(!check('Filter',f));
   f.geography={mode:'all'};f.from='2027-01-01';assert.throws(()=>select(catalog,f));
 });
+test('Régression : divergences de fenêtre rejetées même hors couverture complete',()=>{
+  const window={requested_from:'2026-11-10',requested_to:'2026-11-23',effective_from:'2026-11-10',effective_to:'2026-11-23',requested_department:'26',effective_department:'26',displayed_count:9,distinct_keys:9,status:'consistent_sample',reason:null};
+  const make=(status='consistent_sample')=>mutate(c=>Object.assign(c.coverage,{status,windows:[clone(window)]}));
+  assertCatalog(make());
+  for(const change of [w=>w.effective_to='2026-11-10',w=>w.effective_from='2026-11-11',w=>w.effective_department='69',w=>w.effective_department=null,w=>w.distinct_keys=8,w=>w.requested_to='2026-11-09',w=>w.effective_to='2026-11-09',w=>{w.requested_to='2026-11-24';w.effective_to='2026-11-24';}]) {
+    for(const global of ['unknown','consistent_sample','incomplete','complete']) {
+      const bad=make(global);change(bad.coverage.windows[0]);assert(valid(schema,bad));
+      assert.throws(()=>assertCatalog(bad),/Divergence de fenêtre/);
+      bad.coverage.windows[0].status='incomplete';bad.coverage.windows[0].reason='Divergence observée';
+      if(global==='incomplete') assertCatalog(bad);else assert.throws(()=>assertCatalog(bad),/couverture globale incomplete/);
+    }
+  }
+  assert.throws(()=>assertCatalog(mutate(c=>c.coverage.status='consistent_sample')),/non établi/);
+  const unknown=make('unknown');unknown.coverage.windows[0].status='unknown';assertCatalog(unknown);
+  unknown.coverage.status='consistent_sample';assert.throws(()=>assertCatalog(unknown),/non établi/);
+});
+test('Régression : date-time borne heures, minutes, secondes et décalage',()=>{
+  const format={type:'string',format:'date-time'};
+  for(const invalid of ['2026-11-10T24:00:00Z','2026-11-10T23:60:00Z','2026-11-10T23:59:60Z','2026-11-10T00:00:00+24:00','2026-11-10T00:00:00-24:00','2026-11-10T00:00:00+02:60','2026-02-30T00:00:00Z','2026-11-10t00:00:00z']) assert.equal(valid(format,invalid),false,invalid);
+  for(const accepted of ['2026-11-10T00:00:00Z','2026-11-10T23:59:59Z','2026-11-10T00:00:00+02:00','2026-11-10T00:00:00-05:30','2026-11-10T00:00:00.123+00:00']) assert.equal(valid(format,accepted),true,accepted);
+  const bad=mutate(c=>c.races[0].source.checked_at='2026-11-10T24:00:00Z');assert.equal(valid(schema,bad),false);
+});
 test('OpenAPI 3.1 : toutes références résolues localement et filtre commun',()=>{
   assert.equal(api.openapi,'3.1.0');
   const walk=v=>{if(!v||typeof v!=='object')return;if(v.$ref){if(v.$ref.startsWith('#/'))resolve(api,v.$ref);else{assert(v.$ref.startsWith('./catalog.schema.json#/'));resolve(schema,v.$ref.slice('./catalog.schema.json'.length));}}for(const child of Object.values(v))walk(child);};walk(api);

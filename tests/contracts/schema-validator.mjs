@@ -34,7 +34,10 @@ export function valid(schema,value,root=schema) {
   if(typeof value==='string') {
     if([...value].length<(schema.minLength??0)||[...value].length>(schema.maxLength??Infinity)||(schema.pattern&&!new RegExp(schema.pattern).test(value))) return false;
     if(schema.format==='date' && (!/^\d{4}-\d{2}-\d{2}$/.test(value)||Number.isNaN(Date.parse(value))||new Date(value).toISOString().slice(0,10)!==value)) return false;
-    if(schema.format==='date-time' && (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.test(value)||Number.isNaN(Date.parse(value))||!valid({type:'string',format:'date'},value.slice(0,10)))) return false;
+    if(schema.format==='date-time') {
+      const parts=/^(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d+)?(Z|([+-])(\d{2}):(\d{2}))$/.exec(value);
+      if(!parts||!valid({type:'string',format:'date'},parts[1])||Number(parts[2])>23||Number(parts[3])>59||Number(parts[4])>59||Number(parts[7]??0)>23||Number(parts[8]??0)>59||Number.isNaN(Date.parse(value))) return false;
+    }
     if(schema.format==='uri') { try { new URL(value); } catch { return false; } }
   }
   if(Array.isArray(value)) {

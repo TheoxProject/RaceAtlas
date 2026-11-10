@@ -27,13 +27,20 @@ export function assertCatalog(c) {
     }
   }
   const cov=c.coverage;
+  for(const w of cov.windows) {
+    const dates=[w.requested_from,w.requested_to,w.effective_from,w.effective_to].map(day);
+    const invalidInterval=dates.some(d=>!Number.isFinite(d))||dates[1]<dates[0]||dates[3]<dates[2]||dates[1]-dates[0]>=14||dates[3]-dates[2]>=14;
+    const divergence=invalidInterval||w.requested_from!==w.effective_from||w.requested_to!==w.effective_to||w.requested_department!==w.effective_department||w.displayed_count!==w.distinct_keys;
+    if(divergence) assert.equal(w.status,'incomplete','Divergence de fenêtre sans statut incomplete');
+    if(w.status==='incomplete') assert.equal(cov.status,'incomplete','Fenêtre incomplète sans couverture globale incomplete');
+  }
+  if(cov.status==='consistent_sample') assert(cov.windows.length>0&&cov.windows.every(w=>w.status==='consistent_sample'),'Échantillon cohérent non établi');
   if(cov.status==='complete') {
     assert(cov.requested_from&&cov.requested_to&&cov.requested_from<=cov.requested_to&&cov.departments.length,'Périmètre absent');
     for(const dep of cov.departments) {
       const covered=new Set();
       for(const w of cov.windows.filter(w=>w.requested_department===dep)) {
-        assert.equal(w.status,'consistent_sample');assert.equal(w.requested_from,w.effective_from);assert.equal(w.requested_to,w.effective_to);assert.equal(w.requested_department,w.effective_department);assert.equal(w.displayed_count,w.distinct_keys);
-        assert(day(w.requested_to)>=day(w.requested_from)&&day(w.requested_to)-day(w.requested_from)<14,'Fenêtre invalide');
+        assert.equal(w.status,'consistent_sample');
         for(let d=day(w.requested_from);d<=day(w.requested_to);d++)covered.add(d);
       }
       for(let d=day(cov.requested_from);d<=day(cov.requested_to);d++)assert(covered.has(d),'Trou de couverture');
