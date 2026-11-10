@@ -2,7 +2,7 @@
 
 - Lot4 API catalogue/filtres ; branche `feature/catalog-filters`, worktree `C:/Users/theop/.codex/worktrees/add4/RaceAtlas`.
 - Base locale/distante vérifiée `48a2c3766276c92b2074139847c95e8d6a7b3916` (`origin/main`). Mission `docs/lot-4/mission.md`.
-- Checkpoint initial à committer/pousser, Draft PR à ouvrir. Aucun candidat lot4 approuvé.
+- Draft PR https://github.com/TheoxProject/RaceAtlas/pull/6 ; checkpoint initial d42032729b1b04cc62d5b9df0de00eecfed160d1 publié. Jalon courant WIP avant pagination/concurrence complètes, aucun candidat lot4 approuvé.
 
 ## Intégration confirmée
 
@@ -14,15 +14,15 @@ Migration courante **8a95eb41f220**, après65107930ec01. Six tables audit/cache/
 
 | Tâche | Responsable | État |
 |---|---|---|
-| L4-01 mission/checkpoint/Draft PR | Coordinator | IN_PROGRESS |
-| L4-02 validation/sélection/filtres | Developer | TODO |
-| L4-03 pagination/carte/couverture/intégration | Developer | TODO |
+| L4-01 mission/checkpoint/Draft PR | Coordinator | DONE |
+| L4-02 validation/sélection/filtres | Developer | IN_PROGRESS,41tests ciblés PASS |
+| L4-03 pagination/carte/couverture/intégration | Developer | IN_PROGRESS |
 | L4-04 revue indépendante SHA figé | Tester | TODO |
 | L4-05 CI/fusion/bilan | Coordinator | TODO |
 
 ## Politique et limites
 
-Autonomie technique ; mineur conforme aux contrats ; produit majeur/alternatives visibles soumis au propriétaire (question précise,2–3options et recommandation). Silence jamais accord, seules tâches indépendantes d'une décision pendante continuent. **Choix propriétaire explicite futur lot5 : Altitude2.5D initial, Summit3D à la demande.** Aucun arbitrage en attente. Aucune collecte FFC live/régionale, synchronisation récurrente, dépense, mutation distante/production, déploiement ou publication finale autorisé. Dialecte/données synthétiques, droits/qualification FFC live ouverts ; géocodeur injecté hors réseau, rectangle uniquement de plausibilité, pas GIS polygonal.
+Autonomie technique ; mineur conforme aux contrats ; produit majeur/alternatives visibles soumis au propriétaire (question précise,2–3options et recommandation). Silence jamais accord, seules tâches indépendantes d'une décision pendante continuent. **Choix propriétaire explicites futurs lots5/6 : Altitude2.5D initial, Summit3D à la demande ; ouvrir le calendrier passe la période partagée au mois affiché, conservé au retour carte, autres filtres et caméra préservés.** Aucun arbitrage en attente. Aucune collecte FFC live/régionale, synchronisation récurrente, dépense, mutation distante/production, déploiement ou publication finale autorisé. Dialecte/données synthétiques, droits/qualification FFC live ouverts ; géocodeur injecté hors réseau, rectangle uniquement de plausibilité, pas GIS polygonal.
 
 ## Environnement et processus
 
@@ -32,8 +32,16 @@ PostgreSQL17.11 actif uniquement127.0.0.1:55434, cluster `.local-tools/pgdata-lo
 
 Native DB/Chromium requiert exécution autorisée hors sandbox ; Git métadonnées partagées hors worktree. Aucun rejet auto-review. Connecteur création PR403, fallback Git local autorisé réussi sans secret ni contournement. Scripts ignorés lot2/lot3-pr.py sont limités aux anciennes PR/bases : adapter puis vérifier numéros/SHA avant usage pour lot4. Ne jamais lancer leur merge à l'aveugle.
 
+## Jalon WIP L4-A
+
+Validation JSON/schema stricte et paramètres, service SQL unique, endpoints réels, scope ET/OU exact, rayon/communes, projection une Feature par course, pagination partagée à deux flux pour rayon (confirmées et candidates non localisées). Chaque flux a le même offset et limite ; curseur commun race/map, aucun doublon entre pages, items vides avec continuation possibles quand seules candidates restent. Vérifications adversariales de pagination/concurrence/couverture encore à compléter.
+
+Nouvelle migration statique **b7f4208ac112** : compteur catalogue singleton+epoch, triggers par statement sur tables influençant réponses et audits, normalisation SQL sans extension, ordre d'exécution monotone ImportRun.catalog_order. Anciennes migrations inchangées. Triggers sous privilèges invoquant par défaut, aucun GRANT/SECURITY DEFINER. Historique d'audits antérieur à l'ordre marqué conservativement incomplet jusqu'à nouveau contrôle ; aucune sélection aléatoire par UUID/horloge source. Read-only REPEATABLE READ pour version/compteurs/items/couverture cohérents ; graphes uniquement pour la page<=200.
+
+jsonschema4.25.1 déjà disponible promu aux dépendances runtime épinglées (requirements/pyproject), pas de réinstallation. **41tests ciblés PASS en6,41s** :31validations +9scénarios contractuels viaFlask/PostgreSQL +témoins corrélés, migration aller-retour/check comprise. RuffPASS. Un attendu de nouveau test avait omis le préfixe réel d'un scope, corrigé contre fixture. Aucun test global lot4 ni Tester acquis.
+
 ## Prochaine action sûre
 
-Commit/push du cadrage et ouverture Draft PR lot4, puis délégation bornée au Developer sans autre éditeur suivi. Confirmer URL PR, head distant/base et environnement ; aucun test lot4 encore exécuté. Avant futur gel : checkpoint/handoff consolidés, puis preuves finales dans PR sans changer le SHA en revue.
+Compléter pagination limite1, invalidation déclenchée, catégories dynamiques/recherche Unicode, snapshot concurrent, couverture/dernier échec et fixture→adaptateur→sync→catalogue/carte. Puis checks globaux et docs finales avant gel SHA/Tester. Ne pas fusionner ce WIP.
 
-Dernier checkpoint UTC : 2026-11-10T21:09:37Z
+Dernier checkpoint UTC : 2026-11-10T21:27:32Z

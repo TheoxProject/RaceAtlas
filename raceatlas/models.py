@@ -5,12 +5,15 @@ from uuid import uuid4
 
 from sqlalchemy import (
     JSON,
+    BigInteger,
     CheckConstraint,
     Date,
     DateTime,
     ForeignKey,
     ForeignKeyConstraint,
+    Identity,
     Index,
+    Integer,
     MetaData,
     String,
     UniqueConstraint,
@@ -34,6 +37,21 @@ class Base(DeclarativeBase):
             "pk": "pk_%(table_name)s",
         }
     )
+
+
+class CatalogState(Base):
+    """One persistent revision, transactionally advanced by relevant table statements."""
+
+    __tablename__ = "catalog_state"
+    __table_args__ = (
+        CheckConstraint("id = 1", name="singleton"),
+        CheckConstraint("revision >= 0", name="revision"),
+        CheckConstraint("epoch ~ '^[a-f0-9]{32}$'", name="epoch"),
+    )
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    epoch: Mapped[str] = mapped_column(String(32))
+    revision: Mapped[int] = mapped_column(BigInteger)
+    audit_floor: Mapped[int] = mapped_column(BigInteger)
 
 
 class Competition(Base):
@@ -218,6 +236,7 @@ class ImportRun(Base):
         CheckConstraint("finished_at >= started_at", name="time_order"),
     )
     id: Mapped[str] = mapped_column(String(64), primary_key=True, default=opaque_id)
+    catalog_order: Mapped[int] = mapped_column(BigInteger, Identity(), unique=True)
     started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     status: Mapped[str] = mapped_column(String)

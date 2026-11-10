@@ -2,12 +2,13 @@ from pathlib import Path
 from uuid import uuid4
 
 import click
-from flask import Flask, g, jsonify, send_from_directory
+from flask import Flask, g, jsonify, request, send_from_directory
 from sqlalchemy import create_engine, text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 from werkzeug.exceptions import HTTPException
 
+from raceatlas.catalog import CatalogError, parse_query, select_page
 from raceatlas.config import database_url, environment
 from raceatlas.models import Race
 from raceatlas.seed import demo_id, seed_synthetic
@@ -46,6 +47,25 @@ def create_app(config=None):
         # Never include SQL, connection URLs or exception strings in public output/logs.
         app.logger.error("Database unavailable; request_id=%s", g.request_id)
         return error("unavailable", "Service temporairement indisponible.", 503)
+
+    @app.errorhandler(CatalogError)
+    def catalog_failure(exc):
+        message = {
+            "invalid_filter": "Paramètres de sélection invalides.",
+            "stale_cursor": "Le catalogue a changé. Actualisez la sélection.",
+            "unavailable": "Service temporairement indisponible.",
+        }[exc.code]
+        return jsonify(
+            code=exc.code, message=message, fields=exc.fields, request_id=g.request_id
+        ), exc.status
+
+    @app.get("/api/v1/races")
+    def races():
+        return jsonify(select_page(engine, parse_query(request.args)))
+
+    @app.get("/api/v1/map")
+    def map_page():
+        return jsonify(select_page(engine, parse_query(request.args), map_projection=True))
 
     @app.errorhandler(HTTPException)
     def http_failure(exc):
