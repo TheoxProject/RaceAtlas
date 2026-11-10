@@ -205,3 +205,118 @@ class RuleCategory(Base):
     rule_id: Mapped[str] = mapped_column(ForeignKey("eligibility_rule.id"), primary_key=True)
     category_code: Mapped[str] = mapped_column(ForeignKey("category.code"), primary_key=True)
     position: Mapped[int]
+
+
+class ImportRun(Base):
+    __tablename__ = "import_run"
+    __table_args__ = (
+        CheckConstraint("status IN ('running','success','partial','failed')", name="status"),
+        CheckConstraint("finished_at >= started_at", name="time_order"),
+    )
+    id: Mapped[str] = mapped_column(String(64), primary_key=True, default=opaque_id)
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    status: Mapped[str] = mapped_column(String)
+    parser_version: Mapped[str] = mapped_column(String)
+    synthetic: Mapped[bool]
+    missing_marked: Mapped[int] = mapped_column(default=0)
+
+
+class ImportWindow(Base):
+    __tablename__ = "import_window"
+    __table_args__ = (
+        CheckConstraint("status IN ('success','incomplete','partial','failed')", name="status"),
+        CheckConstraint("displayed_count >= 0 AND distinct_keys >= 0", name="counts"),
+    )
+    id: Mapped[str] = mapped_column(String(64), primary_key=True, default=opaque_id)
+    run_id: Mapped[str] = mapped_column(ForeignKey("import_run.id"), index=True)
+    requested_from: Mapped[date] = mapped_column(Date)
+    requested_to: Mapped[date] = mapped_column(Date)
+    effective_from: Mapped[date] = mapped_column(Date)
+    effective_to: Mapped[date] = mapped_column(Date)
+    requested_department: Mapped[str] = mapped_column(String(2))
+    effective_department: Mapped[str | None] = mapped_column(String(2))
+    displayed_count: Mapped[int]
+    distinct_keys: Mapped[int]
+    status: Mapped[str] = mapped_column(String)
+    diagnostics: Mapped[list[str]] = mapped_column(JSON)
+    source_url: Mapped[str] = mapped_column(String)
+    checked_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+class ImportItem(Base):
+    __tablename__ = "import_item"
+    __table_args__ = (
+        UniqueConstraint("window_id", "source_season", "race_number"),
+        CheckConstraint(
+            "status IN ('created','updated','unchanged','review','error')", name="status"
+        ),
+    )
+    id: Mapped[str] = mapped_column(String(64), primary_key=True, default=opaque_id)
+    window_id: Mapped[str] = mapped_column(ForeignKey("import_window.id"), index=True)
+    source_season: Mapped[int]
+    race_number: Mapped[str] = mapped_column(String)
+    race_id: Mapped[str | None] = mapped_column(ForeignKey("race.id"))
+    status: Mapped[str] = mapped_column(String)
+    diagnostic: Mapped[str | None] = mapped_column(String)
+    # Only normalized business facts needed for review, never HTML or participant zones.
+    observed: Mapped[dict | None] = mapped_column(JSON)
+
+
+class SourceAlias(Base):
+    __tablename__ = "source_alias"
+    __table_args__ = (
+        UniqueConstraint("provider", "source_season", "race_number"),
+        CheckConstraint("provider = 'ffc'", name="provider"),
+        CheckConstraint("source_season BETWEEN 2000 AND 2200", name="season"),
+        CheckConstraint("length(trim(evidence_id)) > 0", name="evidence"),
+    )
+    id: Mapped[str] = mapped_column(String(64), primary_key=True, default=opaque_id)
+    provider: Mapped[str] = mapped_column(String, default="ffc")
+    source_season: Mapped[int]
+    race_number: Mapped[str] = mapped_column(String)
+    race_id: Mapped[str] = mapped_column(ForeignKey("race.id"), index=True)
+    evidence_id: Mapped[str] = mapped_column(String)
+    decided_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+class SourceRevision(Base):
+    __tablename__ = "source_revision"
+    __table_args__ = (
+        UniqueConstraint("race_id", "revision"),
+        CheckConstraint("revision >= 1", name="revision"),
+        CheckConstraint("length(business_hash) = 64", name="hash"),
+    )
+    id: Mapped[str] = mapped_column(String(64), primary_key=True, default=opaque_id)
+    race_id: Mapped[str] = mapped_column(ForeignKey("race.id"), index=True)
+    run_id: Mapped[str] = mapped_column(ForeignKey("import_run.id"))
+    revision: Mapped[int]
+    business_hash: Mapped[str] = mapped_column(String(64))
+    facts: Mapped[dict] = mapped_column(JSON)
+    normalization_version: Mapped[str] = mapped_column(String)
+    source_url: Mapped[str] = mapped_column(String)
+    checked_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+class GeocodeCache(Base):
+    __tablename__ = "geocode_cache"
+    __table_args__ = (
+        UniqueConstraint("provider", "provider_version", "query_key"),
+        CheckConstraint("status IN ('positive','negative','error')", name="status"),
+        CheckConstraint("expires_at > checked_at", name="expiry"),
+        CheckConstraint(
+            "(status = 'positive' AND commune_id IS NOT NULL) OR "
+            "(status IN ('negative','error') AND commune_id IS NULL)",
+            name="result",
+        ),
+    )
+    id: Mapped[str] = mapped_column(String(64), primary_key=True, default=opaque_id)
+    provider: Mapped[str] = mapped_column(String)
+    provider_version: Mapped[str] = mapped_column(String)
+    query_key: Mapped[str] = mapped_column(String(64))
+    query: Mapped[dict] = mapped_column(JSON)
+    status: Mapped[str] = mapped_column(String)
+    commune_id: Mapped[str | None] = mapped_column(ForeignKey("commune.id"))
+    diagnostic: Mapped[str | None] = mapped_column(String)
+    checked_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))

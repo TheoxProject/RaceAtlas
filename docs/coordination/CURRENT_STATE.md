@@ -3,7 +3,7 @@
 - Horodatage : 2026-11-10T15:03:30Z (initialisation lot 3).
 - Lot 3 : synchronisation auditable et communes ; mission `docs/lot-3/mission.md`.
 - Worktree `C:/Users/theop/.codex/worktrees/add4/RaceAtlas` ; branche `feature/auditable-sync`.
-- Base locale/distante après fetch : `f33d837844abdc51ebcafc066da3c16cb4982f34` (`origin/main`). PR/branche distante lot 3 à publier. Aucun candidat lot 3 validé.
+- Base locale/distante après fetch : `f33d837844abdc51ebcafc066da3c16cb4982f34` (`origin/main`). Branche publiée, Draft PR https://github.com/TheoxProject/RaceAtlas/pull/5 ; checkpoint initial `d4f55af6740a52964eb8e68df4273af6346294be`. Aucun candidat lot 3 validé.
 
 ## Intégration précédente confirmée
 
@@ -13,8 +13,8 @@ Preuves : 95 pytest (72 adaptateur, 23 socle dont 3 Chromium), 26 contrats, 3 Re
 
 | Tâche | Responsable | État |
 |---|---|---|
-| L3-01 cadrage/checkpoint/Draft PR | Coordinator | IN_PROGRESS |
-| L3-02 import/audit/identité | Developer | TODO |
+| L3-01 cadrage/checkpoint/Draft PR | Coordinator | DONE |
+| L3-02 import/audit/identité | Developer | IN_PROGRESS |
 | L3-03 communes/cache/intégration/handoff | Developer | TODO |
 | L3-04 revue indépendante SHA figé | Tester | TODO |
 | L3-05 CI/fusion/bilan | Coordinator | TODO |
@@ -37,3 +37,12 @@ Connecteur création PR : 403 Resource not accessible by integration ; fallback 
 
 Commit/push du cadrage et ouverture Draft PR lot 3, puis délégation bornée au Developer. Confirmer URL PR, SHA distant et absence d'autre écrivain. Aucun test lot 3 exécuté ni verdict acquis. Preuves finales dans la description PR sans altérer le SHA en revue.
 
+
+
+## Étape développeur L3-A — WIP publiable
+
+Modèles/migration statique ajoutés : import_run/window/item, source_alias, source_revision, geocode_cache. Types de batches explicites et empreinte métier indépendante des tokens/IDs/contrôles et espaces de présentation ; restrictions corrélées et ordre des scopes conservés pour déceler les réorganisations ambiguës. Deux tests d'empreinte réussis. Migration autogénérée en comparant uniquement la base PostgreSQL locale développeur puis relue ; aucune table historique altérée. Service, géocodage et tests d'intégration restent à réaliser ; aucune validation finale revendiquée.
+
+Décision technique : importer les faits positifs des fenêtres indépendantes mais **différer toute inférence d'absence jusqu'à réussite du périmètre complet du run**. Dédupliquer les clés globalement ; présence dans une fenêtre empêche une fausse absence dans une autre. Cache géocode positif/négatif/versionné ; erreur/ambiguïté/mismatch bloque l'inférence d'absence. LocationFact explicite liée à une SourceKey et preuve ; aucune déduction du titre/slug.
+
+Prochaine action sûre : implémenter le service transactionnel et le résolveur injecté, puis tester migration et imports réels sur PostgreSQL local jetable développeur. Ne pas lancer d'import source ou de synchronisation active.
