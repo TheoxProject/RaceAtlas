@@ -130,6 +130,7 @@ class SourceRecord(Base):
         UniqueConstraint("provider", "source_season", "race_number"),
         CheckConstraint("provider IN ('synthetic','ffc')", name="provider"),
         CheckConstraint("source_season BETWEEN 2000 AND 2200", name="season"),
+        CheckConstraint("presence_checked_at >= checked_at", name="presence_freshness"),
     )
     race_id: Mapped[str] = mapped_column(ForeignKey("race.id"), primary_key=True)
     provider: Mapped[str] = mapped_column(String)
@@ -137,6 +138,9 @@ class SourceRecord(Base):
     race_number: Mapped[str] = mapped_column(String)
     source_url: Mapped[str] = mapped_column(String)
     checked_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    # Nullable for legacy/synthetic ORM writers; importer falls back to checked_at.
+    # Unlike checked_at, this marker also advances on a controlled source absence.
+    presence_checked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
 class EntryScope(Base):

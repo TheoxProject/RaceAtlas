@@ -39,6 +39,27 @@ def _error(code, field="import"):
     raise AdapterError(code, field, "Explicit review or valid complete input required")
 
 
+def _presence_baseline(race):
+    return (
+        max(race.source.checked_at, race.source.presence_checked_at or race.source.checked_at),
+        race.source_presence,
+    )
+
+
+def _freshness_error(observation, now, baseline=None):
+    checked = observation.checked_at
+    if not isinstance(checked, datetime) or checked.tzinfo is None or checked.utcoffset() is None:
+        return "invalid_timestamp"
+    if checked > now:
+        return "invalid_timestamp"
+    if baseline is not None:
+        cutoff, presence = baseline
+        # Equal-time evidence cannot disprove an already controlled absence.
+        if checked < cutoff or presence != "present" and checked == cutoff:
+            return "stale_observation"
+    return None
+
+
 def _index(items):
     result = {}
     for item in items:
@@ -165,14 +186,16 @@ def _apply(
     grouping=None,
     commune=None,
     approved_alias=None,
-    alias_consensus=False,
+    baseline=None,
 ):
-    if observation.checked_at.tzinfo is None or observation.checked_at > now:
-        _error("invalid_timestamp")
     existing, new_alias = _alias_target(
         session, observation, alias, now, approved_target=approved_alias
     )
     previous_revision = existing.revision if existing else 0
+    baseline = baseline or (_presence_baseline(existing) if existing else None)
+    freshness_error = _freshness_error(observation, now, baseline)
+    if freshness_error:
+        _error(freshness_error)
     previous_checked_at = existing.source.checked_at if existing else None
     stale = existing is not None and observation.checked_at < previous_checked_at
     if existing and existing.commune_id and existing.department != observation.department:
@@ -208,7 +231,9 @@ def _apply(
     facts["competition_id"] = competition_id
     facts["location"] = _location(commune or (existing.commune if existing else None))
     current = _model_facts(existing) if existing else None
-    if stale and not (alias_consensus and fingerprint(current) == fingerprint(facts)):
+    # Having passed the immutable pre-run cutoff, an older item can only be behind
+    # a successful mutation of this run. Identical duplicates never advance evidence.
+    if stale and fingerprint(current) != fingerprint(facts):
         _error("stale_observation")
     if existing and (
         observation.diagnostics
@@ -255,6 +280,10 @@ def _apply(
     model.competition_id = competition_id
     if commune:
         model.commune = commune
+    # A projected scope update may already carry the new page timestamp after merge.
+    # Advance its matching presence evidence before the first constraint-checked flush.
+    if not stale:
+        model.source.presence_checked_at = observation.checked_at
     with session.no_autoflush:
         codes = {
             item.category_code
@@ -286,7 +315,7 @@ def _apply(
             observation.checked_at,
             observation.source_url,
         )
-    model.source_presence = "present"
+        model.source_presence = "present"
     if action != "unchanged":
         session.add(
             SourceRevision(
@@ -326,7 +355,7 @@ class _Preflight:
     errors: dict
     targets: dict
     approved_aliases: dict
-    consensus_keys: set
+    baselines: dict
 
 
 def _preflight(session, batches, now):
@@ -337,6 +366,7 @@ def _preflight(session, batches, now):
     """
     groups, key_groups, targets, approved, errors = {}, {}, {}, {}, {}
     new_aliases = {}
+    baselines = {}
     for batch in batches:
         locations = {fact.key: fact for fact in batch.locations}
         groupings = {proof.key: proof for proof in batch.competitions}
@@ -391,24 +421,22 @@ def _preflight(session, batches, now):
             key_groups.setdefault(key, set()).add((identity, signature))
             if target:
                 targets[key] = target.id
+                baselines.setdefault(target.id, _presence_baseline(target))
     conflicts = {key for key, signatures in key_groups.items() if len(signatures) > 1}
     for key, entries in key_groups.items():
         if len({identity for identity, _ in entries}) > 1:
             # Conflicting identity claims must not make the audit assert an arbitrary owner.
             targets.pop(key, None)
             approved.pop(key, None)
-    consensus = set()
     for identity, entries in groups.items():
         keys = {key for key, _ in entries}
         if len({signature for _, signature in entries}) > 1:
             conflicts.update(keys)
-        elif identity[0] == "race" and len(keys) > 1:
-            consensus.update(keys)
         if identity[0] == "race" and len(new_aliases.get(identity[1], ())) > 1:
             # Each new alias proof also changes the primary source reference. Competing
             # primary-reference decisions cannot be selected by window processing order.
             conflicts.update(keys)
-    return _Preflight(conflicts, errors, targets, approved, consensus)
+    return _Preflight(conflicts, errors, targets, approved, baselines)
 
 
 def _import_window(session, batch, run_id, now, provider, preflight):
@@ -462,6 +490,11 @@ def _import_window(session, batch, run_id, now, provider, preflight):
     for key in calendar.keys:
         observation = details.get(key)
         code, race_id, action = None, None, "error"
+        freshness_error = (
+            _freshness_error(observation, now, preflight.baselines.get(preflight.targets.get(key)))
+            if observation
+            else None
+        )
         if observation is None:
             code = failures[key].code if key in failures else "missing_detail"
         elif key in preflight.conflicts:
@@ -470,6 +503,8 @@ def _import_window(session, batch, run_id, now, provider, preflight):
         elif key in preflight.errors:
             code, action = preflight.errors[key], "review"
             race_id = preflight.targets.get(key)
+        elif freshness_error == "invalid_timestamp":
+            code, race_id = freshness_error, preflight.targets.get(key)
         elif observation.normalization_version != NORMALIZATION_VERSION:
             code = "unsupported_normalization"
         elif observation.checked_at < calendar.checked_at:
@@ -479,6 +514,8 @@ def _import_window(session, batch, run_id, now, provider, preflight):
             and observation.end_date >= calendar.effective_start
         ):
             code = "detail_outside_window"
+        elif freshness_error:
+            code, race_id = freshness_error, preflight.targets.get(key)
         else:
             resolution = Resolution("negative", None, None, False)
             try:
@@ -489,6 +526,8 @@ def _import_window(session, batch, run_id, now, provider, preflight):
                         _error("provider_unavailable")
                     with session.begin_nested():
                         resolution = resolve_commune(session, locations[key], provider, now)
+                    if resolution.status == "error":
+                        _error(resolution.diagnostic, "geocoding")
                 with session.begin_nested():
                     race_id, action = _apply(
                         session,
@@ -500,11 +539,9 @@ def _import_window(session, batch, run_id, now, provider, preflight):
                         grouping=groupings.get(key),
                         commune=resolution.commune,
                         approved_alias=preflight.approved_aliases.get(key),
-                        alias_consensus=key in preflight.consensus_keys,
+                        baseline=preflight.baselines.get(preflight.targets.get(key)),
                     )
                 present.add(race_id)
-                if resolution.status == "error":
-                    code = resolution.diagnostic
             except AdapterError as error:
                 code = error.diagnostic.code
                 action = (
@@ -554,6 +591,53 @@ def _import_window(session, batch, run_id, now, provider, preflight):
     return window.status, present
 
 
+def _finalize_historical_duplicates(session, windows, accepted):
+    """Historical records never mutate data; only an actual successful item of this run
+    can make an identical historical record an ignored duplicate instead of a failure.
+    """
+    business_keys = (
+        "name",
+        "discipline",
+        "types",
+        "organizer",
+        "start_date",
+        "end_date",
+        "department",
+        "status",
+        "scopes",
+    )
+    for window in windows:
+        if window.status != "partial":
+            continue
+        items = list(session.scalars(select(ImportItem).where(ImportItem.window_id == window.id)))
+        changed = False
+        for item in items:
+            if (
+                item.diagnostic != "stale_observation"
+                or item.race_id not in accepted
+                or not item.observed
+            ):
+                continue
+            race = session.get(Race, item.race_id)
+            current = _model_facts(race)
+            observed = {key: item.observed.get(key) for key in business_keys}
+            if current["status"] == "cancelled" and observed["status"] == "unknown":
+                observed["status"] = "cancelled"
+            if race.source_presence == "present" and observed == {
+                key: current[key] for key in business_keys
+            }:
+                item.status, item.diagnostic = "unchanged", "historical_duplicate"
+                changed = True
+        if changed:
+            unresolved = {
+                item.diagnostic
+                for item in items
+                if item.diagnostic not in {None, "historical_duplicate"}
+            }
+            window.status = "partial" if unresolved else "success"
+            window.diagnostics = sorted(unresolved)
+
+
 def synchronize(engine, batches, *, checked_at=None, provider=None, synthetic=True):
     """Own all transactions. No caller Session is accepted or implicitly committed.
 
@@ -583,14 +667,12 @@ def synchronize(engine, batches, *, checked_at=None, provider=None, synthetic=Tr
                 )
                 session.add(run)
                 session.commit()
-                run_id, statuses, present = run.id, [], set()
+                run_id, present = run.id, set()
                 for batch in batches:
-                    status, seen = _import_window(session, batch, run_id, now, provider, preflight)
-                    statuses.append(status)
+                    _, seen = _import_window(session, batch, run_id, now, provider, preflight)
                     present.update(seen)
                     session.commit()
                 run = session.get(ImportRun, run_id)
-                success = bool(statuses) and all(status == "success" for status in statuses)
                 candidates = list(
                     session.scalars(
                         select(Race).join(SourceRecord).where(SourceRecord.provider == "ffc")
@@ -599,6 +681,8 @@ def synchronize(engine, batches, *, checked_at=None, provider=None, synthetic=Tr
                 windows = list(
                     session.scalars(select(ImportWindow).where(ImportWindow.run_id == run_id))
                 )
+                _finalize_historical_duplicates(session, windows, present)
+                success = bool(windows) and all(window.status == "success" for window in windows)
                 # Old empty windows cannot override newer verified observations. Defer all
                 # absence inference for this run when any candidate has only stale coverage.
                 if success:
@@ -615,7 +699,7 @@ def synchronize(engine, batches, *, checked_at=None, provider=None, synthetic=Tr
                             )
                         ]
                         if covering and all(
-                            window.checked_at < race.source.checked_at for window in covering
+                            window.checked_at < _presence_baseline(race)[0] for window in covering
                         ):
                             success = False
                             for window in covering:
@@ -623,17 +707,25 @@ def synchronize(engine, batches, *, checked_at=None, provider=None, synthetic=Tr
                                 window.diagnostics = [*window.diagnostics, "stale_window"]
                 if success:
                     for race in candidates:
-                        if race.id in present or race.source.checked_at > now:
+                        if race.id in present or _presence_baseline(race)[0] > now:
                             continue
-                        covered = any(
-                            race.department == batch.calendar.effective_department
-                            and race.start_date <= batch.calendar.effective_end
-                            and race.end_date >= batch.calendar.effective_start
-                            for batch in batches
-                        )
-                        if covered and race.source_presence != "to_verify":
-                            race.source_presence = "to_verify"
-                            run.missing_marked += 1
+                        covered = [
+                            window
+                            for window in windows
+                            if (
+                                race.department == window.effective_department
+                                and race.start_date <= window.effective_to
+                                and race.end_date >= window.effective_from
+                            )
+                        ]
+                        if covered:
+                            race.source.presence_checked_at = max(
+                                _presence_baseline(race)[0],
+                                *(window.checked_at for window in covered),
+                            )
+                            if race.source_presence != "to_verify":
+                                race.source_presence = "to_verify"
+                                run.missing_marked += 1
                 run.status = "success" if success else "partial" if present else "failed"
                 run.finished_at = now
                 result = RunResult(run_id, run.status, run.missing_marked)
