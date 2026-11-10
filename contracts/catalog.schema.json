@@ -1,0 +1,1048 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raceatlas.example.invalid/contracts/catalog/1.0.0",
+  "title": "RaceAtlas catalogue V1",
+  "$ref": "#/$defs/Catalog",
+  "$defs": {
+    "Id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9_-]{2,63}$"
+    },
+    "Date": {
+      "type": "string",
+      "format": "date"
+    },
+    "Department": {
+      "enum": [
+        "01",
+        "03",
+        "07",
+        "15",
+        "26",
+        "38",
+        "42",
+        "43",
+        "63",
+        "69",
+        "73",
+        "74"
+      ]
+    },
+    "Category": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]{1,63}$"
+    },
+    "Coordinates": {
+      "type": "array",
+      "prefixItems": [
+        {
+          "type": "number",
+          "minimum": -180,
+          "maximum": 180
+        },
+        {
+          "type": "number",
+          "minimum": -90,
+          "maximum": 90
+        }
+      ],
+      "minItems": 2,
+      "maxItems": 2,
+      "items": false
+    },
+    "Location": {
+      "type": "object",
+      "properties": {
+        "commune_id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9_-]{2,63}$"
+        },
+        "insee_code": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[0-9]{5}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "commune_name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "department": {
+          "$ref": "#/$defs/Department"
+        },
+        "coordinates": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Coordinates"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "precision": {
+          "enum": [
+            "commune_center"
+          ]
+        },
+        "provenance": {
+          "enum": [
+            "synthetic",
+            "geo_api",
+            "verified_source"
+          ]
+        },
+        "geocoded_at": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "commune_id",
+        "insee_code",
+        "commune_name",
+        "department",
+        "coordinates",
+        "precision",
+        "provenance",
+        "geocoded_at"
+      ],
+      "additionalProperties": false
+    },
+    "Source": {
+      "type": "object",
+      "properties": {
+        "provider": {
+          "enum": [
+            "synthetic",
+            "ffc"
+          ]
+        },
+        "source_season": {
+          "type": "integer",
+          "minimum": 2000,
+          "maximum": 2200
+        },
+        "race_number": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_url": {
+          "type": "string",
+          "format": "uri"
+        },
+        "checked_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "provider",
+        "source_season",
+        "race_number",
+        "source_url",
+        "checked_at"
+      ],
+      "additionalProperties": false
+    },
+    "Restrictions": {
+      "type": "object",
+      "properties": {
+        "sex": {
+          "enum": [
+            "men",
+            "women",
+            "any",
+            "unknown"
+          ]
+        },
+        "min_age": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 120
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "max_age": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 120
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "age_reference": {
+          "enum": [
+            "season_end",
+            "event_date",
+            "unknown"
+          ]
+        },
+        "age_season": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 2000,
+              "maximum": 2200
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "engagers": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "other_text": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "sex",
+        "min_age",
+        "max_age",
+        "age_reference",
+        "age_season",
+        "engagers",
+        "other_text"
+      ],
+      "additionalProperties": false
+    },
+    "Rule": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9_-]{2,63}$"
+        },
+        "category_codes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Category"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "restrictions": {
+          "$ref": "#/$defs/Restrictions"
+        },
+        "raw_label": {
+          "type": "string",
+          "minLength": 1
+        },
+        "evidence_id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9_-]{2,63}$"
+        }
+      },
+      "required": [
+        "id",
+        "category_codes",
+        "restrictions",
+        "raw_label",
+        "evidence_id"
+      ],
+      "additionalProperties": false
+    },
+    "Scope": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9_-]{2,63}$"
+        },
+        "kind": {
+          "enum": [
+            "entry_list",
+            "race"
+          ]
+        },
+        "source_list_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "identity_status": {
+          "enum": [
+            "verified",
+            "unverified",
+            "needs_review"
+          ]
+        },
+        "eligibility_status": {
+          "enum": [
+            "confirmed",
+            "unknown",
+            "ambiguous"
+          ]
+        },
+        "raw_label": {
+          "type": "string",
+          "minLength": 1
+        },
+        "rules": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Rule"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "source_list_id",
+        "identity_status",
+        "eligibility_status",
+        "raw_label",
+        "rules"
+      ],
+      "additionalProperties": false
+    },
+    "Race": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9_-]{2,63}$"
+        },
+        "competition_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9_-]{2,63}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "discipline": {
+          "enum": [
+            "road",
+            "gravel",
+            "mtb",
+            "cyclocross"
+          ]
+        },
+        "types": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "road_race",
+              "time_trial",
+              "gravel_race",
+              "xco",
+              "enduro",
+              "downhill",
+              "cyclocross"
+            ]
+          },
+          "minItems": 0,
+          "uniqueItems": true
+        },
+        "organizer": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "start_date": {
+          "type": "string",
+          "format": "date"
+        },
+        "end_date": {
+          "type": "string",
+          "format": "date"
+        },
+        "status": {
+          "enum": [
+            "scheduled",
+            "cancelled",
+            "postponed",
+            "unknown"
+          ]
+        },
+        "source_presence": {
+          "enum": [
+            "present",
+            "missing",
+            "to_verify"
+          ]
+        },
+        "location": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Location"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "department": {
+          "$ref": "#/$defs/Department"
+        },
+        "source": {
+          "$ref": "#/$defs/Source"
+        },
+        "entry_scopes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Scope"
+          },
+          "minItems": 1
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "personal_eligibility": {
+          "enum": [
+            "not_evaluated"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "competition_id",
+        "name",
+        "discipline",
+        "types",
+        "organizer",
+        "start_date",
+        "end_date",
+        "status",
+        "source_presence",
+        "location",
+        "department",
+        "source",
+        "entry_scopes",
+        "revision",
+        "personal_eligibility"
+      ],
+      "additionalProperties": false
+    },
+    "Window": {
+      "type": "object",
+      "properties": {
+        "requested_from": {
+          "type": "string",
+          "format": "date"
+        },
+        "requested_to": {
+          "type": "string",
+          "format": "date"
+        },
+        "effective_from": {
+          "type": "string",
+          "format": "date"
+        },
+        "effective_to": {
+          "type": "string",
+          "format": "date"
+        },
+        "requested_department": {
+          "$ref": "#/$defs/Department"
+        },
+        "effective_department": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Department"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "displayed_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "distinct_keys": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "status": {
+          "enum": [
+            "consistent_sample",
+            "incomplete",
+            "unknown"
+          ]
+        },
+        "reason": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "requested_from",
+        "requested_to",
+        "effective_from",
+        "effective_to",
+        "requested_department",
+        "effective_department",
+        "displayed_count",
+        "distinct_keys",
+        "status",
+        "reason"
+      ],
+      "additionalProperties": false
+    },
+    "Coverage": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "enum": [
+            "unknown",
+            "consistent_sample",
+            "incomplete",
+            "complete"
+          ]
+        },
+        "intrinsic_exhaustiveness": {
+          "enum": [
+            "unknown"
+          ]
+        },
+        "last_successful_sync_at": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "windows": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Window"
+          }
+        },
+        "note": {
+          "type": "string",
+          "minLength": 1
+        },
+        "requested_from": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Date"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "requested_to": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Date"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "departments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Department"
+          },
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "status",
+        "intrinsic_exhaustiveness",
+        "last_successful_sync_at",
+        "windows",
+        "note",
+        "requested_from",
+        "requested_to",
+        "departments"
+      ],
+      "additionalProperties": false
+    },
+    "Filter": {
+      "type": "object",
+      "properties": {
+        "from": {
+          "type": "string",
+          "format": "date"
+        },
+        "to": {
+          "type": "string",
+          "format": "date"
+        },
+        "disciplines": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "road",
+              "gravel",
+              "mtb",
+              "cyclocross"
+            ]
+          },
+          "uniqueItems": true
+        },
+        "types": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "road_race",
+              "time_trial",
+              "gravel_race",
+              "xco",
+              "enduro",
+              "downhill",
+              "cyclocross"
+            ]
+          },
+          "uniqueItems": true
+        },
+        "categories": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Category"
+          },
+          "uniqueItems": true
+        },
+        "category_operator": {
+          "enum": [
+            "and",
+            "or"
+          ]
+        },
+        "query": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "geography": {
+          "oneOf": [
+            {
+              "type": "object",
+              "properties": {
+                "mode": {
+                  "enum": [
+                    "all"
+                  ]
+                }
+              },
+              "required": [
+                "mode"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "mode": {
+                  "enum": [
+                    "departments"
+                  ]
+                },
+                "departments": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/Department"
+                  },
+                  "minItems": 1,
+                  "uniqueItems": true
+                }
+              },
+              "required": [
+                "mode",
+                "departments"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "mode": {
+                  "enum": [
+                    "radius"
+                  ]
+                },
+                "center": {
+                  "$ref": "#/$defs/Coordinates"
+                },
+                "radius_km": {
+                  "type": "number",
+                  "minimum": 1,
+                  "maximum": 500
+                }
+              },
+              "required": [
+                "mode",
+                "center",
+                "radius_km"
+              ],
+              "additionalProperties": false
+            }
+          ]
+        }
+      },
+      "required": [
+        "from",
+        "to",
+        "disciplines",
+        "types",
+        "categories",
+        "category_operator",
+        "query",
+        "geography"
+      ],
+      "additionalProperties": false
+    },
+    "Catalog": {
+      "type": "object",
+      "properties": {
+        "contract_version": {
+          "const": "1.0.0"
+        },
+        "catalog_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "synthetic": {
+          "type": "boolean"
+        },
+        "categories": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "$ref": "#/$defs/Category"
+              },
+              "label": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "code",
+              "label"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 1
+        },
+        "races": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Race"
+          }
+        },
+        "coverage": {
+          "$ref": "#/$defs/Coverage"
+        }
+      },
+      "required": [
+        "contract_version",
+        "catalog_version",
+        "synthetic",
+        "categories",
+        "races",
+        "coverage"
+      ],
+      "additionalProperties": false
+    },
+    "Match": {
+      "type": "object",
+      "properties": {
+        "race": {
+          "$ref": "#/$defs/Race"
+        },
+        "matching_scope_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{2,63}$"
+          },
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "race",
+        "matching_scope_ids"
+      ],
+      "additionalProperties": false
+    },
+    "RacePage": {
+      "type": "object",
+      "properties": {
+        "contract_version": {
+          "const": "1.0.0"
+        },
+        "catalog_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Match"
+          }
+        },
+        "total": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "unlocated_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "next_cursor": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "coverage": {
+          "$ref": "#/$defs/Coverage"
+        }
+      },
+      "required": [
+        "contract_version",
+        "catalog_version",
+        "items",
+        "total",
+        "unlocated_count",
+        "next_cursor",
+        "coverage"
+      ],
+      "additionalProperties": false
+    },
+    "MapFeature": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "Feature"
+        },
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9_-]{2,63}$"
+        },
+        "geometry": {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "Point"
+            },
+            "coordinates": {
+              "$ref": "#/$defs/Coordinates"
+            }
+          },
+          "required": [
+            "type",
+            "coordinates"
+          ],
+          "additionalProperties": false
+        },
+        "properties": {
+          "type": "object",
+          "properties": {
+            "race_id": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9_-]{2,63}$"
+            },
+            "commune_id": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9_-]{2,63}$"
+            },
+            "discipline": {
+              "enum": [
+                "road",
+                "gravel",
+                "mtb",
+                "cyclocross"
+              ]
+            },
+            "matching_scope_ids": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9_-]{2,63}$"
+              },
+              "uniqueItems": true
+            }
+          },
+          "required": [
+            "race_id",
+            "commune_id",
+            "discipline",
+            "matching_scope_ids"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "type",
+        "id",
+        "geometry",
+        "properties"
+      ],
+      "additionalProperties": false
+    },
+    "MapPage": {
+      "type": "object",
+      "properties": {
+        "contract_version": {
+          "const": "1.0.0"
+        },
+        "catalog_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "type": {
+          "const": "FeatureCollection"
+        },
+        "features": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/MapFeature"
+          }
+        },
+        "total": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "unlocated_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{2,63}$"
+          },
+          "uniqueItems": true
+        },
+        "next_cursor": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "coverage": {
+          "$ref": "#/$defs/Coverage"
+        }
+      },
+      "required": [
+        "contract_version",
+        "catalog_version",
+        "type",
+        "features",
+        "total",
+        "unlocated_ids",
+        "next_cursor",
+        "coverage"
+      ],
+      "additionalProperties": false
+    },
+    "Error": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "enum": [
+            "invalid_filter",
+            "not_found",
+            "stale_cursor",
+            "rate_limited",
+            "unavailable"
+          ]
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1
+        },
+        "fields": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "request_id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9_-]{2,63}$"
+        }
+      },
+      "required": [
+        "code",
+        "message",
+        "fields",
+        "request_id"
+      ],
+      "additionalProperties": false
+    }
+  }
+}
