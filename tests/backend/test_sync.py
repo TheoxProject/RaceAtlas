@@ -315,6 +315,9 @@ def test_explicit_center_binding_cached_and_known_center_survives_provider_error
             == "success"
         )
     assert len(calls) == 1
+    audit = session.scalars(select(ImportItem).order_by(ImportItem.id)).first()
+    assert audit.observed["location_fact"]["evidence_id"] == "source-location-proof"
+    assert audit.observed["geocoding_provider"] == {"name": "offline-test", "version": "v1"}
     race = session.scalar(select(Race))
     commune_id = race.commune_id
 
@@ -333,3 +336,185 @@ def test_explicit_center_binding_cached_and_known_center_survives_provider_error
         session.scalars(select(GeocodeCache.diagnostic)).all()
     )
     assert count(session, SourceRevision) == 1
+
+
+@pytest.mark.parametrize(
+    "statement",
+    [
+        "UPDATE import_run SET status='invented'",
+        "UPDATE import_run SET finished_at=started_at - interval '1 second'",
+        "UPDATE import_window SET displayed_count=-1",
+        "UPDATE import_item SET status='invented'",
+        "UPDATE source_alias SET evidence_id=' '",
+        "UPDATE source_alias SET source_season=1999",
+        "UPDATE source_alias SET provider='synthetic'",
+        "UPDATE source_revision SET revision=0",
+        "UPDATE source_revision SET business_hash='invalid'",
+        "INSERT INTO source_alias SELECT id || '-duplicate',provider,source_season,race_number,"
+        "race_id,evidence_id,decided_at FROM source_alias LIMIT 1",
+        "INSERT INTO source_revision SELECT id || '-duplicate',race_id,run_id,revision,"
+        "business_hash,facts,normalization_version,source_url,checked_at "
+        "FROM source_revision LIMIT 1",
+    ],
+)
+def test_postgresql_enforces_new_audit_and_identity_constraints(session, database, statement):
+    from sqlalchemy.exc import IntegrityError
+
+    synchronize(database, [batch(observation())], checked_at=NOW)
+    with pytest.raises(IntegrityError):
+        session.execute(text(statement))
+        session.commit()
+    session.rollback()
+
+
+def test_negative_geocoder_result_imports_unlocated_and_preserves_known_center_without_fact(
+    session, database, app
+):
+    observed = observation()
+    fact = LocationFact(observed.key, "Commune fictive", "26", "source-proof", "26999")
+    negative = OfflineProvider("offline", "negative", lambda _: ())
+    result = synchronize(
+        database, [batch(observed, locations=(fact,))], checked_at=NOW, provider=negative
+    )
+    assert result.status == "success"
+    stored = session.scalar(select(Race))
+    assert app.test_client().get(f"/api/v1/races/{stored.id}").json["location"] is None
+    positive = OfflineProvider(
+        "offline",
+        "positive",
+        lambda _: (CenterCandidate("26999", "Commune fictive", "26", 4.9, 45.1),),
+    )
+    result = synchronize(
+        database, [batch(observed, locations=(fact,))], checked_at=NOW, provider=positive
+    )
+    assert result.status == "success"
+    response = app.test_client().get(f"/api/v1/races/{stored.id}").json
+    assert response["location"]["coordinates"] == [4.9, 45.1]
+    assert response["location"]["precision"] == "commune_center"
+    assert response["location"]["provenance"] == "synthetic"
+    assert response["location"]["insee_code"] == "26999"
+    assert synchronize(database, [batch(observed)], checked_at=NOW).status == "success"
+    assert (
+        app.test_client().get(f"/api/v1/races/{stored.id}").json["location"] == response["location"]
+    )
+
+
+def test_department_change_with_known_center_is_quarantined(session, database):
+    observed = observation()
+    fact = LocationFact(observed.key, "Commune fictive", "26", "source-proof", "26999")
+    provider = OfflineProvider(
+        "offline", "v1", lambda _: (CenterCandidate("26999", "Commune fictive", "26", 4.9, 45.1),)
+    )
+    synchronize(database, [batch(observed, locations=(fact,))], checked_at=NOW, provider=provider)
+    stored = session.scalar(select(Race))
+    previous_center = stored.commune_id
+    changed = observation(html=HTML.replace("<dd>26</dd>", "<dd>38</dd>"))
+    changed_batch = batch(changed)
+    cal = replace(
+        changed_batch.calendar,
+        requested=replace(WINDOW, department="38"),
+        effective_department="38",
+    )
+    assert (
+        synchronize(database, [replace(changed_batch, calendar=cal)], checked_at=NOW).status
+        == "failed"
+    )
+    session.expire_all()
+    assert session.get(Race, stored.id).department == "26"
+    assert session.get(Race, stored.id).commune_id == previous_center
+
+
+def test_geocoder_failure_defers_absence_for_entire_run(session, database):
+    first, other = observation(), observation("OTHER")
+    synchronize(database, [batch(first, other)], checked_at=NOW)
+    fact = LocationFact(first.key, "Commune fictive", "26", "source-proof", "26999")
+    provider = OfflineProvider(
+        "offline", "v1", lambda _: (CenterCandidate("38999", "Wrong department", "38", 4.9, 45.1),)
+    )
+    result = synchronize(
+        database, [batch(first, locations=(fact,))], checked_at=NOW, provider=provider
+    )
+    session.expire_all()
+    assert result.status == "partial" and result.missing_marked == 0
+    assert all(race.source_presence == "present" for race in session.scalars(select(Race)))
+
+
+def test_inconsistent_location_binding_in_overlapping_windows_cannot_change_catalog(
+    session, database
+):
+    observed = observation()
+    fact = LocationFact(observed.key, "Commune fictive", "26", "source-proof", "26999")
+    result = synchronize(
+        database, [batch(observed), batch(observed, locations=(fact,))], checked_at=NOW
+    )
+    assert result.status == "failed"
+    assert count(session, Race) == 0
+
+
+def test_invalid_detail_parse_diagnostic_is_audited_without_raw_source(session, database):
+    from raceatlas.sync import DetailFailure
+
+    original = observation()
+    invalid = HTML.replace("<dd>Route</dd>", "<dd>Unknown</dd>")
+    with pytest.raises(AdapterError) as error:
+        observation(html=invalid)
+    failed = batch(
+        keys=(original.key,), failures=(DetailFailure(original.key, error.value.diagnostic.code),)
+    )
+    result = synchronize(database, [failed], checked_at=NOW)
+    assert result.status == "failed"
+    item = session.scalar(select(ImportItem))
+    assert item.diagnostic == "unknown_discipline" and item.observed is None
+    assert count(session, Race) == 0
+
+
+def test_unknown_scope_revision_keeps_known_graph_and_audits_needs_review(session, database):
+    original = observation()
+    synchronize(database, [batch(original)], checked_at=NOW)
+    changed = observation(html=HTML.replace("Liste fictive A", "Reorganized list"))
+    assert synchronize(database, [batch(changed)], checked_at=NOW).status == "failed"
+    item = session.scalar(select(ImportItem).where(ImportItem.status == "review"))
+    assert item.observed["identity_status"] == "needs_review"
+    assert session.scalar(select(Race)).scopes[0].raw_label.startswith("Liste fictive A")
+
+
+def test_replayed_grouping_proof_is_idempotent_after_revision_increment(session, database):
+    observed = observation()
+    session.add(Competition(id="group-replay", name="Fictive", grouping_evidence="proof"))
+    session.commit()
+    proof = CompetitionProof(observed.key, "group-replay", 0, "initial-group-proof")
+    for _ in range(2):
+        result = synchronize(database, [batch(observed, competitions=(proof,))], checked_at=NOW)
+        assert result.status == "success"
+    assert count(session, SourceRevision) == count(session, Race) == 1
+
+
+def test_old_empty_window_cannot_mark_newer_observation_missing(session, database):
+    later = NOW + timedelta(hours=1)
+    synchronize(database, [batch(observation(checked=later), checked=later)], checked_at=later)
+    result = synchronize(database, [batch()], checked_at=later + timedelta(hours=1))
+    assert result.status == "failed" and result.missing_marked == 0
+    assert session.scalar(select(Race)).source_presence == "present"
+    assert session.scalar(
+        select(ImportWindow).where(ImportWindow.run_id == result.run_id)
+    ).diagnostics == ["stale_window"]
+
+
+@pytest.mark.parametrize("code", ["", None, "PRIVATE RAW MESSAGE"])
+def test_invalid_failure_codes_cannot_allow_missing_inference(session, database, code):
+    from raceatlas.sync import DetailFailure
+
+    observed = observation()
+    synchronize(database, [batch(observed)], checked_at=NOW)
+    failed = batch(keys=(observed.key,), failures=(DetailFailure(observed.key, code),))
+    result = synchronize(database, [failed], checked_at=NOW)
+    assert result.status == "failed" and result.missing_marked == 0
+    assert session.scalar(select(Race)).source_presence == "present"
+
+
+def test_no_windows_is_audited_as_failed_without_missing_inference(session, database):
+    synchronize(database, [batch(observation())], checked_at=NOW)
+    result = synchronize(database, [], checked_at=NOW)
+    assert result.status == "failed" and result.missing_marked == 0
+    assert session.scalar(select(Race)).source_presence == "present"
+    assert session.get(ImportRun, result.run_id).status == "failed"

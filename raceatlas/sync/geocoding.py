@@ -119,6 +119,10 @@ def resolve_commune(session, fact, provider, now):
             and candidate.provenance in {"synthetic", "geo_api", "verified_source"}
             and _finite(candidate.longitude, -180, 180)
             and _finite(candidate.latitude, -90, 90)
+            # Deliberately loose AURA plausibility envelope, not a boundary/GIS proof.
+            # This catches swapped axes and obviously remote centres despite matching labels.
+            and 1 <= candidate.longitude <= 8
+            and 43 <= candidate.latitude <= 48
         )
         if not valid:
             status, diagnostic = "error", "invalid_commune_center"

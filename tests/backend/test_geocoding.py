@@ -25,6 +25,9 @@ CENTER = CenterCandidate("26999", "Commune fictive", "26", 4.9, 45.1)
         replace(CENTER, latitude=False),
         replace(CENTER, longitude=181),
         replace(CENTER, latitude=-91),
+        replace(CENTER, longitude=45.75, latitude=4.85),
+        replace(CENTER, longitude=2.35, latitude=48.85),
+        replace(CENTER, longitude=-4, latitude=45),
         replace(CENTER, department="38"),
         replace(CENTER, insee_code="38999"),
         replace(CENTER, precision="race_start"),
@@ -106,3 +109,25 @@ def test_name_mismatch_without_explicit_insee_is_rejected(session):
         session, replace(FACT, commune_name="Other place", insee_code=None), provider, NOW
     )
     assert result.status == "error" and result.commune is None
+
+
+@pytest.mark.parametrize(
+    "statement",
+    [
+        "UPDATE geocode_cache SET status='invented'",
+        "UPDATE geocode_cache SET status='positive'",
+        "UPDATE geocode_cache SET expires_at=checked_at",
+        "INSERT INTO geocode_cache SELECT id || '-duplicate', provider,provider_version,query_key,"
+        "query,status,commune_id,diagnostic,checked_at,expires_at FROM geocode_cache LIMIT 1",
+    ],
+)
+def test_postgresql_enforces_cache_result_expiry_and_uniqueness(session, statement):
+    from sqlalchemy import text
+    from sqlalchemy.exc import IntegrityError
+
+    resolve_commune(session, FACT, OfflineProvider("offline", "v1", lambda _: ()), NOW)
+    session.commit()
+    with pytest.raises(IntegrityError):
+        session.execute(text(statement))
+        session.commit()
+    session.rollback()

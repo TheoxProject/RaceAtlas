@@ -4,15 +4,16 @@ Independent windows/items can succeed without authorizing absence inference. Onl
 entirely successful run may mark absent races to_verify, after global key deduplication.
 """
 
+import re
 from dataclasses import replace
-from datetime import date, datetime, timezone
+from datetime import datetime, timezone
 
 from sqlalchemy import select, text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from raceatlas.ffc import project_race
-from raceatlas.ffc.types import NORMALIZATION_VERSION, AdapterError, SourceKey
+from raceatlas.ffc.types import DEPARTMENTS, NORMALIZATION_VERSION, AdapterError, SourceKey
 from raceatlas.models import (
     Category,
     Competition,
@@ -161,9 +162,23 @@ def _apply(
         _error("location_identity_needs_review")
     competition_id = existing.competition_id if existing else None
     if grouping:
+        replay = False
+        if existing and grouping.competition_id == existing.competition_id:
+            replay = any(
+                item.observed
+                and item.observed.get("grouping_evidence") == grouping.evidence_id
+                and item.observed.get("grouping_target") == grouping.competition_id
+                for item in session.scalars(
+                    select(ImportItem).where(
+                        ImportItem.race_id == existing.id,
+                        ImportItem.status.in_(["created", "updated", "unchanged"]),
+                    )
+                )
+            )
         if (
             not grouping.evidence_id.strip()
-            or grouping.expected_revision != (existing.revision if existing else 0)
+            or not replay
+            and grouping.expected_revision != (existing.revision if existing else 0)
             or grouping.competition_id is not None
             and session.get(Competition, grouping.competition_id) is None
         ):
@@ -271,12 +286,14 @@ def _apply(
 def _window_valid(calendar, now):
     return (
         calendar.status == "consistent_sample"
+        and calendar.normalization_version == NORMALIZATION_VERSION
         and not calendar.diagnostics
         and calendar.checked_at.tzinfo is not None
         and calendar.checked_at <= now
         and calendar.requested.start == calendar.effective_start
         and calendar.requested.end == calendar.effective_end
         and calendar.requested.department == calendar.effective_department
+        and calendar.effective_department in DEPARTMENTS
         and 1 <= (calendar.effective_end - calendar.effective_start).days + 1 <= 14
         and calendar.displayed_count == len(set(calendar.keys)) == len(calendar.keys)
     )
@@ -302,14 +319,26 @@ def _import_window(session, batch, run_id, now, provider, conflicts):
     session.add(window)
     session.flush()
     if not _window_valid(calendar, now):
-        window.status, window.diagnostics = "incomplete", ["incoherent_window"]
+        window.status, window.diagnostics = (
+            "incomplete",
+            ["incoherent_window", *(item.code for item in calendar.diagnostics)],
+        )
         return "incomplete", set()
     try:
         details, locations = _index(batch.details), _index(batch.locations)
         aliases, groupings = _index(batch.aliases), _index(batch.competitions)
         identities = _index(batch.identities)
+        failures = _index(batch.failures)
+        if any(
+            not isinstance(failure.code, str)
+            or not re.fullmatch(r"[a-z][a-z0-9_]{1,63}", failure.code)
+            for failure in failures.values()
+        ):
+            _error("invalid_detail_failure")
         if set(details) - set(calendar.keys):
             _error("unexpected_detail")
+        if set(failures) - set(calendar.keys) or set(failures) & set(details):
+            _error("conflicting_detail_failure")
         if any(
             set(bindings) - set(details) for bindings in (locations, aliases, groupings, identities)
         ):
@@ -322,9 +351,13 @@ def _import_window(session, batch, run_id, now, provider, conflicts):
         observation = details.get(key)
         code, race_id, action = None, None, "error"
         if observation is None:
-            code = "missing_detail"
+            code = failures[key].code if key in failures else "missing_detail"
         elif key in conflicts:
             code = "conflicting_details"
+        elif observation.normalization_version != NORMALIZATION_VERSION:
+            code = "unsupported_normalization"
+        elif observation.checked_at < calendar.checked_at:
+            code = "stale_detail"
         elif observation.department != calendar.effective_department or not (
             observation.start_date <= calendar.effective_end
             and observation.end_date >= calendar.effective_start
@@ -366,10 +399,26 @@ def _import_window(session, batch, run_id, now, provider, conflicts):
         if code:
             codes.append(code)
         observed = observation_facts(observation) if observation else None
+        if observed is not None and key in locations:
+            fact = locations[key]
+            observed["location_fact"] = {
+                "name": fact.commune_name,
+                "department": fact.department,
+                "insee_code": fact.insee_code,
+                "evidence_id": fact.evidence_id,
+            }
+            if provider is not None:
+                observed["geocoding_provider"] = {
+                    "name": provider.name,
+                    "version": provider.version,
+                }
         if observed is not None and key in identities:
             observed["identity_evidence"] = identities[key].evidence_id
         if observed is not None and key in groupings:
             observed["grouping_evidence"] = groupings[key].evidence_id
+            observed["grouping_target"] = groupings[key].competition_id
+        if observed is not None and action == "review":
+            observed["identity_status"] = "needs_review"
         session.add(
             ImportItem(
                 window_id=window.id,
@@ -396,13 +445,34 @@ def synchronize(engine, batches, *, checked_at=None, provider=None, synthetic=Tr
     if engine.url.host not in {"127.0.0.1", "localhost", "::1"}:
         _error("local_database_required")
     now = checked_at or datetime.now(timezone.utc)
-    if now.tzinfo is None or type(now.date()) is not date:
+    if not isinstance(now, datetime) or now.tzinfo is None or now.utcoffset() is None:
         _error("invalid_timestamp")
     batches = tuple(batches)
     conflicts, signatures = set(), {}
     for batch in batches:
+        locations = {fact.key: fact for fact in batch.locations}
+        groupings = {proof.key: proof for proof in batch.competitions}
+        aliases = {proof.key: proof for proof in batch.aliases}
         for observation in batch.details:
-            signature = fingerprint(observation_facts(observation))
+            location = locations.get(observation.key)
+            grouping = groupings.get(observation.key)
+            alias = aliases.get(observation.key)
+            signature = fingerprint(
+                {
+                    "facts": observation_facts(observation),
+                    "location": {
+                        "name": clean_text(location.commune_name).casefold()
+                        if isinstance(location.commune_name, str)
+                        else None,
+                        "insee_code": location.insee_code,
+                        "department": location.department,
+                    }
+                    if location
+                    else None,
+                    "group": grouping.competition_id if grouping else None,
+                    "alias_target": alias.race_id if alias else None,
+                }
+            )
             if observation.key in signatures and signatures[observation.key] != signature:
                 conflicts.add(observation.key)
             signatures[observation.key] = signature
@@ -430,10 +500,38 @@ def synchronize(engine, batches, *, checked_at=None, provider=None, synthetic=Tr
                     session.commit()
                 run = session.get(ImportRun, run_id)
                 success = bool(statuses) and all(status == "success" for status in statuses)
-                if success:
-                    for race in session.scalars(
+                candidates = list(
+                    session.scalars(
                         select(Race).join(SourceRecord).where(SourceRecord.provider == "ffc")
-                    ):
+                    )
+                )
+                windows = list(
+                    session.scalars(select(ImportWindow).where(ImportWindow.run_id == run_id))
+                )
+                # Old empty windows cannot override newer verified observations. Defer all
+                # absence inference for this run when any candidate has only stale coverage.
+                if success:
+                    for race in candidates:
+                        if race.id in present:
+                            continue
+                        covering = [
+                            window
+                            for window in windows
+                            if (
+                                window.effective_department == race.department
+                                and race.start_date <= window.effective_to
+                                and race.end_date >= window.effective_from
+                            )
+                        ]
+                        if covering and all(
+                            window.checked_at < race.source.checked_at for window in covering
+                        ):
+                            success = False
+                            for window in covering:
+                                window.status = "incomplete"
+                                window.diagnostics = [*window.diagnostics, "stale_window"]
+                if success:
+                    for race in candidates:
                         if race.id in present or race.source.checked_at > now:
                             continue
                         covered = any(

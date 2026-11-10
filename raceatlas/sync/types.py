@@ -35,6 +35,12 @@ class CompetitionProof:
 
 
 @dataclass(frozen=True)
+class DetailFailure:
+    key: SourceKey
+    code: str
+
+
+@dataclass(frozen=True)
 class WindowBatch:
     calendar: CalendarObservation
     details: tuple[RaceObservation, ...]
@@ -42,6 +48,7 @@ class WindowBatch:
     aliases: tuple[AliasProof, ...] = ()
     identities: tuple[IdentityAttestation, ...] = ()
     competitions: tuple[CompetitionProof, ...] = ()
+    failures: tuple[DetailFailure, ...] = ()
 
 
 @dataclass(frozen=True)

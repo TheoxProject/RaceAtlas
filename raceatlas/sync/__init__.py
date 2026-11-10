@@ -1,6 +1,13 @@
 """Offline auditable synchronization; no source client or scheduler is installed."""
 
 from .service import synchronize
-from .types import AliasProof, CompetitionProof, LocationFact, WindowBatch
+from .types import AliasProof, CompetitionProof, DetailFailure, LocationFact, WindowBatch
 
-__all__ = ["AliasProof", "CompetitionProof", "LocationFact", "WindowBatch", "synchronize"]
+__all__ = [
+    "AliasProof",
+    "CompetitionProof",
+    "DetailFailure",
+    "LocationFact",
+    "WindowBatch",
+    "synchronize",
+]
