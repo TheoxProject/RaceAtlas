@@ -38,7 +38,9 @@ def database():
 @pytest.fixture()
 def session(database):
     with database.begin() as connection:
-        connection.execute(text("TRUNCATE competition, commune, category, race CASCADE"))
+        connection.execute(
+            text("TRUNCATE import_run, geocode_cache, competition, commune, category, race CASCADE")
+        )
     with Session(database) as session:
         yield session
         session.rollback()

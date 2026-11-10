@@ -21,7 +21,8 @@ def scope_facts(scope):
         "kind": scope.kind,
         "eligibility": scope.eligibility_status,
         "rules": rules,
-        "unresolved": text(scope.raw_label) if scope.eligibility_status != "confirmed" else None,
+        # Labels detect ambiguity only; they are never a positive identity match.
+        "raw_label": text(scope.raw_label),
     }
 
 

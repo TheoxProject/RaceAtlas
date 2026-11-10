@@ -1,48 +1,43 @@
 # Point de reprise RaceAtlas
 
-- Horodatage : 2026-11-10T15:03:30Z (initialisation lot 3).
-- Lot 3 : synchronisation auditable et communes ; mission `docs/lot-3/mission.md`.
-- Worktree `C:/Users/theop/.codex/worktrees/add4/RaceAtlas` ; branche `feature/auditable-sync`.
-- Base locale/distante après fetch : `f33d837844abdc51ebcafc066da3c16cb4982f34` (`origin/main`). Branche publiée, Draft PR https://github.com/TheoxProject/RaceAtlas/pull/5 ; checkpoint initial `d4f55af6740a52964eb8e68df4273af6346294be`. Aucun candidat lot 3 validé.
+- Horodatage : **2026-11-10T15:16:44Z**, lot 3 WIP après service/cache.
+- Branche `feature/auditable-sync`, worktree `C:/Users/theop/.codex/worktrees/add4/RaceAtlas`.
+- Base `origin/main` : `f33d837844abdc51ebcafc066da3c16cb4982f34`. Parent avant ce checkpoint : `ff351d9c762ea9075efa8f8683ab098777246c5d` ; relever HEAD après commit/push.
+- Draft PR https://github.com/TheoxProject/RaceAtlas/pull/5 ; CI intermédiaire ff351d9 SUCCESS https://github.com/TheoxProject/RaceAtlas/actions/runs/42841269435. Aucun candidat lot 3 figé ni approuvé.
+- Mission `docs/lot-3/mission.md`.
 
 ## Intégration précédente confirmée
 
-Lot 2 DONE : https://github.com/TheoxProject/RaceAtlas/pull/4. Tester **APPROVE** au SHA **511208b7d5142f708106a3d4a8f51d170fb3e148** ; CI https://github.com/TheoxProject/RaceAtlas/actions/runs/42839321426 **success**. Merge GitHub **f33d837844abdc51ebcafc066da3c16cb4982f34** confirmé, arbre identique au SHA testé (`git diff --exit-code` réussi). Workflow sur PR, pas de CI push main distincte attendue.
-
-Preuves : 95 pytest (72 adaptateur, 23 socle dont 3 Chromium), 26 contrats, 3 React, lint/format/build/pip et 18 probes indépendantes PASS. Deux défauts de la première revue corrigés en un cycle. Rapport final dans PR #4 et `.local-tools/tester-report-lot2.md`. Lots 0/1 et politique PR #3 déjà fusionnés. Limite : dialecte HTML synthétique, qualification live et droits FFC encore ouverts avant exploitation.
+Lot 2 DONE : PR https://github.com/TheoxProject/RaceAtlas/pull/4, Tester APPROVE `511208b7d5142f708106a3d4a8f51d170fb3e148`, CI success https://github.com/TheoxProject/RaceAtlas/actions/runs/42839321426, merge confirmé `f33d837844abdc51ebcafc066da3c16cb4982f34`, arbre identique au SHA testé. Lots 0/1 et politique PR #3 déjà fusionnés. Dialecte HTML synthétique et droits FFC encore ouverts avant exploitation.
 
 | Tâche | Responsable | État |
 |---|---|---|
 | L3-01 cadrage/checkpoint/Draft PR | Coordinator | DONE |
-| L3-02 import/audit/identité | Developer | IN_PROGRESS |
-| L3-03 communes/cache/intégration/handoff | Developer | TODO |
+| L3-02 import/audit/identité | Developer | IN_PROGRESS, service et35 tests ciblés PASS |
+| L3-03 communes/cache/intégration/handoff | Developer | IN_PROGRESS, cache testé, docs/finalisation restantes |
 | L3-04 revue indépendante SHA figé | Tester | TODO |
 | L3-05 CI/fusion/bilan | Coordinator | TODO |
 
+## Livré et vérifications actuelles
+
+Six tables/migration audit/cache/révisions/alias ; empreintes métier stables sans tokens/checkdates ; service local possédant ses transactions et verrou PostgreSQL ; savepoints par item, audit durable des erreurs, alias explicitement prouvés, graphes non rapprochés par rang/nom. LocationFact explicite, fournisseur injecté sans client réseau, cache positif7j/négatif1j/erreur5min séparé par version/département. Faits connus et centres existants préservés ; conflit/ambiguïté mis en revue/erreur.
+
+**35 tests ciblés PASS en7,02s** sur PostgreSQL17.11 réel, migration upgrade/check/downgrade/upgrade/check compris. Ruff PASS. Pas encore de suite globale lot3 ni revue/CI du prochain SHA ; ce checkpoint WIP n'est pas fusionnable.
+
+Décisions techniques : faits positifs de fenêtres indépendantes autorisés, mais **toute absence différée jusqu'à réussite de tout le périmètre du run** ; présence globale dédupliquée protège les chevauchements. Textes source normalisés des listes conservés comme signaux d'ambiguïté, jamais comme preuve positive d'identité. Une réorganisation ambiguë conserve intégralement le graphe existant. Groupe/alias sous preuve référencée et révision attendue ; preuves d'identité enregistrées dans audit item. Révisions métier minimales sans archive HTML/participants. Aucune garantie d'audit si PostgreSQL lui-même est indisponible.
+
 ## Politique et restrictions
 
-Autonomie technique documentée ; fonctionnel mineur conforme aux contrats ; consultation pour choix produit majeurs/alternatives visibles, question précise avec 2–3 options et recommandation. Silence jamais considéré comme accord ; seules tâches indépendantes d'une décision en attente continuent. Aucun arbitrage majeur en attente. Aucun déploiement, achat, collecte FFC live/régionale, mutation distante/production ni publication finale autorisé.
+Autonomie technique documentée ; fonctionnel mineur conforme aux contrats ; consultation pour choix produit majeurs/alternatives visibles (2–3 options, recommandation). Silence jamais accord ; seules tâches indépendantes d'une décision en attente continuent. Aucun arbitrage majeur en attente. Aucun déploiement, achat, collecte FFC live/régionale, mutation distante/production ou publication finale autorisé. Aucune voie réseau/schedule ajoutée.
 
 ## Environnement et processus
 
-Python 3.12.14/paquets : `C:/Users/theop/.codex/worktrees/1a1e/RaceAtlas/.venv/Scripts/python.exe`. Pip via runtime Python `C:/Users/theop/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/python.exe -m pip --python <venvpython> check`. Node/pnpm cache Codex ; frontend installé offline/build prêt. pnpm CLI `C:/Users/theop/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/pnpm/bin/pnpm.cjs`.
+Python3.12.14 : `C:/Users/theop/.codex/worktrees/1a1e/RaceAtlas/.venv/Scripts/python.exe`. Pip via runtime Python cache Codex `-m pip --python <venvpython> check`. Node/pnpm cache Codex, frontend installé offline/build prêt ; pnpm CLI `C:/Users/theop/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/pnpm/bin/pnpm.cjs`.
 
-PostgreSQL 17.11 actif uniquement `127.0.0.1:55434`, cluster `.local-tools/pgdata-lot2-native`, log `.local-tools/postgres-lot2.log`. Bases jetables distinctes `raceatlas_lot2_test` (Developer) / `raceatlas_lot2_review` (Tester), utilisateur `raceatlas_local`, URL `postgresql+psycopg://raceatlas_local@127.0.0.1:55434/<base>`, opt-in `RACEATLAS_DISPOSABLE_DB=1`. Réutilisables après migrations ; jamais tests concurrents sur même base. Browser `PLAYWRIGHT_BROWSERS_PATH=C:/Users/theop/.codex/worktrees/1a1e/RaceAtlas/.local-tools/browsers`. Aucun test/agent écrivain actif après lot 2.
+PostgreSQL17.11 actif **127.0.0.1:55434**, cluster `.local-tools/pgdata-lot2-native`, log `.local-tools/postgres-lot2.log`. Bases jetables `raceatlas_lot2_test` (Developer), `raceatlas_lot2_review` (Tester), utilisateur `raceatlas_local`, URL `postgresql+psycopg://raceatlas_local@127.0.0.1:55434/<base>`, `RACEATLAS_DISPOSABLE_DB=1`. Tests réinitialisent leurs tables, dont audits/cache. Ne pas tester simultanément sur même base. Browser `PLAYWRIGHT_BROWSERS_PATH=C:/Users/theop/.codex/worktrees/1a1e/RaceAtlas/.local-tools/browsers`. Aucun test actif après ce checkpoint ; cluster laissé actif.
 
-Ne pas relancer initdb du cluster actif ; `.local-tools/pgdata-lot2` est un ancien initdb sandbox incomplet à ignorer. Copie deps partielle `.local-tools/frontend-deps-partial` à ignorer. Processus natifs DB/Chromium hors sandbox ; Git nécessite autorisation pour métadonnées partagées hors worktree. Aucun rejet auto-review.
-
-Connecteur création PR : 403 Resource not accessible by integration ; fallback accès Git local configuré réussi, sans secrets affichés ni contournement. `.local-tools/lot2-pr.py` est limité à PR 4 et ancienne base : **ne pas lancer pour lot 3 sans adaptation et contrôle des SHA**.
+Ne pas relancer initdb ; ancien `.local-tools/pgdata-lot2` incomplet à ignorer, copie deps partielle `.local-tools/frontend-deps-partial` à ignorer. Processus natifs DB/Chromium hors sandbox ; Git demande autorisation métadonnées partagées. Aucun rejet auto-review. Connecteur création PR 403 ; fallback accès Git local autorisé réussi sans secret exposé. `.local-tools/lot2-pr.py` limité ancienne PR4/base : ne pas lancer aveuglément pour lot3.
 
 ## Prochaine action sûre
 
-Commit/push du cadrage et ouverture Draft PR lot 3, puis délégation bornée au Developer. Confirmer URL PR, SHA distant et absence d'autre écrivain. Aucun test lot 3 exécuté ni verdict acquis. Preuves finales dans la description PR sans altérer le SHA en revue.
-
-
-
-## Étape développeur L3-A — WIP publiable
-
-Modèles/migration statique ajoutés : import_run/window/item, source_alias, source_revision, geocode_cache. Types de batches explicites et empreinte métier indépendante des tokens/IDs/contrôles et espaces de présentation ; restrictions corrélées et ordre des scopes conservés pour déceler les réorganisations ambiguës. Deux tests d'empreinte réussis. Migration autogénérée en comparant uniquement la base PostgreSQL locale développeur puis relue ; aucune table historique altérée. Service, géocodage et tests d'intégration restent à réaliser ; aucune validation finale revendiquée.
-
-Décision technique : importer les faits positifs des fenêtres indépendantes mais **différer toute inférence d'absence jusqu'à réussite du périmètre complet du run**. Dédupliquer les clés globalement ; présence dans une fenêtre empêche une fausse absence dans une autre. Cache géocode positif/négatif/versionné ; erreur/ambiguïté/mismatch bloque l'inférence d'absence. LocationFact explicite liée à une SourceKey et preuve ; aucune déduction du titre/slug.
-
-Prochaine action sûre : implémenter le service transactionnel et le résolveur injecté, puis tester migration et imports réels sur PostgreSQL local jetable développeur. Ne pas lancer d'import source ou de synchronisation active.
+Terminer cas négatifs d'intégration/contraintes et documentation Windows/handoff, puis exécuter suite globale (backend+Chromium, contrats, frontend/build pertinents) sur base développeur isolée. Mettre à jour ce checkpoint avant candidat final, committer/pousser, figer HEAD et demander Tester. Ne pas fusionner ni commencer lot4 avant gates lot3.
