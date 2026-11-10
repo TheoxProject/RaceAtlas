@@ -1,0 +1,232 @@
+{
+  "contract_version": "1.0.0",
+  "catalog_version": "synthetic-2026-11-10",
+  "total": 12,
+  "next_cursor": null,
+  "coverage": {
+    "status": "unknown",
+    "intrinsic_exhaustiveness": "unknown",
+    "last_successful_sync_at": null,
+    "windows": [],
+    "note": "Catalogue synthétique sans assertion de complétude FFC.",
+    "requested_from": null,
+    "requested_to": null,
+    "departments": []
+  },
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "id": "race-access-ambiguous",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.85,
+          45.75
+        ]
+      },
+      "properties": {
+        "race_id": "race-access-ambiguous",
+        "commune_id": "commune-synthetic-a",
+        "discipline": "road",
+        "matching_scope_ids": [
+          "scope-ambiguous"
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "race-cancelled",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.85,
+          45.75
+        ]
+      },
+      "properties": {
+        "race_id": "race-cancelled",
+        "commune_id": "commune-synthetic-a",
+        "discipline": "road",
+        "matching_scope_ids": [
+          "scope-cancelled"
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "race-correlated",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.85,
+          45.75
+        ]
+      },
+      "properties": {
+        "race_id": "race-correlated",
+        "commune_id": "commune-synthetic-a",
+        "discipline": "road",
+        "matching_scope_ids": [
+          "scope-correlated"
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "race-cross-restricted",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.85,
+          45.75
+        ]
+      },
+      "properties": {
+        "race_id": "race-cross-restricted",
+        "commune_id": "commune-synthetic-a",
+        "discipline": "cyclocross",
+        "matching_scope_ids": [
+          "scope-cross"
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "race-gravel",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.85,
+          45.75
+        ]
+      },
+      "properties": {
+        "race_id": "race-gravel",
+        "commune_id": "commune-synthetic-a",
+        "discipline": "gravel",
+        "matching_scope_ids": [
+          "scope-gravel"
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "race-missing",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.85,
+          45.75
+        ]
+      },
+      "properties": {
+        "race_id": "race-missing",
+        "commune_id": "commune-synthetic-a",
+        "discipline": "mtb",
+        "matching_scope_ids": [
+          "scope-missing"
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "race-other-one",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.85,
+          45.75
+        ]
+      },
+      "properties": {
+        "race_id": "race-other-one",
+        "commune_id": "commune-synthetic-a",
+        "discipline": "road",
+        "matching_scope_ids": [
+          "scope-other-one"
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "race-other-two",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.85,
+          45.75
+        ]
+      },
+      "properties": {
+        "race_id": "race-other-two",
+        "commune_id": "commune-synthetic-a",
+        "discipline": "road",
+        "matching_scope_ids": [
+          "scope-other-two"
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "race-road-combined",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.85,
+          45.75
+        ]
+      },
+      "properties": {
+        "race_id": "race-road-combined",
+        "commune_id": "commune-synthetic-a",
+        "discipline": "road",
+        "matching_scope_ids": [
+          "scope-road-combined"
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "race-road-split",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.85,
+          45.75
+        ]
+      },
+      "properties": {
+        "race_id": "race-road-split",
+        "commune_id": "commune-synthetic-a",
+        "discipline": "road",
+        "matching_scope_ids": [
+          "scope-split-one",
+          "scope-split-two"
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "race-mtb-multiday",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.85,
+          45.75
+        ]
+      },
+      "properties": {
+        "race_id": "race-mtb-multiday",
+        "commune_id": "commune-synthetic-a",
+        "discipline": "mtb",
+        "matching_scope_ids": [
+          "scope-mtb"
+        ]
+      }
+    }
+  ],
+  "unlocated_ids": [
+    "race-unlocated"
+  ]
+}

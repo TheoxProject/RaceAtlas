@@ -1,0 +1,236 @@
+{
+  "contract_version": "1.0.0",
+  "synthetic": true,
+  "scenarios": [
+    {
+      "id": "no-categories",
+      "filter": {
+        "from": "2026-01-01",
+        "to": "2026-12-31",
+        "disciplines": [],
+        "types": [],
+        "categories": [],
+        "category_operator": "or",
+        "query": "",
+        "geography": {
+          "mode": "all"
+        }
+      },
+      "expected_ids": [
+        "race-road-combined",
+        "race-road-split",
+        "race-gravel",
+        "race-mtb-multiday",
+        "race-cross-restricted",
+        "race-access-ambiguous",
+        "race-unlocated",
+        "race-cancelled",
+        "race-missing",
+        "race-correlated",
+        "race-other-one",
+        "race-other-two"
+      ],
+      "expected_unlocated_ids": [
+        "race-unlocated"
+      ]
+    },
+    {
+      "id": "and-same-scope",
+      "filter": {
+        "from": "2026-01-01",
+        "to": "2026-12-31",
+        "disciplines": [],
+        "types": [],
+        "categories": [
+          "open_1",
+          "open_2"
+        ],
+        "category_operator": "and",
+        "query": "",
+        "geography": {
+          "mode": "all"
+        }
+      },
+      "expected_ids": [
+        "race-road-combined",
+        "race-correlated"
+      ],
+      "expected_unlocated_ids": []
+    },
+    {
+      "id": "or-open",
+      "filter": {
+        "from": "2026-01-01",
+        "to": "2026-12-31",
+        "disciplines": [],
+        "types": [],
+        "categories": [
+          "open_1",
+          "open_2"
+        ],
+        "category_operator": "or",
+        "query": "",
+        "geography": {
+          "mode": "all"
+        }
+      },
+      "expected_ids": [
+        "race-road-combined",
+        "race-road-split",
+        "race-correlated",
+        "race-other-one",
+        "race-other-two"
+      ],
+      "expected_unlocated_ids": []
+    },
+    {
+      "id": "all-access-confirmed",
+      "filter": {
+        "from": "2026-01-01",
+        "to": "2026-12-31",
+        "disciplines": [],
+        "types": [],
+        "categories": [
+          "access_1",
+          "access_2",
+          "access_3",
+          "access_4"
+        ],
+        "category_operator": "and",
+        "query": "",
+        "geography": {
+          "mode": "all"
+        }
+      },
+      "expected_ids": [
+        "race-gravel",
+        "race-cross-restricted"
+      ],
+      "expected_unlocated_ids": []
+    },
+    {
+      "id": "clm-is-road",
+      "filter": {
+        "from": "2026-01-01",
+        "to": "2026-12-31",
+        "disciplines": [
+          "road"
+        ],
+        "types": [
+          "time_trial"
+        ],
+        "categories": [],
+        "category_operator": "or",
+        "query": "",
+        "geography": {
+          "mode": "all"
+        }
+      },
+      "expected_ids": [
+        "race-road-combined",
+        "race-cancelled"
+      ],
+      "expected_unlocated_ids": []
+    },
+    {
+      "id": "multiday-january",
+      "filter": {
+        "from": "2027-01-01",
+        "to": "2027-01-01",
+        "disciplines": [],
+        "types": [],
+        "categories": [],
+        "category_operator": "or",
+        "query": "",
+        "geography": {
+          "mode": "all"
+        }
+      },
+      "expected_ids": [
+        "race-mtb-multiday"
+      ],
+      "expected_unlocated_ids": []
+    },
+    {
+      "id": "department",
+      "filter": {
+        "from": "2026-01-01",
+        "to": "2026-12-31",
+        "disciplines": [],
+        "types": [],
+        "categories": [],
+        "category_operator": "or",
+        "query": "",
+        "geography": {
+          "mode": "departments",
+          "departments": [
+            "26"
+          ]
+        }
+      },
+      "expected_ids": [
+        "race-unlocated"
+      ],
+      "expected_unlocated_ids": [
+        "race-unlocated"
+      ]
+    },
+    {
+      "id": "radius-unlocated",
+      "filter": {
+        "from": "2026-01-01",
+        "to": "2026-12-31",
+        "disciplines": [],
+        "types": [],
+        "categories": [],
+        "category_operator": "or",
+        "query": "",
+        "geography": {
+          "mode": "radius",
+          "center": [
+            4.85,
+            45.75
+          ],
+          "radius_km": 1
+        }
+      },
+      "expected_ids": [
+        "race-road-combined",
+        "race-road-split",
+        "race-gravel",
+        "race-mtb-multiday",
+        "race-cross-restricted",
+        "race-access-ambiguous",
+        "race-cancelled",
+        "race-missing",
+        "race-correlated",
+        "race-other-one",
+        "race-other-two"
+      ],
+      "expected_unlocated_ids": [
+        "race-unlocated"
+      ]
+    },
+    {
+      "id": "reactive-search",
+      "filter": {
+        "from": "2026-01-01",
+        "to": "2026-12-31",
+        "disciplines": [
+          "gravel"
+        ],
+        "types": [],
+        "categories": [],
+        "category_operator": "or",
+        "query": "  COMMUNE FICTIVE A  ",
+        "geography": {
+          "mode": "all"
+        }
+      },
+      "expected_ids": [
+        "race-gravel"
+      ],
+      "expected_unlocated_ids": []
+    }
+  ]
+}

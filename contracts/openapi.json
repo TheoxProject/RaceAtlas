@@ -1,0 +1,276 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "RaceAtlas catalogue — contrat de conception",
+    "version": "1.0.0",
+    "description": "Routes non implémentées. Données synthétiques pour première carte."
+  },
+  "paths": {
+    "/api/v1/races": {
+      "get": {
+        "operationId": "getRacePage",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Filter"
+          },
+          {
+            "$ref": "#/components/parameters/Limit"
+          },
+          {
+            "$ref": "#/components/parameters/Cursor"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Projection du catalogue filtré",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./catalog.schema.json#/$defs/RacePage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Filtre invalide",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./catalog.schema.json#/$defs/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Fiche inconnue",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./catalog.schema.json#/$defs/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Curseur périmé",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./catalog.schema.json#/$defs/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite atteinte",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./catalog.schema.json#/$defs/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service indisponible",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./catalog.schema.json#/$defs/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/map": {
+      "get": {
+        "operationId": "getMapPage",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Filter"
+          },
+          {
+            "$ref": "#/components/parameters/Limit"
+          },
+          {
+            "$ref": "#/components/parameters/Cursor"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Projection du catalogue filtré",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./catalog.schema.json#/$defs/MapPage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Filtre invalide",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./catalog.schema.json#/$defs/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Fiche inconnue",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./catalog.schema.json#/$defs/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Curseur périmé",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./catalog.schema.json#/$defs/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite atteinte",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./catalog.schema.json#/$defs/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service indisponible",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./catalog.schema.json#/$defs/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/races/{race_id}": {
+      "get": {
+        "operationId": "getRace",
+        "parameters": [
+          {
+            "name": "race_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "./catalog.schema.json#/$defs/Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Épreuve et restrictions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./catalog.schema.json#/$defs/Race"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Filtre invalide",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./catalog.schema.json#/$defs/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Fiche inconnue",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./catalog.schema.json#/$defs/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Curseur périmé",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./catalog.schema.json#/$defs/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite atteinte",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./catalog.schema.json#/$defs/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service indisponible",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./catalog.schema.json#/$defs/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "Filter": {
+        "name": "filter",
+        "in": "query",
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "./catalog.schema.json#/$defs/Filter"
+            }
+          }
+        }
+      },
+      "Limit": {
+        "name": "limit",
+        "in": "query",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 200,
+          "default": 100
+        }
+      },
+      "Cursor": {
+        "name": "cursor",
+        "in": "query",
+        "schema": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

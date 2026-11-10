@@ -1,0 +1,837 @@
+{
+  "contract_version": "1.0.0",
+  "catalog_version": "synthetic-2026-11-10",
+  "synthetic": true,
+  "categories": [
+    {
+      "code": "elite",
+      "label": "elite"
+    },
+    {
+      "code": "open_1",
+      "label": "open 1"
+    },
+    {
+      "code": "open_2",
+      "label": "open 2"
+    },
+    {
+      "code": "open_3",
+      "label": "open 3"
+    },
+    {
+      "code": "access_1",
+      "label": "access 1"
+    },
+    {
+      "code": "access_2",
+      "label": "access 2"
+    },
+    {
+      "code": "access_3",
+      "label": "access 3"
+    },
+    {
+      "code": "access_4",
+      "label": "access 4"
+    },
+    {
+      "code": "u19",
+      "label": "u19"
+    },
+    {
+      "code": "u17",
+      "label": "u17"
+    }
+  ],
+  "races": [
+    {
+      "id": "race-road-combined",
+      "competition_id": "competition-synthetic-a",
+      "name": "Course fictive race-road-combined",
+      "discipline": "road",
+      "types": [
+        "road_race",
+        "time_trial"
+      ],
+      "organizer": "Organisateur fictif",
+      "start_date": "2026-11-11",
+      "end_date": "2026-11-11",
+      "status": "scheduled",
+      "source_presence": "present",
+      "location": {
+        "commune_id": "commune-synthetic-a",
+        "insee_code": null,
+        "commune_name": "Commune fictive A",
+        "department": "69",
+        "coordinates": [
+          4.85,
+          45.75
+        ],
+        "precision": "commune_center",
+        "provenance": "synthetic",
+        "geocoded_at": null
+      },
+      "department": "69",
+      "source": {
+        "provider": "synthetic",
+        "source_season": 2027,
+        "race_number": "SYN-race-road-combined",
+        "source_url": "https://example.invalid/race-road-combined",
+        "checked_at": "2026-11-10T09:00:00Z"
+      },
+      "entry_scopes": [
+        {
+          "id": "scope-road-combined",
+          "kind": "entry_list",
+          "source_list_id": null,
+          "identity_status": "unverified",
+          "eligibility_status": "confirmed",
+          "raw_label": "Liste synthétique scope-road-combined",
+          "rules": [
+            {
+              "id": "rule-combined",
+              "category_codes": [
+                "open_1",
+                "open_2"
+              ],
+              "restrictions": {
+                "sex": "any",
+                "min_age": null,
+                "max_age": null,
+                "age_reference": "unknown",
+                "age_season": null,
+                "engagers": [],
+                "other_text": null
+              },
+              "raw_label": "Règle synthétique rule-combined",
+              "evidence_id": "synthetic-proof"
+            }
+          ]
+        }
+      ],
+      "revision": 1,
+      "personal_eligibility": "not_evaluated"
+    },
+    {
+      "id": "race-road-split",
+      "competition_id": "competition-synthetic-a",
+      "name": "Course fictive race-road-split",
+      "discipline": "road",
+      "types": [
+        "road_race"
+      ],
+      "organizer": "Organisateur fictif",
+      "start_date": "2026-11-11",
+      "end_date": "2026-11-11",
+      "status": "scheduled",
+      "source_presence": "present",
+      "location": {
+        "commune_id": "commune-synthetic-a",
+        "insee_code": null,
+        "commune_name": "Commune fictive A",
+        "department": "69",
+        "coordinates": [
+          4.85,
+          45.75
+        ],
+        "precision": "commune_center",
+        "provenance": "synthetic",
+        "geocoded_at": null
+      },
+      "department": "69",
+      "source": {
+        "provider": "synthetic",
+        "source_season": 2027,
+        "race_number": "SYN-race-road-split",
+        "source_url": "https://example.invalid/race-road-split",
+        "checked_at": "2026-11-10T09:00:00Z"
+      },
+      "entry_scopes": [
+        {
+          "id": "scope-split-one",
+          "kind": "entry_list",
+          "source_list_id": null,
+          "identity_status": "unverified",
+          "eligibility_status": "confirmed",
+          "raw_label": "Liste synthétique scope-split-one",
+          "rules": [
+            {
+              "id": "rule-split-one",
+              "category_codes": [
+                "open_1"
+              ],
+              "restrictions": {
+                "sex": "any",
+                "min_age": null,
+                "max_age": null,
+                "age_reference": "unknown",
+                "age_season": null,
+                "engagers": [],
+                "other_text": null
+              },
+              "raw_label": "Règle synthétique rule-split-one",
+              "evidence_id": "synthetic-proof"
+            }
+          ]
+        },
+        {
+          "id": "scope-split-two",
+          "kind": "entry_list",
+          "source_list_id": null,
+          "identity_status": "unverified",
+          "eligibility_status": "confirmed",
+          "raw_label": "Liste synthétique scope-split-two",
+          "rules": [
+            {
+              "id": "rule-split-two",
+              "category_codes": [
+                "open_2"
+              ],
+              "restrictions": {
+                "sex": "any",
+                "min_age": null,
+                "max_age": null,
+                "age_reference": "unknown",
+                "age_season": null,
+                "engagers": [],
+                "other_text": null
+              },
+              "raw_label": "Règle synthétique rule-split-two",
+              "evidence_id": "synthetic-proof"
+            }
+          ]
+        }
+      ],
+      "revision": 1,
+      "personal_eligibility": "not_evaluated"
+    },
+    {
+      "id": "race-gravel",
+      "competition_id": "competition-synthetic-a",
+      "name": "Course fictive race-gravel",
+      "discipline": "gravel",
+      "types": [
+        "gravel_race"
+      ],
+      "organizer": "Organisateur fictif",
+      "start_date": "2026-11-11",
+      "end_date": "2026-11-11",
+      "status": "scheduled",
+      "source_presence": "present",
+      "location": {
+        "commune_id": "commune-synthetic-a",
+        "insee_code": null,
+        "commune_name": "Commune fictive A",
+        "department": "69",
+        "coordinates": [
+          4.85,
+          45.75
+        ],
+        "precision": "commune_center",
+        "provenance": "synthetic",
+        "geocoded_at": null
+      },
+      "department": "69",
+      "source": {
+        "provider": "synthetic",
+        "source_season": 2027,
+        "race_number": "SYN-race-gravel",
+        "source_url": "https://example.invalid/race-gravel",
+        "checked_at": "2026-11-10T09:00:00Z"
+      },
+      "entry_scopes": [
+        {
+          "id": "scope-gravel",
+          "kind": "entry_list",
+          "source_list_id": null,
+          "identity_status": "unverified",
+          "eligibility_status": "confirmed",
+          "raw_label": "Liste synthétique scope-gravel",
+          "rules": [
+            {
+              "id": "rule-gravel",
+              "category_codes": [
+                "access_1",
+                "access_2",
+                "access_3",
+                "access_4"
+              ],
+              "restrictions": {
+                "sex": "any",
+                "min_age": null,
+                "max_age": null,
+                "age_reference": "unknown",
+                "age_season": null,
+                "engagers": [],
+                "other_text": null
+              },
+              "raw_label": "Règle synthétique rule-gravel",
+              "evidence_id": "synthetic-proof"
+            }
+          ]
+        }
+      ],
+      "revision": 1,
+      "personal_eligibility": "not_evaluated"
+    },
+    {
+      "id": "race-mtb-multiday",
+      "competition_id": "competition-synthetic-a",
+      "name": "Course fictive race-mtb-multiday",
+      "discipline": "mtb",
+      "types": [
+        "enduro"
+      ],
+      "organizer": "Organisateur fictif",
+      "start_date": "2026-12-31",
+      "end_date": "2027-01-02",
+      "status": "scheduled",
+      "source_presence": "present",
+      "location": {
+        "commune_id": "commune-synthetic-a",
+        "insee_code": null,
+        "commune_name": "Commune fictive A",
+        "department": "69",
+        "coordinates": [
+          4.85,
+          45.75
+        ],
+        "precision": "commune_center",
+        "provenance": "synthetic",
+        "geocoded_at": null
+      },
+      "department": "69",
+      "source": {
+        "provider": "synthetic",
+        "source_season": 2027,
+        "race_number": "SYN-race-mtb-multiday",
+        "source_url": "https://example.invalid/race-mtb-multiday",
+        "checked_at": "2026-11-10T09:00:00Z"
+      },
+      "entry_scopes": [
+        {
+          "id": "scope-mtb",
+          "kind": "entry_list",
+          "source_list_id": null,
+          "identity_status": "unverified",
+          "eligibility_status": "unknown",
+          "raw_label": "Liste synthétique scope-mtb",
+          "rules": []
+        }
+      ],
+      "revision": 1,
+      "personal_eligibility": "not_evaluated"
+    },
+    {
+      "id": "race-cross-restricted",
+      "competition_id": "competition-synthetic-a",
+      "name": "Course fictive race-cross-restricted",
+      "discipline": "cyclocross",
+      "types": [
+        "cyclocross"
+      ],
+      "organizer": "Organisateur fictif",
+      "start_date": "2026-11-11",
+      "end_date": "2026-11-11",
+      "status": "scheduled",
+      "source_presence": "present",
+      "location": {
+        "commune_id": "commune-synthetic-a",
+        "insee_code": null,
+        "commune_name": "Commune fictive A",
+        "department": "69",
+        "coordinates": [
+          4.85,
+          45.75
+        ],
+        "precision": "commune_center",
+        "provenance": "synthetic",
+        "geocoded_at": null
+      },
+      "department": "69",
+      "source": {
+        "provider": "synthetic",
+        "source_season": 2027,
+        "race_number": "SYN-race-cross-restricted",
+        "source_url": "https://example.invalid/race-cross-restricted",
+        "checked_at": "2026-11-10T09:00:00Z"
+      },
+      "entry_scopes": [
+        {
+          "id": "scope-cross",
+          "kind": "entry_list",
+          "source_list_id": null,
+          "identity_status": "unverified",
+          "eligibility_status": "confirmed",
+          "raw_label": "Liste synthétique scope-cross",
+          "rules": [
+            {
+              "id": "rule-cross",
+              "category_codes": [
+                "access_1",
+                "access_2",
+                "access_3",
+                "access_4"
+              ],
+              "restrictions": {
+                "sex": "men",
+                "min_age": 18,
+                "max_age": null,
+                "age_reference": "season_end",
+                "age_season": 2027,
+                "engagers": [],
+                "other_text": null
+              },
+              "raw_label": "Règle synthétique rule-cross",
+              "evidence_id": "synthetic-proof"
+            }
+          ]
+        }
+      ],
+      "revision": 1,
+      "personal_eligibility": "not_evaluated"
+    },
+    {
+      "id": "race-access-ambiguous",
+      "competition_id": "competition-synthetic-a",
+      "name": "Course fictive race-access-ambiguous",
+      "discipline": "road",
+      "types": [
+        "road_race"
+      ],
+      "organizer": "Organisateur fictif",
+      "start_date": "2026-11-11",
+      "end_date": "2026-11-11",
+      "status": "scheduled",
+      "source_presence": "present",
+      "location": {
+        "commune_id": "commune-synthetic-a",
+        "insee_code": null,
+        "commune_name": "Commune fictive A",
+        "department": "69",
+        "coordinates": [
+          4.85,
+          45.75
+        ],
+        "precision": "commune_center",
+        "provenance": "synthetic",
+        "geocoded_at": null
+      },
+      "department": "69",
+      "source": {
+        "provider": "synthetic",
+        "source_season": 2027,
+        "race_number": "SYN-race-access-ambiguous",
+        "source_url": "https://example.invalid/race-access-ambiguous",
+        "checked_at": "2026-11-10T09:00:00Z"
+      },
+      "entry_scopes": [
+        {
+          "id": "scope-ambiguous",
+          "kind": "entry_list",
+          "source_list_id": null,
+          "identity_status": "unverified",
+          "eligibility_status": "ambiguous",
+          "raw_label": "Access (portée non confirmée)",
+          "rules": []
+        }
+      ],
+      "revision": 1,
+      "personal_eligibility": "not_evaluated"
+    },
+    {
+      "id": "race-unlocated",
+      "competition_id": "competition-synthetic-a",
+      "name": "Course fictive race-unlocated",
+      "discipline": "road",
+      "types": [
+        "road_race"
+      ],
+      "organizer": "Organisateur fictif",
+      "start_date": "2026-11-11",
+      "end_date": "2026-11-11",
+      "status": "scheduled",
+      "source_presence": "present",
+      "location": null,
+      "department": "26",
+      "source": {
+        "provider": "synthetic",
+        "source_season": 2027,
+        "race_number": "SYN-race-unlocated",
+        "source_url": "https://example.invalid/race-unlocated",
+        "checked_at": "2026-11-10T09:00:00Z"
+      },
+      "entry_scopes": [
+        {
+          "id": "scope-unlocated",
+          "kind": "entry_list",
+          "source_list_id": null,
+          "identity_status": "unverified",
+          "eligibility_status": "confirmed",
+          "raw_label": "Liste synthétique scope-unlocated",
+          "rules": [
+            {
+              "id": "rule-unlocated",
+              "category_codes": [
+                "u19"
+              ],
+              "restrictions": {
+                "sex": "any",
+                "min_age": null,
+                "max_age": null,
+                "age_reference": "unknown",
+                "age_season": null,
+                "engagers": [],
+                "other_text": null
+              },
+              "raw_label": "Règle synthétique rule-unlocated",
+              "evidence_id": "synthetic-proof"
+            }
+          ]
+        }
+      ],
+      "revision": 1,
+      "personal_eligibility": "not_evaluated"
+    },
+    {
+      "id": "race-cancelled",
+      "competition_id": "competition-synthetic-a",
+      "name": "Course fictive race-cancelled",
+      "discipline": "road",
+      "types": [
+        "time_trial"
+      ],
+      "organizer": "Organisateur fictif",
+      "start_date": "2026-11-11",
+      "end_date": "2026-11-11",
+      "status": "cancelled",
+      "source_presence": "present",
+      "location": {
+        "commune_id": "commune-synthetic-a",
+        "insee_code": null,
+        "commune_name": "Commune fictive A",
+        "department": "69",
+        "coordinates": [
+          4.85,
+          45.75
+        ],
+        "precision": "commune_center",
+        "provenance": "synthetic",
+        "geocoded_at": null
+      },
+      "department": "69",
+      "source": {
+        "provider": "synthetic",
+        "source_season": 2027,
+        "race_number": "SYN-race-cancelled",
+        "source_url": "https://example.invalid/race-cancelled",
+        "checked_at": "2026-11-10T09:00:00Z"
+      },
+      "entry_scopes": [
+        {
+          "id": "scope-cancelled",
+          "kind": "entry_list",
+          "source_list_id": null,
+          "identity_status": "unverified",
+          "eligibility_status": "confirmed",
+          "raw_label": "Liste synthétique scope-cancelled",
+          "rules": [
+            {
+              "id": "rule-cancelled",
+              "category_codes": [
+                "elite"
+              ],
+              "restrictions": {
+                "sex": "any",
+                "min_age": null,
+                "max_age": null,
+                "age_reference": "unknown",
+                "age_season": null,
+                "engagers": [],
+                "other_text": null
+              },
+              "raw_label": "Règle synthétique rule-cancelled",
+              "evidence_id": "synthetic-proof"
+            }
+          ]
+        }
+      ],
+      "revision": 1,
+      "personal_eligibility": "not_evaluated"
+    },
+    {
+      "id": "race-missing",
+      "competition_id": "competition-synthetic-a",
+      "name": "Course fictive race-missing",
+      "discipline": "mtb",
+      "types": [
+        "xco"
+      ],
+      "organizer": "Organisateur fictif",
+      "start_date": "2026-11-11",
+      "end_date": "2026-11-11",
+      "status": "scheduled",
+      "source_presence": "to_verify",
+      "location": {
+        "commune_id": "commune-synthetic-a",
+        "insee_code": null,
+        "commune_name": "Commune fictive A",
+        "department": "69",
+        "coordinates": [
+          4.85,
+          45.75
+        ],
+        "precision": "commune_center",
+        "provenance": "synthetic",
+        "geocoded_at": null
+      },
+      "department": "69",
+      "source": {
+        "provider": "synthetic",
+        "source_season": 2027,
+        "race_number": "SYN-race-missing",
+        "source_url": "https://example.invalid/race-missing",
+        "checked_at": "2026-11-10T09:00:00Z"
+      },
+      "entry_scopes": [
+        {
+          "id": "scope-missing",
+          "kind": "entry_list",
+          "source_list_id": null,
+          "identity_status": "unverified",
+          "eligibility_status": "unknown",
+          "raw_label": "Liste synthétique scope-missing",
+          "rules": []
+        }
+      ],
+      "revision": 1,
+      "personal_eligibility": "not_evaluated"
+    },
+    {
+      "id": "race-correlated",
+      "competition_id": "competition-synthetic-a",
+      "name": "Course fictive race-correlated",
+      "discipline": "road",
+      "types": [
+        "road_race"
+      ],
+      "organizer": "Organisateur fictif",
+      "start_date": "2026-11-11",
+      "end_date": "2026-11-11",
+      "status": "scheduled",
+      "source_presence": "present",
+      "location": {
+        "commune_id": "commune-synthetic-a",
+        "insee_code": null,
+        "commune_name": "Commune fictive A",
+        "department": "69",
+        "coordinates": [
+          4.85,
+          45.75
+        ],
+        "precision": "commune_center",
+        "provenance": "synthetic",
+        "geocoded_at": null
+      },
+      "department": "69",
+      "source": {
+        "provider": "synthetic",
+        "source_season": 2027,
+        "race_number": "SYN-race-correlated",
+        "source_url": "https://example.invalid/race-correlated",
+        "checked_at": "2026-11-10T09:00:00Z"
+      },
+      "entry_scopes": [
+        {
+          "id": "scope-correlated",
+          "kind": "entry_list",
+          "source_list_id": null,
+          "identity_status": "unverified",
+          "eligibility_status": "confirmed",
+          "raw_label": "Liste synthétique scope-correlated",
+          "rules": [
+            {
+              "id": "rule-men-open",
+              "category_codes": [
+                "open_1"
+              ],
+              "restrictions": {
+                "sex": "men",
+                "min_age": 18,
+                "max_age": null,
+                "age_reference": "event_date",
+                "age_season": null,
+                "engagers": [],
+                "other_text": null
+              },
+              "raw_label": "Règle synthétique rule-men-open",
+              "evidence_id": "synthetic-proof"
+            },
+            {
+              "id": "rule-women-open",
+              "category_codes": [
+                "open_2"
+              ],
+              "restrictions": {
+                "sex": "women",
+                "min_age": 18,
+                "max_age": null,
+                "age_reference": "event_date",
+                "age_season": null,
+                "engagers": [],
+                "other_text": null
+              },
+              "raw_label": "Règle synthétique rule-women-open",
+              "evidence_id": "synthetic-proof"
+            }
+          ]
+        }
+      ],
+      "revision": 1,
+      "personal_eligibility": "not_evaluated"
+    },
+    {
+      "id": "race-other-one",
+      "competition_id": "competition-synthetic-a",
+      "name": "Course fictive race-other-one",
+      "discipline": "road",
+      "types": [
+        "road_race"
+      ],
+      "organizer": "Organisateur fictif",
+      "start_date": "2026-11-11",
+      "end_date": "2026-11-11",
+      "status": "scheduled",
+      "source_presence": "present",
+      "location": {
+        "commune_id": "commune-synthetic-a",
+        "insee_code": null,
+        "commune_name": "Commune fictive A",
+        "department": "69",
+        "coordinates": [
+          4.85,
+          45.75
+        ],
+        "precision": "commune_center",
+        "provenance": "synthetic",
+        "geocoded_at": null
+      },
+      "department": "69",
+      "source": {
+        "provider": "synthetic",
+        "source_season": 2027,
+        "race_number": "SYN-race-other-one",
+        "source_url": "https://example.invalid/race-other-one",
+        "checked_at": "2026-11-10T09:00:00Z"
+      },
+      "entry_scopes": [
+        {
+          "id": "scope-other-one",
+          "kind": "entry_list",
+          "source_list_id": null,
+          "identity_status": "unverified",
+          "eligibility_status": "confirmed",
+          "raw_label": "Liste synthétique scope-other-one",
+          "rules": [
+            {
+              "id": "rule-other-one",
+              "category_codes": [
+                "open_1"
+              ],
+              "restrictions": {
+                "sex": "any",
+                "min_age": null,
+                "max_age": null,
+                "age_reference": "unknown",
+                "age_season": null,
+                "engagers": [],
+                "other_text": null
+              },
+              "raw_label": "Règle synthétique rule-other-one",
+              "evidence_id": "synthetic-proof"
+            }
+          ]
+        }
+      ],
+      "revision": 1,
+      "personal_eligibility": "not_evaluated"
+    },
+    {
+      "id": "race-other-two",
+      "competition_id": "competition-synthetic-a",
+      "name": "Course fictive race-other-two",
+      "discipline": "road",
+      "types": [
+        "road_race"
+      ],
+      "organizer": "Organisateur fictif",
+      "start_date": "2026-11-11",
+      "end_date": "2026-11-11",
+      "status": "scheduled",
+      "source_presence": "present",
+      "location": {
+        "commune_id": "commune-synthetic-a",
+        "insee_code": null,
+        "commune_name": "Commune fictive A",
+        "department": "69",
+        "coordinates": [
+          4.85,
+          45.75
+        ],
+        "precision": "commune_center",
+        "provenance": "synthetic",
+        "geocoded_at": null
+      },
+      "department": "69",
+      "source": {
+        "provider": "synthetic",
+        "source_season": 2027,
+        "race_number": "SYN-race-other-two",
+        "source_url": "https://example.invalid/race-other-two",
+        "checked_at": "2026-11-10T09:00:00Z"
+      },
+      "entry_scopes": [
+        {
+          "id": "scope-other-two",
+          "kind": "entry_list",
+          "source_list_id": null,
+          "identity_status": "unverified",
+          "eligibility_status": "confirmed",
+          "raw_label": "Liste synthétique scope-other-two",
+          "rules": [
+            {
+              "id": "rule-other-two",
+              "category_codes": [
+                "open_2"
+              ],
+              "restrictions": {
+                "sex": "any",
+                "min_age": null,
+                "max_age": null,
+                "age_reference": "unknown",
+                "age_season": null,
+                "engagers": [],
+                "other_text": null
+              },
+              "raw_label": "Règle synthétique rule-other-two",
+              "evidence_id": "synthetic-proof"
+            }
+          ]
+        }
+      ],
+      "revision": 1,
+      "personal_eligibility": "not_evaluated"
+    }
+  ],
+  "coverage": {
+    "status": "unknown",
+    "intrinsic_exhaustiveness": "unknown",
+    "last_successful_sync_at": null,
+    "windows": [],
+    "note": "Catalogue synthétique sans assertion de complétude FFC.",
+    "requested_from": null,
+    "requested_to": null,
+    "departments": []
+  }
+}
