@@ -1,0 +1,6 @@
+# RaceAtlas Codex project configuration.
+# Loaded after this project is trusted in Codex.
+# The coordinator is the main Codex thread; developer/tester are custom subagents.
+[agents]
+enabled = true
+max_concurrent_threads_per_session = 2

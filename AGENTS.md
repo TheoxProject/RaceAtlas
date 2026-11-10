@@ -1,56 +1,49 @@
-# RaceAtlas — Project Instructions for Codex
+# RaceAtlas — Instructions for Codex
 
 ## Project
-RaceAtlas is a web application for discovering and planning cycling races. V1 covers the 12 departments of Auvergne-Rhône-Alpes, France; other regions may follow. The interface is public for browsing, with optional accounts for saved races and personal tracking.
 
-Planned stack (do not scaffold until assigned): React + Vite, Python Flask + SQLAlchemy, Neon PostgreSQL, MapLibre GL JS, Render, and GitHub Actions for scheduled imports.
+RaceAtlas is a cycling-race discovery and planning web app. V1 covers the 12 departments of Auvergne-Rhône-Alpes, France, with extension to other regions later. The public interface offers a map and calendar, with optional accounts for personally saved races.
 
-## Universal working rules
-- Only work on the explicitly assigned task. If scope or acceptance criteria are unclear, report the ambiguity rather than implementing unrelated features.
-- Treat `main` as stable. Do not edit, commit, reset, force-push, or merge into `main` as an agent. Feature code belongs in a dedicated worktree and `feature/*` or `fix/*` branch. The repository owner authorizes integration.
-- Keep commits small, logically coherent, and descriptive (e.g. `feat(map): add race markers`). Prefer one pull request per independently testable feature. Do not rewrite published history or force-push.
-- Do not silently overwrite other agents' changes. Use Git branches, pull requests, and written handoffs. Never assume concurrent Codex chats share task context.
-- Keep changes minimal and explain important technical choices and trade-offs. Avoid unnecessary frameworks, dependencies, or speculative infrastructure.
-- Do not claim a test passed unless it was executed. Report the exact command and its outcome; if it could not run, state why.
-- Add or update automated tests for changed behavior where practical. Regression tests are especially important for import idempotency, date handling, filtering semantics, authentication, and persistence.
-- Never commit secrets, credentials, `.env` files, personal data, or production data. Never expose API keys or database credentials in logs or responses.
-- Do not deploy publicly, enable paid services, modify live databases, or import/publish actual FFC data without explicit authorization from the repository owner. Use synthetic or duly authorized fixtures during development.
-- Ask for approval before destructive commands, schema changes affecting stored data, permissions changes, or changes to security-sensitive configuration.
+Target architecture (do not scaffold without an assigned task): React + Vite, Python Flask + SQLAlchemy, Neon PostgreSQL, MapLibre GL JS, Render, and GitHub Actions scheduled imports.
 
-## Roles and handoffs
+## Three-agent orchestration
 
-### Coordinator / Architect (local project)
-- Define the scope, technical boundaries, interfaces, task dependencies, acceptance criteria, and Git branch names.
-- Delegate bounded tasks to Developer and independent verification to Tester via explicit task briefs; keep a concise written record of decisions, branch/commit identifiers, and results.
-- Review tests and changes before recommending a pull-request merge. Never claim another agent has acted unless there is an observable result.
-- Do not modify application code or merge/deploy unless the repository owner explicitly requests it.
+- The **Coordinator / Architect** is the main Codex thread. For a sufficiently bounded, owner-approved implementation task, it spawns the project-scoped `developer` subagent, waits for a stable commit, and delegates verification of that exact SHA to `tester`. It routes defects back to Developer, up to 3 correction cycles, before escalating.
+- `developer` and `tester` are configured in `.codex/agents/*.toml`. Follow the detailed handoff and gate in `docs/AGENT_WORKFLOW.md`.
+- Subagents share the parent workspace and sandbox, not separate worktrees by default. Start work in a dedicated **Codex worktree for the feature**; do not concurrently edit the same files. Tester is instructed not to modify source, but this is not an OS-level sandbox guarantee.
+- **Do not start developing features merely because these instructions are present.** Await the owner's feature brief or explicit go-ahead. No coordinator mission prompt is included here.
 
-### Developer (isolated worktree)
-- Implement only the assigned functionality in a dedicated feature/fix branch. Include tests and documentation relevant to that change.
-- Produce coherent commits and a pull request when ready; identify changed files, test results, assumptions, known limitations, and the commit SHA for Tester.
-- Address verified defects on the same feature branch and request retesting.
+## Git and collaboration rules
 
-### Tester (independent worktree)
-- Inspect and test the exact commit or pull request supplied by the Coordinator/Developer, not an assumed current version of `main`.
-- Run relevant checks, examine edge cases, and report reproducible findings with severity, steps, expected/observed results, and the tested commit SHA.
-- Do not modify application source code or merge branches. Submit defects to Developer for correction; if a check cannot run, mark it as unverified.
+- `main` is the stable integration branch. No agent may edit, commit, merge, reset or force-push `main` or rewrite shared history. Only the repository owner authorizes merges and deployments.
+- Feature/fix code uses its own Codex worktree and `feature/*` or `fix/*` branch. Prefer one pull request per independently testable feature and logical, descriptive commits. Do not force-push.
+- Coordinator specifies scope, interfaces, acceptance criteria and ownership of files. Developer works only in that scope; Tester independently examines the specified SHA and reports reproducible findings. Never claim another agent acted without observable output.
+- Execute relevant tests and provide exact commands, actual outcomes, and blockers. Never claim a check passed unless run. Preserve test evidence in the handoff.
+- Never commit secrets, `.env`, tokens, credentials, user data, production dumps or downloaded raw provider datasets. Ask before destructive commands, live schema migrations, permission changes, production resource changes, or paid operations.
+- No broad live import automation or public release without owner's explicit permission.
+
+## FFC data: development policy
+
+The owner approves implementing FFC ingestion and developing against small factual examples of publicly visible race metadata, subject to the data provider's terms and applicable rights. This is **not** proof of permission to mass-extract or republish a protected database. Prefer synthetic/authorized fixtures for comprehensive tests; keep source references, links, fetch timestamps and respect limits. Do not bypass logins, technical protection or rate limits. If source terms restrict a requested data use, report the blocker and use fixtures or an authorized source rather than circumventing restrictions. An unindexed Render URL is still publicly reachable; test staging with actual authentication. Do not expose personal participant data or protected media/documents without rights.
 
 ## V1 product invariants (summary)
-- One interactive map view with Altitude (topographic 2.5D) and Summit (3D terrain) modes, plus one monthly calendar view. Do not add a separate list page unless requested.
-- Map markers represent the center of the event's commune, not a claimed exact start line. Cache geocoding; missing locations must remain visible in a clearly labeled exception list.
-- The primary disciplines are Road, Gravel, MTB, and Cyclo-cross. Time trials (CLM) are a Road event type, not an independent discipline.
-- Category filters support OR and AND. AND means that a single race/entry list admits all selected categories, not that categories can be combined across different races of one event. Generic `Access` means Access 1–4; generic `Open` means Open 1–3. Preserve raw source labels.
-- The map has Year / Month / Week temporal controls and opens on the current calendar year. The calendar has a monthly view and an optional My Races mode for authenticated users.
-- Saved race statuses: Interested, Planned, Registered, Completed; tracking is per specific race/entry list. Changes to saved events appear in in-app notifications. Do not assume user-entered registration has been verified by FFC.
-- Weekly FFC synchronization must be idempotent, auditable, and resilient to missing events. A vanished source entry is 'to verify', not automatically canceled. Do not invent event details.
-- Visual direction: modern, sporty, navy (`#111F37`) and orange (`#F97316`); responsive desktop/mobile layouts.
 
-## Definition of done for each task
-1. Scope and acceptance criteria are addressed without unrelated changes.
-2. Relevant tests/lint/build are run if available; otherwise limitations are explicit.
-3. No secrets or unauthorized third-party data are added.
-4. Developer provides a commit/PR reference and brief handoff.
-5. Tester reports independently on that exact revision.
-6. Coordinator requests owner approval before integration into `main` or deployment.
+- One interactive map view with **Altitude** topographic 2.5D and **Summit** 3D terrain modes, plus one **monthly calendar** view; no separate listing page.
+- Markers at **commune center**, not an invented start point; cache geocoding. Missing coordinates remain visible in a clearly identified unlocated-races panel.
+- Disciplines: Road, Gravel, MTB and Cyclo-cross. A time trial (CLM) is a Road event type, not its own discipline.
+- Category filters support OR and AND. AND requires all selected categories to be accepted by **one specific race/entry list**, not a combination of separate races. Generic `Access` expands to Access 1–4, generic `Open` to Open 1–3; preserve raw source labels.
+- Map Year / Month / Week controls; opening date range is the current calendar year. Calendar is monthly with All Races / My Races switch.
+- Saved race statuses: Interested, Planned, Registered, Completed, stored per specific race/entry list; Registered is user-declared, not FFC-verified.
+- Weekly FFC synchronization is designed to be idempotent/auditable and resilient to source gaps. Disappeared races are 'to verify', not automatically canceled; don't invent details.
+- Modern sport design: navy `#111F37` and orange `#F97316`, responsive for desktop/mobile.
 
-This document supplies shared rules, not a replacement for a task-specific brief or for technical permission controls.
+## Definition of done
+
+1. Assigned scope and acceptance criteria met.
+2. Relevant tests/lint/build actually run, or limitations precisely stated.
+3. Source rights, secrets and production controls respected.
+4. Developer provides commit SHA, files changed, tests and known risks.
+5. Tester independently reports verdict for **that SHA**.
+6. Coordinator compiles evidence and requests owner permission before merging into `main` or deploying.
+
+These rules direct behavior but do not replace Git branch protections, credentials restrictions or OS permissions.
