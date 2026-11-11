@@ -33,7 +33,9 @@ export function MapView({ features, races, mode, setMode, onReliefError, onSelec
         else setMessage('Le fond de carte est partiellement indisponible. Les courses restent consultables.');
       });
       map.on('webglcontextlost', () => setMessage('L’affichage de la carte est interrompu. Retrouvez les courses avec Explorer les communes.'));
-      map.on('load', () => {
+      // Style readiness does not wait for a failing basemap's visible tiles.
+      map.once('style.load', () => {
+        if (!active) return;
         map.addSource('elevation', { type: 'raster-dem', url: DEM, tileSize: 512, encoding: 'terrarium', attribution: '© Mapterhorn' });
         map.addLayer({ id: 'relief', type: 'hillshade', source: 'elevation', paint: { 'hillshade-exaggeration': 0.35, 'hillshade-shadow-color': '#4d5e57', 'hillshade-highlight-color': '#fff8e8' } });
         map.addSource('communes', { type: 'geojson', data: empty, cluster: true, clusterRadius: 52, clusterMaxZoom: 11, clusterProperties: { race_count: ['+', ['get', 'race_count']] } });

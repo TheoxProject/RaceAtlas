@@ -255,6 +255,8 @@ def test_base_map_warning_does_not_silently_disable_summit(seeded, server):
         expect(
             page.get_by_text("Le fond de carte est partiellement indisponible.", exact=False)
         ).to_be_visible()
+        expect(page.locator(".result-count")).to_contain_text("12 courses")
+        expect(page.locator(".race-marker")).to_have_text("11", timeout=15000)
         page.get_by_role("button", name=re.compile("Summit")).click()
         page.wait_for_function(
             "Number(document.querySelector('.map-canvas').dataset.elevation) > 100"
@@ -262,8 +264,35 @@ def test_base_map_warning_does_not_silently_disable_summit(seeded, server):
         expect(page.get_by_role("button", name=re.compile("Summit"))).to_have_attribute(
             "aria-pressed", "true"
         )
+        page.wait_for_function(
+            "JSON.parse(document.querySelector('.map-canvas').dataset.camera).pitch === 60",
+            timeout=10000,
+        )
         assert camera(page)["pitch"] == 60
         browser.close()
+
+
+@pytest.mark.e2e
+def test_pending_basemap_does_not_block_real_race_markers(seeded, server):
+    with sync_playwright() as playwright:
+        browser = launch(playwright)
+        page = browser.new_page()
+        pending = intercept_map(page, base_pending=True)
+        page.clock.set_fixed_time("2026-11-11T12:00:00Z")
+        try:
+            page.goto(server)
+            expect(page.locator(".map-canvas")).to_have_attribute(
+                "data-ready", "true", timeout=20000
+            )
+            expect(page.locator(".result-count")).to_contain_text("12 courses")
+            expect(page.locator(".race-marker")).to_have_text("11", timeout=15000)
+            assert pending, "Basemap requests must still be held while race markers render"
+        finally:
+            try:
+                for route in pending:
+                    route.abort()
+            finally:
+                browser.close()
 
 
 @pytest.mark.e2e

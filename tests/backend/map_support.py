@@ -68,9 +68,10 @@ def offline_style():
     }
 
 
-def intercept_map(page, *, dem_failure=False, base_failure=False):
+def intercept_map(page, *, dem_failure=False, base_failure=False, base_pending=False):
     style = offline_style()
-    if base_failure:
+    pending = []
+    if base_failure or base_pending:
         style["sources"]["missing-base"] = {
             "type": "raster",
             "tileSize": 256,
@@ -79,7 +80,9 @@ def intercept_map(page, *, dem_failure=False, base_failure=False):
         style["layers"].append({"id": "missing-base", "type": "raster", "source": "missing-base"})
         page.route(
             "https://tiles.openfreemap.org/synthetic/**",
-            lambda route: route.fulfill(status=503, body="offline"),
+            (lambda route: pending.append(route))
+            if base_pending
+            else lambda route: route.fulfill(status=503, body="offline"),
         )
     page.route(STYLE_URL, lambda route: route.fulfill(json=style))
     page.route(
@@ -104,6 +107,7 @@ def intercept_map(page, *, dem_failure=False, base_failure=False):
     )
     # Any unexpected external style dependency fails locally rather than accessing providers.
     page.route("https://tiles.openfreemap.org/planet/**", lambda route: route.abort())
+    return pending
 
 
 def camera(page):
