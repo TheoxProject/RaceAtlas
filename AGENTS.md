@@ -45,6 +45,8 @@ If approval cannot be obtained for a restricted action, continue with synthetic 
 
 Subagents generally share the parent workspace, sandbox, and permissions; they do **not** have an independent worktree or security boundary by default. Do not run concurrent editors in the same worktree. Parallel development requires separate worktrees and explicit file ownership/interfaces. Use up to **three targeted correction cycles**; report unresolved blockers instead of approving by exhaustion.
 
+Develop each lot as coherent, independently testable features. Developer runs targeted checks while implementing. At each important feature milestone, freeze its SHA for a targeted independent Tester review; a full review is not required after every small commit. Finish the lot with a complete independent acceptance review of the final SHA. An intermediate verdict never approves a different final SHA.
+
 ## 4. GitHub-first development workflow
 
 For each independently testable feature or lot:
@@ -52,11 +54,11 @@ For each independently testable feature or lot:
 1. Start from the latest verified `origin/main`. Inspect `git status`, current branch, and worktree. Never implement directly on `main`.
 2. Create an isolated worktree and `feature/*` or `fix/*` branch. Split into parallel branches only when independence genuinely reduces integration risk.
 3. Publish the branch early and open a **Draft PR** linked to the lot and acceptance criteria. A pushed branch and Draft PR are visible publicly in this repository; do not expose secrets or private data.
-4. Make coherent **Conventional Commits**; push at meaningful checkpoints so GitHub reflects progress. Do not force-push or rewrite shared history.
-5. Run appropriate checks as development progresses. CI supplements, but does not replace, independent Tester review and real integration tests.
-6. Stop source edits; record the exact head SHA; request Tester review of that SHA. If source or tracked checkpoint files change later, the verdict is stale and must be renewed for the new SHA.
+4. Make coherent **Conventional Commits**; push at meaningful checkpoints so GitHub reflects progress. Inspect GitHub Actions after **every push**, check that runs belong to the current PR head, and diagnose/fix failures promptly instead of waiting for the end of the lot. Do not force-push or rewrite shared history.
+5. Run targeted feature checks during development and request targeted independent reviews at important frozen milestones. CI supplements, but does not replace, independent Tester review and real integration tests. Separate worktrees may be used for genuinely independent work; Tester never edits the application it reviews.
+6. At the end of the lot, stop source edits; record the exact final head SHA; request a **complete independent acceptance review** of that SHA. If source or tracked checkpoint files change later, the verdict is stale and must be renewed for the new SHA. Explicitly identify any evidence reused for unchanged code; never copy an old verdict to a new SHA.
 7. Require all merge gates below, then mark the PR ready and merge autonomously. Prefer **merge commits for substantial lots** and squash only for small fixes/docs when suitable.
-8. Confirm the resulting `main` SHA, CI/health checks where applicable, and record the integration result. Start the next approved lot from updated `main`.
+8. Confirm the resulting `main` SHA, tree and post-merge CI/health checks where applicable, and record the integration result. Wait for configured `main` checks to pass before starting the next dependent lot. Start the next approved lot from updated `main`.
 
 **Merge gate (all mandatory):**
 - Acceptance criteria met and integrated behavior actually exercised.

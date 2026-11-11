@@ -1,5 +1,7 @@
 # Développement local — Windows PowerShell
 
+Document du socle lot1 : les commandes d'installation restent utiles, mais les exemples de démonstration et le statut des routes ci-dessous décrivent ce jalon historique. Pour l'interface/API actuelles, suivre le [README](../../README.md) et le [guide lot5](../lot-5/local-development.md). Les règles de fusion actuelles figurent dans [AGENTS.md](../../AGENTS.md) et le [workflow](../AGENT_WORKFLOW.md).
+
 Prérequis : Python 3.12, Node.js 24 LTS (minimum 22.12), pnpm 10.20.0 et PostgreSQL 17.11 local. Installer pnpm avec `npm install --global pnpm@10.20.0` si nécessaire. PostgreSQL peut être installé nativement ou via Docker Desktop selon votre usage. Toutes les commandes partent de la racine du dépôt.
 
 ## Installation et démarrage
@@ -69,4 +71,4 @@ Aucun déploiement n'est effectué. Fournir `RACEATLAS_ENV=production` et `DATAB
 
 API livrée : `/api/health/live` (processus), `/api/health/ready` (DB et schéma accessibles), `/api/v1/races/{race_id}` (contrat `Race` v1), `/api/foundation/demo` (découverte bornée de démonstration, `{synthetic:true,race_id:string|null}`). Les sélections `/api/v1/races` et `/api/v1/map` restent au lot 4 et renvoient 404 JSON. L'OpenAPI lot 0 reste un contrat de conception, pas une déclaration que toutes ses routes sont opérationnelles.
 
-IDs nouvelles entités : UUID opaques par défaut ; les IDs lisibles du catalogue synthétique sont conservés conformément aux exemples du lot 0. La position d'une liste sert uniquement à l'affichage, jamais à son identité. Les règles/restrictions restent associées à leur liste ; aucune éligibilité personnelle n'est déduite. Les premières tables n'anticipent ni comptes ni import/synchronisation. L'intégration future privilégie un Merge commit, après accord du propriétaire.
+IDs nouvelles entités : UUID opaques par défaut ; les IDs lisibles du catalogue synthétique sont conservés conformément aux exemples du lot 0. La position d'une liste sert uniquement à l'affichage, jamais à son identité. Les règles/restrictions restent associées à leur liste ; aucune éligibilité personnelle n'est déduite. Les premières tables n'anticipent ni comptes ni import/synchronisation. L'intégration suit désormais les gates autonomes V1 d'AGENTS.md ; les opérations restreintes conservent leur autorisation propriétaire séparée.

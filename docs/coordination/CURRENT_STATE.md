@@ -1,45 +1,43 @@
 # Point de reprise RaceAtlas
 
-Dernier checkpoint UTC : 2026-11-11T13:31:36Z. **Lot5 correction cycle3 F7 tests/documentation validée localement ; aucun APPROVE ni merge lot5.**
+Dernier checkpoint UTC : **2026-11-11T13:40:34Z**. Lots0–5 intégrés ; préparation V1 en cours, **aucun déploiement**.
 
-## État Git et prochaine action
+## Git et tâche active
 
-- Worktree isolé `C:/Users/theop/.codex/worktrees/add4/RaceAtlas`, branche `feature/map-experience`, Developer seul writer pendant correction ; aucun fichier préexistant révoqué.
-- Base `origin/main` **3bd018bff1b60f3831606348831fd72375f557dd**, lots0–4 intégrés. Draft PR https://github.com/TheoxProject/RaceAtlas/pull/7.
-- Dernier candidat revu/local/distant **5cd0c5839ce596d0e0426613659422b8dbb416cd** : Tester **REQUEST CHANGES F7**, F1–F6 CLOSED. CI43028158824 FAILURE314PASS/1FAIL (mainE2E Summit pitch35 lu avant fin de mouvement). Rapport `.local-tools/tester-report-lot5.md` ; C2 sondes no-op/détails/requêtes ont PASS, chronologie locale échoue uniquement centre arrondi≈2e-12degrés, zoom/bearing/pitch identiques.
-- Le commit contenant ce checkpoint publie C3 ; relever son SHA local/distant/PR et sa propre CI. **C3 modifie seulement test_e2e.py et trois documents, aucun produit JS/Python/contrat.** Après push, éditions suivies arrêtées.
+- Worktree isolé réutilisé après propreté/arrêt des tests : `C:/Users/theop/.codex/worktrees/add4/RaceAtlas`, branche **feature/v1-readiness**. Le checkout personnel main est préservé.
+- Base locale/distante vérifiée : **5f8229245f31ff64f678cad9df331f7302bef76f** (`origin/main`). HEAD avant premier commit de préparation = cette base ; le commit contenant ce checkpoint sera le jalon RDY-01, à relever et publier avant revue.
+- Nouvelle PR Draft à ouvrir après premier commit. Aucun SHA de préparation approuvé ; CI à contrôler après chaque push.
+- Mission/critères : `docs/readiness/mission.md`. Notes techniques de préparation ignorées : `.local-tools/next-readiness-notes.md` ; ne pas les présenter comme configurations testées.
 
-| Tâche | État / preuve |
-|---|---|
-| L5-01/02/03 carte/API/détails | Livrés, comportement et contrats validés progressivement |
-| L5-C1 F1–F5 et fond pending | CLOSED indépendant surfc8 ;315tests/11Chromium PASS252,70s et CI315PASS133,58s |
-| L5-C2 F6 no-op période | CLOSED indépendant sur5cd : quatre combinaisons ISOyear/week×Tab/Enter, détails/pasrefetch/retours2027Janvier PASS |
-| L5-C3 F7 harness caméra | DONE local : attente réelle pitch, centre abs1e-9deg rel0, autres champs stricts, baseline zoomée et contrôle négatif reset |
-| L5-04 revue finale C3 | TODO exact nouveau SHA, troisième et dernier cycle ; aucune approbation par épuisement |
-| L5-05 CI/fusion | TODO, nouvelle CI complète315 et APPROVE exact obligatoires |
+| Tâche | Responsable | État |
+|---|---|---|
+| RDY-01 politique progressive, README, intégration5, qualification FFC | Coordinator | IN_PROGRESS, documents préparés, revue ciblée à obtenir |
+| RDY-02 CI SHA courant/échecs/main | Developer après libération | TODO |
+| RDY-03 Render/Neon/TLS/build/start sans activation | Developer | TODO |
+| RDY-04 preview privée/health/redémarrage/backup et tests locaux | Developer | TODO |
+| RDY-05 revue finale/CI/fusion/main | Coordinator/Tester | TODO |
+| Lot6 calendrier puis rapport pré-déploiement | Équipe | TODO après intégration/CI main ; décision de mois déjà acquise |
 
-**Prochaine action sûre unique :** Coordinator confirme le SHA final local/distant/PR, surveille sa CI complète et demande la revue indépendante ciblée C3 avec évaluation finale du lot. Aucun writer pendant revue. Si défaut persiste, le rapporter sans contourner la limite des cycles ; aucun merge avant tous les gates.
+**Prochaine action sûre unique :** publier le premier commit documentaire et ouvrir sa Draft PR, surveiller sa CI puis demander une revue indépendante ciblée RDY-01 du SHA figé. Ne pas éditer les sources suivies pendant cette revue. Développer ensuite CI/configuration dans cette PR ; aucune fusion sur un seul avis intermédiaire.
 
-## Preuves C3 et exigences conservées
+## Lot5 réellement intégré
 
-**3E2E PASS36,87s**,8désélectionnés, première campagne C3 code0 : main React→Flask→PostgreSQL/SQL actualisé/Summit, NouvelAn/ISO/matriceF6/invalides, fond503 avec Summit. Les deux tests Summit attendent réellement le pitch60 enregistré au moveend (maximum10s), puis assertion60 stricte ; élévationDEM réelle>100 et mode conservés. Les700ms fixes pour caméra sont supprimés, pas remplacés par un délai plus long.
+PR https://github.com/TheoxProject/RaceAtlas/pull/7, **APPROVE** indépendant exact **95bf1deabec10492100c0d6210dd3f30ccf57c3f**. CI https://github.com/TheoxProject/RaceAtlas/actions/runs/43029965848 **success** :315pytest156,61s,28frontend,26contrats/lint/build/dépendances verts. F1–F7 clos après trois cycles ; pas d'approbation par épuisement. Rapport final dans PR et `.local-tools/tester-report-lot5.md`, historiques initial/C1/C2 préservés.
 
-Comparateur partagé : seules les deux coordonnées du centre admettent **abs1e-9degré, rel0** (≈0,1mm maximum, contre≈2e-12 observés). Tous les autres champs, clés et zoom/bearing/pitch restent stricts. Trois anciennes égalités dictionnaires utilisent ce même comparateur. La chronologie effectue un vrai clic navigationZoomin, attend le zoom final initial+1 enregistré par moteur, puis prend la baseline ; contrôle négatif prouve que le comparateur rejette la caméra initiale. Invariance vérifiée après no-ops et retoursAnnée/Mois, puis changements réels, sans réinitialiser ce zoom non initial.
+Merge confirmé **5f8229245f31ff64f678cad9df331f7302bef76f** ; fetch et diff ont prouvé l'arbre identique au candidat approuvé. L'ancien workflow ne teste pas main après merge : aucune CI main prétendue, ajout demandé dans RDY-02. Preuves et limites dans `docs/lot-5/integration.md`. MapLibre5.11, caméra, scopes, pagination, crédits mobiles, nouveaux cas ISO/no-op et terrain réellement exercés. Dernière révision C3 seulement tests/docs ; centre toléré1e-9degré pour arrondi, autres champs stricts et reset réel rejeté.
 
-Aucun source produit modifié.28tests frontend C2 PASS9,87s (22catalogue+6App),26contrats/build/lint frontend de5cd réutilisés explicitement ; pas de nouvelles campagnes redondantes. Ruff37 lint/format et diff PASS C3. Migrations roundtrip de la fixture E2E jetable incluses.315tests indépendants surfc8 restent historiques ; **nouvelleCI complète sur C3 obligatoire**, aucun315local C3 revendiqué.
+## Décisions, qualification et suite
 
-C2 produit : ancre conservée pour année/mois/semaine normalisés inchangés, même objet/no-refetch/détails maintenus ; vrais changements et bornages conservés. SourceJS depuis5cd inchangé. MapLibre5.11.0 ; réponses catalogue1.0/options1.0/OpenAPIcollection1.1, migrationb7f4208ac112 inchangés. Bundle historique5cd1183,90kB/330,87gzip ; avertissement taille moteur conservé.
+Propriétaire : **Altitude2,5D initial**, Summit3D à la demande ; ouvrir le calendrier sélectionnera le mois affiché et le conservera au retour carte, autres filtres/caméra préservés. Aucun arbitrage produit en attente.
 
-## Suite après intégration5 et limites
+Qualification FFC limitée du11novembre : robots et mentions consultés, deux exemples publics en mémoire seulement. Calendrier échoue `layout_changed/debut`, fiche `html_structure/html`, dialecte synthétique non qualifié live. Aucun HTML brut ou participant archivé ; aucune API/handler/login contacté. Voir `docs/readiness/ffc-qualification.md`. Droits de collecte récurrente/republication non établis : **blocage d'activation**, pas de contournement. Fixtures et travaux indépendants continuent.
 
-TODO : AGENTS/workflow validation progressive, surveillance CI après push/contrôle SHA/tests main après merge ; README ; configs Render Free monolitheFlask/Waitress et NeonTLS sans création/déploiement/mutation distante. Lot6 calendrier mensuel puis rapport pré-déploiement propriétaire ; lots7 comptes/planning/ICS,8 exploitation/notifications/RC. Qualification FFC limitée Coordinator, incompatibilités HTML/droits à documenter séparément ; aucun importlive/récurrent/bulk autorisé.
-
-Choix propriétaire acquis : Altitude2,5D initial, Summit3D à la demande ; calendrier sélectionne le mois affiché et le conserve au retour carte, autres filtres/caméra préservés. Aucun arbitrage en attente. Seul smokeAltitude historique limité vu ; Summitlive expiré/non qualifié, ne pas relancer aveuglément. Droits FFC/terrain, performances matérielles mobiles/régionales restent gates avant release. Aucun déploiement, dépense, mutation distante ou tag/publication finale autorisé.
+Préparer Render Free monolithe Flask/Waitress + Neon TLS ; sources officielles consultées11novembre dans notes, limites à revérifier à l'utilisation. Aucun service créé ni distant connecté. Après lot6 : rapport propriétaire de pré-déploiement avant décision. Lots7 comptes/planning/ICS (expéditeur réel encore non validé),8 exploitation/notifications/backups puis RC. Publication/tag final, déploiement, dépense, mutation distante et collecte live récurrente restent non autorisés.
 
 ## Environnement et processus
 
-Python3.12.14 `C:/Users/theop/.codex/worktrees/1a1e/RaceAtlas/.venv/Scripts/python.exe`, Node24.22.1, frontend/node_modules et build5cd réutilisés. pnpm10.20 compatible en cache, ne pas employer wrapper11 contre store10. Chromium : `PLAYWRIGHT_BROWSERS_PATH=C:/Users/theop/.codex/worktrees/1a1e/RaceAtlas/.local-tools/browsers`.
+Python3.12.14 : `C:/Users/theop/.codex/worktrees/1a1e/RaceAtlas/.venv/Scripts/python.exe`. Node24.22.1, frontend/node_modules réutilisés ; pnpm10.20.0 compatible en cache, wrapper11 incompatible avec store10 à éviter. Chromium cache `C:/Users/theop/.codex/worktrees/1a1e/RaceAtlas/.local-tools/browsers`. Migration actuelle **b7f4208ac112**.
 
-PostgreSQL17.11 actif uniquement127.0.0.1:55434, cluster `.local-tools/pgdata-lot2-native`, utilisateur `raceatlas_local`. Developer `raceatlas_lot2_test`, Tester `raceatlas_lot2_review`, URL `postgresql+psycopg://raceatlas_local@127.0.0.1:55434/<base>`, opt-in `RACEATLAS_DISPOSABLE_DB=1`. Bases distinctes, fixtures synthétiques ; preview `_map_demo` séparée. Session Developer95430 terminée code0, aucun test/preview Developer restant ; PostgreSQL conservé actif. Ne pas initdb/reseed/réinstaller aveuglément ni arrêter tous les Node/Postgres.
+PostgreSQL17.11 existant seulement `127.0.0.1:55434`, cluster `.local-tools/pgdata-lot2-native`, utilisateur `raceatlas_local`. Developer `raceatlas_lot2_test`, Tester `raceatlas_lot2_review`, URL `postgresql+psycopg://raceatlas_local@127.0.0.1:55434/<base>`, opt-in `RACEATLAS_DISPOSABLE_DB=1`. Les deux bases ont12fixtures après derniers tests ; elles sont jetables et distinctes. Preview `raceatlas_map_demo` séparée, aucun serveur actif. Aucun processus de test/preview Developer ou Tester laissé actif ; PostgreSQL conservé. Ne pas initdb/réinstaller/reseed aveuglément ni arrêter tous les Node/Postgres.
 
-Git/DB/browser natifs autorisés nécessaires ; connecteur créationPR403 historique, fallback Git autorisé sans secret. Aucun reset/forcepush/main direct ; scripts ignorés anciens lots à ne pas relancer. Rapports/scripts/captures ignorés ne prouvent jamais une fusion. Tester/CI doivent viser le SHA final, même pour changement uniquement documentaire.
+Git natif et DB/browser nécessitent exécution native autorisée. Connecteur création PR403 historique : fallback Git/GCM dans ses permissions réelles, sans secret affiché. Scripts PR anciens à base/numéro statiques : ne pas les réutiliser aveuglément pour la nouvelle PR. Aucun reset/forcepush/main direct.
