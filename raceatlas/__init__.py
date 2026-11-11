@@ -3,14 +3,14 @@ from uuid import uuid4
 
 import click
 from flask import Flask, g, jsonify, request, send_from_directory
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine, select, text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 from werkzeug.exceptions import HTTPException
 
 from raceatlas.catalog import CatalogError, parse_query, select_page
 from raceatlas.config import database_url, environment
-from raceatlas.models import Race
+from raceatlas.models import Category, Race
 from raceatlas.seed import demo_id, seed_synthetic
 from raceatlas.serialization import race_document
 
@@ -66,6 +66,15 @@ def create_app(config=None):
     @app.get("/api/v1/map")
     def map_page():
         return jsonify(select_page(engine, parse_query(request.args), map_projection=True))
+
+    @app.get("/api/v1/catalog/options")
+    def catalog_options():
+        with Session(engine) as session:
+            categories = session.scalars(select(Category).order_by(Category.code)).all()
+            return jsonify(
+                contract_version="1.0.0",
+                categories=[{"code": item.code, "label": item.label} for item in categories],
+            )
 
     @app.errorhandler(HTTPException)
     def http_failure(exc):

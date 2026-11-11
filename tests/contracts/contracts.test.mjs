@@ -125,7 +125,7 @@ test('Régression : date-time borne heures, minutes, secondes et décalage',()=>
 });
 test('OpenAPI 3.1 : toutes références résolues localement et filtre commun',()=>{
   assert.equal(api.openapi,'3.1.0');
-  const walk=v=>{if(!v||typeof v!=='object')return;if(v.$ref){if(v.$ref.startsWith('#/'))resolve(api,v.$ref);else{assert(v.$ref.startsWith('./catalog.schema.json#/'));resolve(schema,v.$ref.slice('./catalog.schema.json'.length));}}for(const child of Object.values(v))walk(child);};walk(api);
+  const walk=v=>{if(!v||typeof v!=='object')return;if(v.$ref){if(v.$ref.startsWith('#/'))resolve(api,v.$ref);else{if(v.$ref === './catalog-options.schema.json'){checkSchema(read('contracts/catalog-options.schema.json'));}else{assert(v.$ref.startsWith('./catalog.schema.json#/'));resolve(schema,v.$ref.slice('./catalog.schema.json'.length));}}}for(const child of Object.values(v))walk(child);};walk(api);
   assert.deepEqual(api.paths['/api/v1/map'].get.parameters,api.paths['/api/v1/races'].get.parameters);
   assert.equal(api.paths['/api/v1/races/{race_id}'].get.parameters[0].name,'race_id');
 });

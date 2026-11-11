@@ -1,9 +1,9 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "RaceAtlas catalogue — contrat de conception",
-    "version": "1.0.0",
-    "description": "Routes non implémentées. Données synthétiques pour première carte."
+    "title": "RaceAtlas catalogue â€” contrat de conception",
+    "version": "1.1.0",
+    "description": "API catalogue, carte et options de filtres. Les réponses catalogue restent au contrat 1.0.0."
   },
   "paths": {
     "/api/v1/races": {
@@ -22,7 +22,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Projection du catalogue filtré",
+            "description": "Projection du catalogue filtrÃ©",
             "content": {
               "application/json": {
                 "schema": {
@@ -52,7 +52,7 @@
             }
           },
           "409": {
-            "description": "Curseur périmé",
+            "description": "Curseur pÃ©rimÃ©",
             "content": {
               "application/json": {
                 "schema": {
@@ -100,7 +100,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Projection du catalogue filtré",
+            "description": "Projection du catalogue filtrÃ©",
             "content": {
               "application/json": {
                 "schema": {
@@ -130,7 +130,7 @@
             }
           },
           "409": {
-            "description": "Curseur périmé",
+            "description": "Curseur pÃ©rimÃ©",
             "content": {
               "application/json": {
                 "schema": {
@@ -177,7 +177,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Épreuve et restrictions",
+            "description": "Ã‰preuve et restrictions",
             "content": {
               "application/json": {
                 "schema": {
@@ -207,7 +207,7 @@
             }
           },
           "409": {
-            "description": "Curseur périmé",
+            "description": "Curseur pÃ©rimÃ©",
             "content": {
               "application/json": {
                 "schema": {
@@ -222,6 +222,33 @@
               "application/json": {
                 "schema": {
                   "$ref": "./catalog.schema.json#/$defs/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service indisponible",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./catalog.schema.json#/$defs/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/catalog/options": {
+      "get": {
+        "operationId": "getCatalogOptions",
+        "responses": {
+          "200": {
+            "description": "Référentiel dynamique des catégories, indépendant de la sélection courante",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./catalog-options.schema.json"
                 }
               }
             }

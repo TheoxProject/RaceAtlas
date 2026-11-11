@@ -37,3 +37,13 @@ Connecteur création PR 403, accès Git local autorisé a servi sans secrets exp
 Publier cadrage/checkpoint, ouvrir Draft PR lot 5 et déléguer une tâche bornée au Developer, seul éditeur suivi. Proposer toute extension de métadonnées nécessaire avant de modifier les contrats. Aucun test lot 5 encore exécuté ; prochain gel seulement après code/tests/handoff/checkpoint, puis Tester et CI du même SHA.
 
 Dernier checkpoint UTC : 2026-11-11T07:55:11Z
+
+## Jalon WIP L5-A (2026-11-11T08:10Z)
+
+L5-01 DONE : branche initiale563b49e publiée, Draft PR https://github.com/TheoxProject/RaceAtlas/pull/7. L5-02/L5-03 IN_PROGRESS : modules temporels/API, filtres et détails React, regroupement communes/clusters MapLibre réel implémentés ; rendu navigateur pas encore validé. MapLibre5.11.0 installé via binaire pnpm10.20.0 en cache (wrapper système11 incompatible avec store10), cache MapLibre absent donc téléchargement borné autorisé. Aucun script de build de dépendance activé.
+
+Extension technique approuvée par Coordinator : GET `/api/v1/catalog/options` indépendant des courses filtrées, catégories dynamiques triées ; schéma séparé1.0.0, collection OpenAPI1.1.0 additive, réponses catalogue/map/detail1.0.0 inchangées.3tests API PostgreSQL PASS en5,40s,20tests frontend temporels/cycleAPI/UI PASS en11,21s,26contratsPASS. ESLint et build passent (bundle MapLibre important signalé par Vite, à documenter). Pas de gel ni avis Tester.
+
+Preview locale distincte créée vide par Coordinator : `raceatlas_map_demo` sur même serveur local. Migration head puis seed synthétique12courses réussis ; première tentative seed bloquée avant écriture par RACEATLAS_ENV=development invalide, corrigé en local. Pas de serveur preview durable actif à ce jalon. Ne pas réinitialiser les bases Reviewer/Developer pour preview. Seuls données et fournisseurs synthétiques dans les tests.
+
+Prochaine action sûre actualisée : remplacer les assertions Chromium de démonstration par les interactions carte réelles avec style/DEM déterministes interceptés, puis inspecter captures desktop/mobile/échecs et corriger les défauts avant régression globale/handoff. Ancienne prochaine action cadrage est accomplie ; les paragraphes ci-dessus constituent l'état courant WIP.
