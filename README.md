@@ -58,5 +58,6 @@ La cible préparée est un monolithe Flask/Waitress sur Render Free avec Neon Fr
 - [Contrat API OpenAPI 3.1](contracts/openapi.json)
 - [Fixtures synthétiques](fixtures/catalog.v1.json)
 - [Orchestration developer → tester](docs/AGENT_WORKFLOW.md)
+- [Préparation de la preview privée Render Free / Neon Free](docs/readiness/hosting.md)
 
 Les contrats et fixtures sont synthétiques. Leur validation seule ne remplace pas les tests de l'application ni la revue indépendante du SHA final.

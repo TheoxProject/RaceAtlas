@@ -1,31 +1,45 @@
-# Handoff Developer — préparation V1, jalon RDY-02
+# Handoff Developer — préparation V1, candidat final RDY-01–05
 
-Branche `feature/v1-readiness`, Draft PR https://github.com/TheoxProject/RaceAtlas/pull/8, base **5f8229245f31ff64f678cad9df331f7302bef76f**. RDY-01 **136768cd6499f18858e27834926bd3bf216150f7** approuvé uniquement sur son périmètre documentaire, CI43031656451 success. Le commit contenant ce handoff est le candidat RDY-02 ; relever HEAD local/distant/PR. Éditions suivies arrêtées après push pour revue ciblée. **Pas de verdict final, aucun merge ou déploiement.**
+Branche `feature/v1-readiness`, Draft PR https://github.com/TheoxProject/RaceAtlas/pull/8, base **5f8229245f31ff64f678cad9df331f7302bef76f**. Jalons intermédiaires approuvés : RDY-01 documentaire **136768cd6499f18858e27834926bd3bf216150f7**, RDY-02 CI **1d33dc480b1cdc3f9de4a9c959788f6ad982d24b** ; ce dernier a CI43086393213 success (315 tests en128,50s,28 frontend, gardes début/fin réellement exercées). **Aucun avis intermédiaire n'approuve le candidat final.** Le commit contenant ce handoff publie RDY-03/04 ; relever son SHA local/distant/PR, puis aucune édition suivie pendant revue complète. Aucun merge, service ou déploiement effectué.
 
-## Changements
+## Livré
 
-`.github/workflows/ci.yml` conserve jobintegrated, permissions contentsread et tous contrôles dépendances/lint/contrats/frontend/build/Chromium/pytest/migrations. Checkout du head source exact PR ou SHA push, sans credentials persistés. La même garde vérifie HEAD et la refpublique `refs/pull/N/head` anonymement avant et après validation ; une révision périmée échoue. Concurrence annule anciens runs d'une PR. Le pushmain déclenchera les contrôles après intégration ; aucun runmain de cette nouvelle configuration prétendu avant merge.
+- CI du jalon précédent conservée : job `integrated`, `contents: read`, checkout source exact sans credentials persistés, contrôle HEAD/ref PR publique avant/après, concurrence, `push` sur `main`, annotations/résumé et preuves synthétiques limitées à un jour. Tous contrôles existants préservés, aucun bot/write/schedule/déploiement.
+- Nouveau `raceatlas/serve.py` : préflight avant `create_app`, environnement production, URL complète `postgresql+psycopg`, `sslmode=verify-full`, CA absolue lisible/non vide, port valide non réservé et credentials sans défaut. Garde Basic WSGI obligatoire, comparaison UTF-8 avec `compare_digest`, toutes routes/assets/ready protégés ; seuls GET/HEAD exacts sans query sur `/api/health/live` publics. Refus401 générique, aucune réflexion des headers, réponses privées `no-store`. Main Waitress sur `0.0.0.0:$PORT`, quatre threads ; aucun startup migration/seed/connexion DB.
+- `ops/render.yaml` : un Web Service Python plan `free`, branche `main`, auto-déploiement et previews Blueprint désactivés, aucune DB Render ou `preDeployCommand`. Secrets `sync: false`, versions Python3.12.14/Node24.22.1. `ops/build.sh` installe les dépendances Python de production et compile React avec pnpm10.20 gelé, outils de build explicitement inclus ; `ops/.gitattributes` force LF. Aucun build/start ne migre ou seed.
+- `.env.example` : nouveaux secrets vides et URL de maintenance distincte, jamais intégrée au service Web. Nouveau `tests/backend/test_hosting.py` :70 cas ciblés. Guide `docs/readiness/hosting.md`, lien README et checkpoint actualisés. Les sources catalogue, modèles, migrations, frontend et configuration `create_app` restent inchangées.
 
-Sur échec : résumé et annotation liés au SHA, JUnit pytest et seulement sept captures synthétiques connues copiées vers RUNNER_TEMP non caché, upload rétention1jour. Aucun upload global.local-tools/hiddenfiles, provider-altitude, console/env ou données réelles. Pas de permissions supplémentaires, workflow_run privilégié, bot d'écriture, schedule ou déploiement. Pipeline série fail-fast conservé ; aucune réduction des tests.
+## Vérifications réelles
 
-Nit RDY-01 autorisé : SHA complet rendu copiable dans `docs/lot-5/integration.md`. Checkpoint actualisé, aucun changement applicatif.
+Python3.12.14, Node24.22.1 et caches existants réutilisés. PostgreSQL17.11 déjà actif sur127.0.0.1:55434 vérifié avant tests, aucune réinitialisation du cluster. Seulement la base jetable Developer `_test` utilisée ; `_review` et `_map_demo` préservées.
 
-## Vérifications locales réellement effectuées
+```powershell
+$python = 'C:/Users/theop/.codex/worktrees/1a1e/RaceAtlas/.venv/Scripts/python.exe'
+$env:TEST_DATABASE_URL = 'postgresql+psycopg://raceatlas_local@127.0.0.1:55434/raceatlas_lot2_test'
+$env:RACEATLAS_DISPOSABLE_DB = '1'
+& $python -m pytest tests/backend/test_hosting.py -q --tb=short
+& $python -m ruff check raceatlas migrations tests/backend
+& $python -m ruff format --check raceatlas migrations tests/backend
+node --test tests/contracts/contracts.test.mjs
+Push-Location frontend
+node node_modules/vite/bin/vite.js build
+Pop-Location
+& 'C:/Users/theop/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/python.exe' -m pip --python $python check
+git diff --check
+```
 
-Extraction des scriptsBash du YAML vers fichiers ignorés `.local-tools/ci-check-source-probe.sh` et `ci-stage-probe.sh`, puis `C:/Program Files/Git/bin/bash.exe -n` : PASS pour les deux. Exécution native en lecturepubliqueGitHub, sans helpercredential ni extraHeader :
+**70 tests hosting PASS6,07s**, sans skip : TLS plus faible/manquant, CA absente/relative/vide/illisible/dupliquée, variables invalides et ports réservés, préflight avant factory, startup sans connexion/migration/seed, appel Waitress simulé borné, Basic malformé/UTF-8, mauvaise authentification et protection des pages/assets/API/ready ; vraie intégration Flask/React compilé/PostgreSQL et panne locale sans DSN/Authorization dans réponse/logs. Les identifiants des tests paramétrés ne contiennent pas les headers Basic. Migrations upgrade/check/downgrade/upgrade/check de la fixture incluses. Premières campagnes65 puis69 cas également vertes ; la dernière70 les remplace sans transformer un échec en succès.
 
-- HEAD136768cd et PR8 actuelle : PASS.
-- SHA attendu000… au lieu du checkout : refus code1 attendu, pas un échec produit.
-- HEAD courant mais refPR7 différente : refus code1 attendu, pas une ancienne révision acceptée.
-- Branche sans numéroPR (chemin push) : PASS du contrôle local ; pas une affirmation de CI pushmain exécutée.
-- Staging des seules captures connues : sept PNG,683478octets, provider-altitude/env exclus. Répertoire isolé référencé dans `.local-tools/ci-probe-temp-path.txt`, aucun fichier existant supprimé.
+Ruff lint/format **39 fichiers PASS**,26 contrats PASS, pip sans paquet cassé, diff PASS. Build frontend réel **PASS8,94s**,37 modules, JS1183,90kB/330,87kB gzip etCSS81,76kB/13,15kB gzip ; avertissement du moteur conservé. Frontend source/28 tests inchangés depuis CI1d33, explicitement réutilisés plutôt que rejoués localement ; nouvelle CI complète obligatoire.
 
-`git diff --check` PASS. Aucun backend/frontend produit modifié ; tests complets à exécuter par la CI de ce SHA. PyYAML absent des cachesPython interrogés, aucune installation effectuée pour ce seul contrôle et aucune validationYAML locale prétendue. Le succès de plateforme reste indispensable avant revue finale/fusion.
+Build Render préparatoire : `bash -n`, LF et exécution des trois commandes avec stubs, arrêt code9 attendu sur échec de la première commande, PASS via `.local-tools/hosting-build-probe.py`. **Aucun pip global, téléchargement pnpm ou build Render complet exécuté.** Premier Bash sandbox refusé par MSYS ; reprise native autorisée réussie, pas de modification pour masquer ce refus. `js-yaml`4.3.2 transitive déjà en cache : parsing CI/Blueprint et vérification des champs critiques PASS via `.local-tools/readiness-yaml-check.cjs`, aucune dépendance ajoutée.17 liens relatifs README/guide vérifiés sans cible absente.
 
-## Revue et prochaine fonction
+## Limites et revue finale
 
-Tester vérifie SHA/propreté/base, préservation des contrôles et permissions, checkout source exact, gardes début/fin, échec visible, artefacts limités et trigger main. CI réelle du SHA obligatoire. Les sondes négatives locales ne sont pas des résultats rouges de CI, ni un contournement des permissions. Pendant gel, aucun writer.
+Préflight CA local : lecture d'un fichier, pas validation d'une chaîne Neon ; les tests utilisent un placeholder synthétique et aucune connexion distante. Waitress main vérifié par interception, aucune ouverture de service externe. Le guard a été exercé localement avec la vraie app et PostgreSQL. Basic est uniquement la preview privée, pas les comptes du lot7 ; aucun flag ne permet de la rendre publique. Render terminera HTTPS selon sa documentation, pas TLS dans Waitress ni confiance globale dans un proxy.
 
-Après libération de ce jalon : RDY-03/04 configuration RenderFree/NeonTLS, launcherWaitress et guardpreview privé, tests locaux négatifs/integration, procédures migrations/backups séparées et docshosting. Rien de cela n'est encore implémenté ou qualifié ici. Aucun service créé, remoteDB connecté/muté, compte payant, appelFFC ou déploiement. Rapport pré-déploiement propriétaire après lot6 ; finalpublication/tag et activationlive soumis à autorisation.
+Le guide décrit migrations manuelles seulement après autorisation et une procédure de sauvegarde chiffrée hors Render, avec client PostgreSQL17 compatible, secrets via environnement/fichier privé et restauration d'abord en nouvelle DB locale jetable. **Aucun dump/restore réalisé ; preuve opérationnelle complète au lot8.** Aucun service, compte payant, handshake Neon, mutation distante, FFC ou déploiement. Limites gratuites vérifiées dans les sources officielles datées11novembre, à revérifier avant activation ; usage de compte non inspecté et aucune garantie de coût/SLA.
 
-Références primaires consultées2026-11-11 : [sourceSHA pull_request](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#pull_request), [upload-artifact](https://github.com/actions/upload-artifact#uploading-hidden-files). Les copies explicites en répertoire non caché évitent d'activer globalement l'upload des fichiers cachés.
+Tester : confirmer le SHA final/propreté/base ; évaluer tous critères RDY-01–05, inspecter le delta depuis les jalons et réutiliser explicitement leurs preuves seulement sur les chemins inchangés. Rejouer les70 cas sur `_review` et les sondes indépendantes utiles, vérifier les configurations/build/guards/limites, puis contrôler la CI du nouveau SHA. Aucun writer pendant revue. Les avis RDY-01/02 restent intermédiaires ; nouveau APPROVE exact et CI verte nécessaires. Après merge éventuel, vérifier arbre/SHA et attendre la nouvelle CI `main` avant lot6.
+
+Rapport propriétaire de pré-déploiement après lot6, puis lots7/8 et RC ; publication finale/tag, déploiement, mutations distantes et collecte FFC récurrente restent soumis à autorisation. Les blocages de compatibilité/droits FFC et de qualification matérielle/provider antérieurs sont préservés. Tous processus Developer terminés, PostgreSQL existant conservé actif ; ne pas initdb/reseed/réinstaller aveuglément.

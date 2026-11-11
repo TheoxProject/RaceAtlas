@@ -1,0 +1,28 @@
+# Configuration only: importing/creating/deploying this service requires owner approval.
+previews:
+  generation: "off"
+
+services:
+  - type: web
+    name: raceatlas-private-preview
+    runtime: python
+    plan: free
+    repo: https://github.com/TheoxProject/RaceAtlas
+    branch: main
+    autoDeployTrigger: "off"
+    buildCommand: bash ops/build.sh
+    startCommand: python -m raceatlas.serve
+    healthCheckPath: /api/health/live
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.14
+      - key: NODE_VERSION
+        value: 24.22.1
+      - key: RACEATLAS_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: PREVIEW_USERNAME
+        sync: false
+      - key: PREVIEW_PASSWORD
+        sync: false
