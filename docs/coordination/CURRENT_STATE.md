@@ -1,48 +1,49 @@
 # Point de reprise RaceAtlas
 
-- Horodatage : **2026-11-10T20:53:56Z**, lot3 correction2 livrée, nouveau gel/revue requis.
-- Branche `feature/auditable-sync`, worktree `C:/Users/theop/.codex/worktrees/add4/RaceAtlas`.
-- Base `origin/main` vérifiée `f33d837844abdc51ebcafc066da3c16cb4982f34`. Parent avant livraison documentaire finale : `9467f30ea3ae599892b904fb514a175b952b1f3d` ; le commit contenant ce checkpoint est le candidat, relever HEAD après commit/push et comparer à PR#5.
-- Draft PR https://github.com/TheoxProject/RaceAtlas/pull/5. Dernier Tester : **REQUEST CHANGES F2/P1 sur228074c** (F1 résolu). CI source WIP9467f30e verte https://github.com/TheoxProject/RaceAtlas/actions/runs/42899106770 ; elle ne valide pas le nouveau SHA documentaire final. Aucune approbation du nouveau candidat.
-- Mission `docs/lot-3/mission.md`, usage et handoff finaux `docs/lot-3/local-development.md` / `docs/lot-3/developer-handoff.md` alignés sur le périmètre réel.
+Dernier checkpoint UTC : **2026-11-11T07:38:37Z**. Lot4 API catalogue/filtres prêt pour gel/revue, **pas encore intégré ni approuvé**.
 
-## Intégration précédente
+## Git et tâches
 
-Lot2 DONE : PR https://github.com/TheoxProject/RaceAtlas/pull/4, Tester APPROVE `511208b7d5142f708106a3d4a8f51d170fb3e148`, CI success https://github.com/TheoxProject/RaceAtlas/actions/runs/42839321426, merge confirmé `f33d837844abdc51ebcafc066da3c16cb4982f34`, arbre identique au SHA testé. Lots0/1 et politique PR#3 déjà intégrés. Sources/droits FFC live non qualifiés.
+- Worktree isolé `C:/Users/theop/.codex/worktrees/add4/RaceAtlas`, branche `feature/catalog-filters`.
+- Base vérifiée `origin/main` : `48a2c3766276c92b2074139847c95e8d6a7b3916`.
+- Dernier jalon code local/distant : `9364442f4c6034b389dcac80cd46105d045b687e`. Le commit contenant ce checkpoint et le handoff final est le candidat à relever avec `git rev-parse HEAD`, puis comparer au distant et à la PR.
+- Draft PR https://github.com/TheoxProject/RaceAtlas/pull/6. CI jalon code `9364442` verte https://github.com/TheoxProject/RaceAtlas/actions/runs/42980914993 ; **CI du candidat final à vérifier**, aucune preuve ancienne ne vaut pour le nouveau SHA.
+- Mission `docs/lot-4/mission.md`, handoff `docs/lot-4/developer-handoff.md`, usage `docs/lot-4/local-development.md`.
 
 | Tâche | Responsable | État |
 |---|---|---|
-| L3-01 cadrage/PR/checkpoint | Coordinator | DONE |
-| L3-02 import/audit/identité | Developer | DONE, F1 corrigé |
-| L3-03 communes/cache/intégration | Developer | DONE |
-| L3-C2 fraîcheur présence/absence | Developer | DONE ;205tests globaux PASS |
-| L3-04 revue indépendante exacte | Tester | REQUEST CHANGES ancien228074c ; nouvelle revue TODO |
-| L3-05 CI/fusion/bilan | Coordinator | TODO |
+| L4-01 mission/checkpoint/Draft PR | Coordinator | DONE |
+| L4-02 validation/sélection/filtres | Developer | DONE, validations locales réussies |
+| L4-03 pagination/carte/couverture/intégration | Developer | DONE, handoff livré |
+| L4-04 revue indépendante SHA figé | Tester | TODO, aucun SHA lot4 approuvé |
+| L4-05 CI/fusion/bilan | Coordinator | TODO, aucun merge lot4 |
 
-## Correction2 et preuves actuelles
+## Livraison et preuves actuelles
 
-F2 : anciens alias ou observations entre dernière fiche présente et absence plus récente rétablissaient present ; un item frais planifié mais futur/échoué prêtait une fausse autorité. Rapports/scripts ignorés `.local-tools/tester-report-lot3-228074c.md`, `tester-presence-freshness-lot3-c1.py`, `tester-failed-fresh-alias-lot3-c1.py`.
+GET catalogue/carte via un sélecteur SQL partagé, catégories dynamiques, ET dans un seul scope confirmé, règles/restrictions intactes, dates civiles inclusives et saison source indépendante. Recherche nom/commune/organisateur normalisée NFD et espaces Unicode ; JSON/paramètres/types stricts, erreurs publiques structurées sans détails SQL. Jsonschema4.25.1 promu en dépendance runtime épinglée.
 
-Repère interne **source_record.presence_checked_at** essentiel pour séparer dernière fiche et dernier contrôle de présence OU absence. Nouvelle migration statique **8a95eb41f220**, après65107930ec01 inchangée : backfill sur audits réels, exclusion d'un positif via n'importe quel alias/fenêtre du même run, réparation conservatrice des égalités uniquement en présence d'une vraie preuve d'absence. Colonne nullable compatible anciens writers/seed, contrainte présence>=fiche. API/sérialisation/contrats inchangés.
+Pagination triée date/ID, curseur lié au filtre et à la version, invalidation409. Rayon à deux flux indépendants partageant offset/limite : confirmées dans `total`, candidates non localisées à part ; des pages vides avec continuation sont attendues, parcourir jusqu'à `next_cursor=null`. Une Feature par course au centre communal ; regroupement visuel au lot5. Graphes chargés uniquement pour la page<=200, compteurs SQL.
 
-Baseline immuable par course au début du run ; historique rejeté avant géocodeur/preuves. Aucun consensus planifié ne donne de fraîcheur. Après succès effectif d'un item frais du run, un doublon historique strictement identique peut être audité **historical_duplicate** sans aucune mutation. Sinon reste stale/error. Égalité de timestamp avec absence : aucune présence réputée plus récente. Absences répétées avancent le repère même déjà to_verify ; dernière fiche et révision métier conservées. Erreur fournisseur : cache/diagnostic conservés mais aucun remplacement de l'item ; fenêtres indépendantes positives toujours autorisées.
+Nouvelle migration **b7f4208ac112** après **8a95eb41f220** : singleton epoch/révision et triggers statement sur dix tables métier/audits, normalisation SQL sans extension, ordre monotone `ImportRun.catalog_order`. Anciennes migrations inchangées, aucun GRANT/SECURITY DEFINER. Audits historiques préordre conservativement incomplets ; dernière tentative sélectionnée par ordre de création DB, jamais UUID/horloge source. Dernier succès conservé après échec ; exhaustivité intrinsèque toujours inconnue. Une requête lit version/compteurs/items/couverture dans un snapshot PostgreSQL read-only REPEATABLE READ, puis restaure le pool.
 
-**205/205pytest PASS en118,24s**, aucun skip (110lot3+95antérieurs dont3Chromium) ;86sync ciblés PASS en62,97s. Migration aller-retour/drift, backfills réels antérieur/égal et présence via alias, répétition d'absence, échecs futur/fournisseur/stockage et25nouvelles régressions compris. Ruff lint/format26fichiers PASS,26contrats PASS, diff-check PASS. SQL initial a échoué sur alias réservé (rollback), corrigé ; alignement avant flush des scopes et replay historique corrigés avant86PASS puis205PASS. Frontend/dépendances inchangés, non réexécutés localement en C2 ; CI source WIP verte inclut leur vérification. Aucun défaut non résolu confirmé à la remise développeur ; Tester/CI du SHA final toujours requis.
+**Résultats Developer sur code9364442 :304/304pytest PASS en90,46s**, aucun skip, dont99tests catalogue et3Chromium antérieurs. Migration upgrade/check/downgrade/upgrade/check exécutée. Les neuf scénarios contractuels passent par Flask/PostgreSQL, puis parcours limite1 ; tests rayon sans confirmées et avec continuation, catégories u15/recherche Unicode, triggers/rollback/seed/import, commit concurrent réel entre compteurs et graphes, fixture→adaptateur→sync→catalogue/carte, centres communs, couverture échec/reprise/historique et erreurs malformées.26contrats Node PASS ; Ruff lint/format35fichiers PASS ; frontend ESLint PASS, Vitest3/3PASS (threads1), build Vite PASS ; pip check PASS ; diff-check PASS.
 
-## Décisions et restrictions
+Première expansion ciblée :15échecs/58succès ; défaut réel NBSP corrigé dans normalisation SQL, chaînes NUL/surrogates isolés rejetées avant DB. Les autres échecs provenaient d'attendus nouveaux incorrects (Error plat et suppression raw SQL contraire aux FK), corrigés. Puis98tests ciblés PASS, extension finale incluse dans304tests globaux. Aucun défaut local restant connu, aucune revue indépendante acquise.
 
-F1 reste protégé : conflits par identité résolue avant mutation, preuves sur baseline stable ; aucun rapprochement par nom/rang. Absence globale différée jusqu'au succès entier du périmètre, présence dédupliquée, centres connus préservés. Cache/provenance hors réseau, rectangle numérique sans preuve GIS polygonale.
+## Intégration antérieure confirmée
 
-Autonomie technique ; consultation pour produit majeur, silence jamais accord. Choix propriétaire futur lot5 explicitement résolu : **Altitude2.5D initial, Summit3D à la demande**. Aucun arbitrage en attente. Aucun achat, déploiement, fournisseur/source live, collecte régionale, mutation distante/production ou publication finale autorisé. Nouvelle migration exécutée uniquement en base locale jetable.
+Lot3 DONE : https://github.com/TheoxProject/RaceAtlas/pull/5. Tester **APPROVE** SHA **54a14472222c0278017074a82ab097f3de8b50ac**, CI https://github.com/TheoxProject/RaceAtlas/actions/runs/42899767502 **success**, check integrated vert au même SHA, aucun autre statut requis en attente. Merge GitHub confirmé **48a2c3766276c92b2074139847c95e8d6a7b3916**, arbre identique au SHA approuvé (`git diff --exit-code` réussi). Workflow PR, pas de CI push main distincte attendue.205tests backend,26contrats et22assertions indépendantes PASS ; rapport PR#5 et `.local-tools/tester-report-lot3.md`. Lots0/1/2 et politique agents également intégrés (lot2PR#4, SHA revu511208b, mergef33d837).
 
-## Environnement/processus
+## Environnement et restrictions
 
-Python3.12.14 `C:/Users/theop/.codex/worktrees/1a1e/RaceAtlas/.venv/Scripts/python.exe`. PostgreSQL17.11 actif **127.0.0.1:55434**, cluster `.local-tools/pgdata-lot2-native`, log `.local-tools/postgres-lot2.log`. Bases `raceatlas_lot2_test` Developer / `raceatlas_lot2_review` Tester, utilisateur `raceatlas_local`, URL `postgresql+psycopg://raceatlas_local@127.0.0.1:55434/<base>`, opt-in `RACEATLAS_DISPOSABLE_DB=1`. Réinitialisations réservées aux bases jetables ; aucun test concurrent sur même base. Migration head8a95eb41f220 appliquée en base développeur.
+Python3.12.14 réutilisé : `C:/Users/theop/.codex/worktrees/1a1e/RaceAtlas/.venv/Scripts/python.exe`. Pip check via runtime `C:/Users/theop/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/python.exe -m pip --python <venvpython> check`. Node cache Codex ; `frontend/node_modules` local, build prêt. Binaires locaux eslint/bin/eslint.js, vitest/vitest.mjs, vite/bin/vite.js ; Vitest `--pool=threads --maxWorkers=1` fonctionne ici (3tests exécutés), aucun changement produit pour le runner.
 
-Browser `PLAYWRIGHT_BROWSERS_PATH=C:/Users/theop/.codex/worktrees/1a1e/RaceAtlas/.local-tools/browsers`. Dépendances frontend déjà locales ; Vitest local nécessite si fork timeout `--pool=threads --maxWorkers=1` sans config produit changée. Aucun test développeur encore actif à ce checkpoint, cluster laissé actif.
+PostgreSQL17.11 actif seulement `127.0.0.1:55434`, cluster existant `.local-tools/pgdata-lot2-native`, log `.local-tools/postgres-lot2.log`. Redémarré à la reprise sans réinitialisation. Bases jetables séparées `raceatlas_lot2_test` Developer et `raceatlas_lot2_review` Tester ; utilisateur `raceatlas_local`, URL `postgresql+psycopg://raceatlas_local@127.0.0.1:55434/<base>`, opt-in `RACEATLAS_DISPOSABLE_DB=1`. Browser `PLAYWRIGHT_BROWSERS_PATH=C:/Users/theop/.codex/worktrees/1a1e/RaceAtlas/.local-tools/browsers`. Tous les tests Developer terminés, aucun test actif ; cluster conservé. Ne pas initdb/reseed aveuglément ni partager les bases pendant tests. Ancien cluster incomplet `.local-tools/pgdata-lot2` et deps partielles à ignorer.
 
-Ne pas réinitialiser le cluster ni utiliser ancien `.local-tools/pgdata-lot2` incomplet ; copie deps partielle `.local-tools/frontend-deps-partial` ignorée. Processus natifs DB/Chromium hors sandbox, Git métadonnées partagées nécessite autorisation. Connecteur PR403 connu, fallback accès Git configuré autorisé sans secret affiché. Aucun rejet auto-review dans cette correction. Ne pas réutiliser aveuglément scripts PR4 pour PR5.
+Exécution native DB/Chromium et Git métadonnées partagées requiert hors sandbox autorisé. Aucun rejet auto-review. Connecteur création PR403 historique, fallback Git autorisé ; ne pas relancer les scripts ignorés lot2/lot3 de merge ciblant anciennes PR/bases. Ne pas stopper de processus Node sans propriété prouvée.
+
+Choix propriétaire explicites futurs lots5/6 : **Altitude2.5D initial, Summit3D à la demande ; ouvrir le calendrier passe la période partagée au mois affiché, conservé au retour carte, autres filtres et caméra préservés.** Aucun arbitrage en attente. Aucune collecte FFC live/régionale, synchronisation récurrente, dépense, mutation distante/production, déploiement ou publication finale autorisé. Données synthétiques et géocodeur injecté hors réseau ; droits/qualification FFC live ouverts. Rectangle de géocodage : plausibilité, pas preuve GIS. Pas de benchmark sur corpus FFC régional réel.
 
 ## Prochaine action sûre
 
-Après commit/push documentaire final : **figer le résultat de git rev-parse HEAD, confirmer le head PR#5 puis demander la nouvelle revue Tester de ce SHA exact sur sa base locale raceatlas_lot2_review**. Suivre la CI du même SHA ; preuves finales dans PR sans modifier le candidat. Aucun test développeur actif, cluster laissé actif. Ne pas fusionner ni commencer lot4 avant tous les gates. Cette livraison correspond au cycle2/3 maximum ; aucune approbation par épuisement.
+Coordinator : relever et confirmer le **SHA final du commit de handoff** local/distant/PR, puis demander au Tester la revue indépendante de ce SHA avec sa seule base `_review` et contrôler la CI de ce même SHA. Aucune édition suivie après gel ; preuves de revue/CI dans la PR. Le lot n'est DONE qu'après tous les gates et merge GitHub confirmé. Ne pas fusionner sur la seule preuve304pytest locale.

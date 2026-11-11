@@ -84,7 +84,7 @@ def test_postgresql_rejects_invalid_business_data(seeded, statement):
 def test_errors_empty_and_no_api_spa_fallback(session, app):
     client = app.test_client()
     assert client.get("/api/foundation/demo").json == {"synthetic": True, "race_id": None}
-    for path in ("/api/v1/races/absent", "/api/v1/races", "/api/v1/map", "/api/absent"):
+    for path in ("/api/v1/races/absent", "/api/absent"):
         response = client.get(path)
         assert response.status_code == 404
         validate(response.json, "Error")
