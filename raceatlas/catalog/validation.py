@@ -54,11 +54,16 @@ def _bounded(value, depth=0):
     if depth > 20 or isinstance(value, float) and not math.isfinite(value):
         raise ValueError("invalid_structure")
     if isinstance(value, dict):
-        for item in value.values():
+        for key, item in value.items():
+            _bounded(key, depth + 1)
             _bounded(item, depth + 1)
     elif isinstance(value, list):
         for item in value:
             _bounded(item, depth + 1)
+    elif isinstance(value, str) and (
+        "\x00" in value or any(0xD800 <= ord(character) <= 0xDFFF for character in value)
+    ):
+        raise ValueError("invalid_text")
 
 
 def parse_json(value, *, max_length=16384):

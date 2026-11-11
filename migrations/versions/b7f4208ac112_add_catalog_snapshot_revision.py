@@ -68,7 +68,8 @@ def upgrade():
             SELECT btrim(regexp_replace(lower(translate(
                 regexp_replace(normalize(coalesce(value, ''), NFD), U&'[\0300-\036f]', '', 'g'),
                 'ŒÆØÐÞẞ', 'œæøðþß'
-            )), '[[:space:]]+', ' ', 'g'))
+            )), U&'[\0009-\000d\001c-\0020\0085\00a0\1680\2000-\200a\2028\2029\202f\205f\3000]+',
+            ' ', 'g'))
         $$
     """)
 

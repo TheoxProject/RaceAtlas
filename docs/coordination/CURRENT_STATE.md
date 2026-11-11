@@ -40,8 +40,14 @@ Nouvelle migration statique **b7f4208ac112** : compteur catalogue singleton+epoc
 
 jsonschema4.25.1 déjà disponible promu aux dépendances runtime épinglées (requirements/pyproject), pas de réinstallation. **41tests ciblés PASS en6,41s** :31validations +9scénarios contractuels viaFlask/PostgreSQL +témoins corrélés, migration aller-retour/check comprise. RuffPASS. Un attendu de nouveau test avait omis le préfixe réel d'un scope, corrigé contre fixture. Aucun test global lot4 ni Tester acquis.
 
+## Jalon WIP L4-B
+
+Reprise vérifiée le 2026-11-11 sur `c707d08f70470eabe90c27062a583daa6e53e8d5`, distant identique, CI WIP verte (run42905266499), base inchangée. Cluster existant redémarré sans initdb ni reseed ; seul Developer utilise `_test`.
+
+**98 tests catalogue ciblés PASS en23,16s**, PostgreSQL réel et migration aller-retour/check inclus. Ajouts : parcours limite1 des neuf scénarios, parité carte/catalogue, invalidation des dix triggers, rollback, seed répété, catégorie u15 dynamique, recherche nom/commune/organisateur, bornes civiles multijours, commit concurrent réel entre compteurs et graphes, adaptateur→sync→API, dernier échec et reprise, audits historiques conservateurs, erreurs publiques malformées. Un défaut réel de normalisation d'espace Unicode NBSP corrigé dans la nouvelle migration ; validation rejette également NUL et surrogates isolés avant accès DB. Premiers échecs de tests corrigés : forme Error plate du contrat et suppression ORM requise par les FK. RuffPASS. Depuis ces98tests, extension des preuves de flux rayon vide avec continuation et de projection de deux imports au même centre ; nouveau run/global encore à exécuter. Aucun candidat figé ni avis Tester.
+
 ## Prochaine action sûre
 
-Compléter pagination limite1, invalidation déclenchée, catégories dynamiques/recherche Unicode, snapshot concurrent, couverture/dernier échec et fixture→adaptateur→sync→catalogue/carte. Puis checks globaux et docs finales avant gel SHA/Tester. Ne pas fusionner ce WIP.
+Exécuter le backend global avec PostgreSQL `_test` et Chromium existants, puis contrats Node/lint/build/tests frontend et handoff avant gel SHA/Tester. Ne pas fusionner ce WIP.
 
-Dernier checkpoint UTC : 2026-11-10T21:27:32Z
+Dernier checkpoint UTC : 2026-11-11T07:36:08Z
