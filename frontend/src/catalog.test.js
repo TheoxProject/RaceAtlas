@@ -1,9 +1,26 @@
 import { expect, test, vi } from 'vitest';
-import { groupCommunes, initialPeriod, loadSelection, parisToday, periodRange, weeksInYear } from './catalog.js';
+import { changePeriod, groupCommunes, initialPeriod, loadSelection, parisToday, periodRange, weeksInYear } from './catalog.js';
 
 test('initial year uses the current Paris civil year, including UTC New Year boundary', () => {
-  expect(initialPeriod(new Date('2026-12-31T23:30:00Z'))).toEqual({ mode: 'year', year: 2027, month: 1, week: 1 });
+  expect(initialPeriod(new Date('2026-12-31T23:30:00Z'))).toEqual({ mode: 'year', year: 2027, month: 1, day: 1, isoYear: 2026, week: 53 });
   expect(parisToday(new Date('2026-06-01T22:30:00Z'))).toEqual({ year: 2026, month: 6, day: 2 });
+});
+test('civil and ISO views share the focused date at both New Year boundaries', () => {
+  const january = initialPeriod(new Date('2027-01-01T12:00:00Z'));
+  expect(periodRange(changePeriod(january, { mode: 'week' }))).toEqual({ from: '2026-12-28', to: '2027-01-03' });
+  expect(periodRange(changePeriod(january, { mode: 'month' }))).toEqual({ from: '2027-01-01', to: '2027-01-31' });
+  const december = initialPeriod(new Date('2025-12-31T12:00:00Z'));
+  expect(december).toMatchObject({ year: 2025, isoYear: 2026, week: 1 });
+  expect(periodRange(changePeriod(december, { mode: 'week' }))).toEqual({ from: '2025-12-29', to: '2026-01-04' });
+});
+test('changing the focused month/year recomputes ISO and clamps leap days; changing ISO synchronizes civil month', () => {
+  const leap = initialPeriod(new Date('2024-02-29T12:00:00Z'));
+  expect(changePeriod(leap, { year: 2025 })).toMatchObject({ year: 2025, month: 2, day: 28, isoYear: 2025, week: 9 });
+  const week = changePeriod(initialPeriod(new Date('2027-01-01T12:00:00Z')), { mode: 'week' });
+  const next = changePeriod(week, { isoYear: 2027 });
+  expect(next).toMatchObject({ isoYear: 2027, week: 52, year: 2027, month: 12, day: 27 });
+  expect(periodRange(changePeriod(next, { mode: 'month' }))).toEqual({ from: '2027-12-01', to: '2027-12-31' });
+  expect(changePeriod(next, { month: 1 })).toMatchObject({ year: 2027, month: 1, day: 27, isoYear: 2027, week: 4 });
 });
 test.each([
   [{ mode: 'year', year: 2026 }, { from: '2026-01-01', to: '2026-12-31' }],

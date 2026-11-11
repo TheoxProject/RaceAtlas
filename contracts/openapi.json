@@ -1,7 +1,7 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "RaceAtlas catalogue â€” contrat de conception",
+    "title": "RaceAtlas catalogue — contrat de conception",
     "version": "1.1.0",
     "description": "API catalogue, carte et options de filtres. Les réponses catalogue restent au contrat 1.0.0."
   },
@@ -22,7 +22,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Projection du catalogue filtrÃ©",
+            "description": "Projection du catalogue filtré",
             "content": {
               "application/json": {
                 "schema": {
@@ -52,7 +52,7 @@
             }
           },
           "409": {
-            "description": "Curseur pÃ©rimÃ©",
+            "description": "Curseur périmé",
             "content": {
               "application/json": {
                 "schema": {
@@ -100,7 +100,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Projection du catalogue filtrÃ©",
+            "description": "Projection du catalogue filtré",
             "content": {
               "application/json": {
                 "schema": {
@@ -130,7 +130,7 @@
             }
           },
           "409": {
-            "description": "Curseur pÃ©rimÃ©",
+            "description": "Curseur périmé",
             "content": {
               "application/json": {
                 "schema": {
@@ -177,7 +177,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Ã‰preuve et restrictions",
+            "description": "Épreuve et restrictions",
             "content": {
               "application/json": {
                 "schema": {
@@ -207,7 +207,7 @@
             }
           },
           "409": {
-            "description": "Curseur pÃ©rimÃ©",
+            "description": "Curseur périmé",
             "content": {
               "application/json": {
                 "schema": {

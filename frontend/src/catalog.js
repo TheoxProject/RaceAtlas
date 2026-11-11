@@ -13,13 +13,32 @@ export function isoMonday(year, week = 1) {
   return new Date(+fourth - ((fourth.getUTCDay() + 6) % 7) * day + (week - 1) * 7 * day);
 }
 export function weeksInYear(year) { return Math.round((isoMonday(year + 1) - isoMonday(year)) / (7 * day)); }
+function anchoredPeriod(date) {
+  const thursday = new Date(+date + (3 - (date.getUTCDay() + 6) % 7) * day);
+  const isoYear = thursday.getUTCFullYear();
+  return { year: date.getUTCFullYear(), month: date.getUTCMonth() + 1, day: date.getUTCDate(), isoYear, week: Math.floor((+date - isoMonday(isoYear)) / (7 * day)) + 1 };
+}
 export function initialPeriod(now = new Date()) {
   const today = parisToday(now);
-  return { mode: 'year', year: today.year, month: today.month, week: 1 };
+  return { mode: 'year', ...anchoredPeriod(new Date(Date.UTC(today.year, today.month - 1, today.day))) };
+}
+export function changePeriod(period, patch) {
+  if (patch.isoYear !== undefined || patch.week !== undefined) {
+    const isoYear = patch.isoYear ?? period.isoYear ?? period.year;
+    const week = Math.min(patch.week ?? period.week, weeksInYear(isoYear));
+    return { ...period, ...patch, ...anchoredPeriod(isoMonday(isoYear, week)) };
+  }
+  if (patch.year !== undefined || patch.month !== undefined) {
+    const year = patch.year ?? period.year, month = patch.month ?? period.month;
+    const lastDay = new Date(Date.UTC(year, month, 0)).getUTCDate();
+    return { ...period, ...patch, ...anchoredPeriod(new Date(Date.UTC(year, month - 1, Math.min(period.day ?? 1, lastDay)))) };
+  }
+  return { ...period, ...patch };
 }
 export function periodRange(period) {
   if (period.mode === 'week') {
-    const from = isoMonday(period.year, Math.min(period.week, weeksInYear(period.year)));
+    const year = period.isoYear ?? period.year;
+    const from = isoMonday(year, Math.min(period.week, weeksInYear(year)));
     return { from: isoDate(from), to: isoDate(new Date(+from + 6 * day)) };
   }
   const month = period.mode === 'month' ? period.month : 1;

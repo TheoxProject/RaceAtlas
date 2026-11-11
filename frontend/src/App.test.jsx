@@ -7,8 +7,34 @@ import fixture from '../../fixtures/catalog.v1.json';
 vi.mock('./MapView.jsx', () => ({ MapView: () => <div aria-label="Moteur carte isolé en test unitaire" /> }));
 vi.mock('./catalog.js', async importOriginal => ({ ...await importOriginal(), getJson: vi.fn(), loadSelection: vi.fn() }));
 const data = (items = fixture.races) => ({ total: items.length, items: items.map(race => ({ race, matching_scope_ids: [] })), features: [], unlocated_count: items.length, unlocatedIds: items.map(race => race.id), coverage: {} });
-afterEach(() => { cleanup(); vi.resetAllMocks(); });
+afterEach(() => { cleanup(); vi.resetAllMocks(); vi.useRealTimers(); });
 function prepare(value = data()) { getJson.mockResolvedValue({ categories: [{ code: 'u15', label: 'U15' }] }); loadSelection.mockResolvedValue(value); }
+
+test('New Year ISO mode uses the containing week and rejects fractional year/week selections', async () => {
+  vi.setSystemTime(new Date('2027-01-01T12:00:00Z'));
+  prepare(data([])); render(<App />);
+  await screen.findByText('Aucune course dans cette sélection');
+  expect(screen.getByLabelText('Année civile').value).toBe('2027');
+  fireEvent.click(screen.getByRole('button', { name: 'Semaine ISO', exact: true }));
+  await waitFor(() => expect(loadSelection.mock.lastCall[0]).toMatchObject({ from: '2026-12-28', to: '2027-01-03' }));
+  expect(screen.getByLabelText('Année ISO').value).toBe('2026');
+  expect(screen.getByLabelText('Semaine ISO').value).toBe('53');
+  for (const [label, invalid, restored] of [['Année ISO', '2026.5', '2026'], ['Semaine ISO', '2.5', '53'], ['Semaine ISO', '', '53'], ['Semaine ISO', '0', '53'], ['Semaine ISO', '-1', '53']]) {
+    const input = screen.getByLabelText(label);
+    fireEvent.change(input, { target: { value: invalid } });
+    fireEvent.blur(input);
+    expect(input.value).toBe(restored);
+  }
+  expect(loadSelection.mock.lastCall[0]).toMatchObject({ from: '2026-12-28', to: '2027-01-03' });
+  const year = screen.getByLabelText('Année ISO');
+  fireEvent.change(year, { target: { value: '2027' } }); fireEvent.blur(year);
+  await waitFor(() => expect(loadSelection.mock.lastCall[0]).toMatchObject({ from: '2027-12-27', to: '2028-01-02' }));
+  expect(screen.getByLabelText('Semaine ISO').value).toBe('52');
+  fireEvent.click(screen.getByRole('button', { name: 'Année', exact: true }));
+  const civil = screen.getByLabelText('Année civile');
+  fireEvent.change(civil, { target: { value: '2027.5' } }); fireEvent.blur(civil);
+  expect(civil.value).toBe('2027');
+});
 
 test('current year selection and dynamic categories are independent of filtered races', async () => {
   prepare(data([])); render(<App />);

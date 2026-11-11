@@ -24,9 +24,9 @@ def server(app):
     thread.join(timeout=5)
 
 
-def open_map(page, server, **kwargs):
-    SHOTS.mkdir(exist_ok=True)
-    page.clock.set_fixed_time("2026-11-11T12:00:00Z")
+def open_map(page, server, *, now="2026-11-11T12:00:00Z", **kwargs):
+    SHOTS.mkdir(parents=True, exist_ok=True)
+    page.clock.set_fixed_time(now)
     intercept_map(page, **kwargs)
     page.goto(server)
     expect(page.locator(".map-canvas")).to_have_attribute("data-ready", "true", timeout=20000)
@@ -48,7 +48,7 @@ def test_compiled_react_flask_postgresql(seeded, server):
         expect(page.get_by_role("button", name=re.compile("Altitude"))).to_have_attribute(
             "aria-pressed", "true"
         )
-        SHOTS.mkdir(exist_ok=True)
+        SHOTS.mkdir(parents=True, exist_ok=True)
         page.screenshot(path=str(SHOTS / "desktop.png"))
         before = camera(page)
         previous_marker = page.locator(".race-marker").get_attribute("style")
@@ -117,7 +117,13 @@ def test_compiled_mobile_filters_nonlocalized_and_radius(seeded, server):
         expect(page.locator(".result-count")).to_contain_text("12 courses")
         expect(page.locator(".race-marker")).to_have_text("11", timeout=15000)
         expect(page.locator(".race-marker")).to_be_visible()
+        assert_attribution_unobscured(page)
         page.screenshot(path=str(SHOTS / "mobile.png"))
+        page.get_by_role("button", name="Explorer les communes").click()
+        assert_attribution_unobscured(page)
+        page.get_by_role("button", name=re.compile("Course fictive race-access-ambiguous")).click()
+        assert_attribution_unobscured(page)
+        page.get_by_role("button", name="Fermer les détails").click()
         page.get_by_role("button", name=re.compile("Filtres")).click()
         page.get_by_label("Route", exact=True).check()
         page.get_by_label("open 1", exact=True).check()
@@ -137,9 +143,88 @@ def test_compiled_mobile_filters_nonlocalized_and_radius(seeded, server):
         page.get_by_role("button", name=re.compile("Course fictive race-unlocated")).click()
         expect(page.get_by_text("cette course n’est pas comptée", exact=False)).to_be_visible()
         expect(page.get_by_text("Centre de commune non disponible")).to_be_visible()
+        assert_attribution_unobscured(page)
         page.screenshot(path=str(SHOTS / "mobile-details.png"))
         assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
         browser.close()
+
+
+def assert_attribution_unobscured(page):
+    expect(page.locator(".map-attribution a")).to_have_count(4)
+    assert page.locator(".map-attribution a").evaluate_all("""links => links.every(link => {
+        const rect = link.getBoundingClientRect();
+        const hit = document.elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2);
+        return hit && link.contains(hit);
+    })""")
+
+
+@pytest.mark.e2e
+def test_new_year_iso_inputs_and_clean_screenshot_directory(seeded, server, monkeypatch, tmp_path):
+    screenshots = tmp_path / "absent-parent" / "screenshots"
+    monkeypatch.setattr(__import__(__name__), "SHOTS", screenshots)
+    with sync_playwright() as playwright:
+        browser = launch(playwright)
+        page = browser.new_page(viewport={"width": 1440, "height": 960})
+        filters = []
+        page.on("request", lambda request: filters.append(request.url))
+        open_map(page, server, now="2027-01-01T12:00:00Z")
+        assert screenshots.is_dir()
+        expect(page.get_by_label("Année civile")).to_have_value("2027")
+        expect(page.locator(".result-count strong")).to_have_text("1")
+        expect(page.locator(".race-marker")).to_be_visible(timeout=15000)
+        # Capture after the initial 500 ms camera transition, before changing any period.
+        page.wait_for_timeout(700)
+        before = camera(page)
+        page.get_by_role("button", name="Semaine ISO", exact=True).click()
+        expect(page.get_by_label("Année ISO")).to_have_value("2026")
+        expect(page.get_by_label("Semaine ISO", exact=True)).to_have_value("53")
+        wait_period_filter(page, filters, "2026-12-28", "2027-01-03")
+        expect(page.locator(".result-count strong")).to_have_text("1")
+        page.get_by_role("button", name="Explorer les communes").click()
+        expect(page.get_by_role("button", name=re.compile("race-mtb-multiday"))).to_be_visible()
+        page.get_by_role("button", name="Fermer les détails").click()
+        for label, invalid, restored in [
+            ("Année ISO", "2026.5", "2026"),
+            ("Semaine ISO", "2.5", "53"),
+            ("Semaine ISO", "", "53"),
+            ("Semaine ISO", "0", "53"),
+            ("Semaine ISO", "-1", "53"),
+        ]:
+            field = page.get_by_label(label, exact=True)
+            field.fill(invalid)
+            field.press("Tab")
+            expect(field).to_have_value(restored)
+        wait_period_filter(page, filters, "2026-12-28", "2027-01-03")
+        page.get_by_label("Année ISO").fill("2027")
+        page.get_by_label("Année ISO").press("Enter")
+        expect(page.get_by_label("Semaine ISO", exact=True)).to_have_value("52")
+        wait_period_filter(page, filters, "2027-12-27", "2028-01-02")
+        page.get_by_label("Semaine ISO", exact=True).fill("54")
+        page.get_by_label("Semaine ISO", exact=True).press("Enter")
+        expect(page.get_by_label("Semaine ISO", exact=True)).to_have_value("52")
+        page.get_by_role("button", name="Année", exact=True).click()
+        page.get_by_label("Année civile").fill("2027.5")
+        page.get_by_label("Année civile").press("Enter")
+        expect(page.get_by_label("Année civile")).to_have_value("2027")
+        wait_period_filter(page, filters, "2027-01-01", "2027-12-31")
+        assert camera(page) == before
+        browser.close()
+
+
+def wait_period_filter(page, requests, start, end):
+    import json
+    from urllib.parse import parse_qs, urlparse
+
+    def last_filter():
+        urls = [url for url in requests if "/api/v1/races?" in url]
+        return json.loads(parse_qs(urlparse(urls[-1]).query)["filter"][0]) if urls else {}
+
+    expect(page.locator(".result-count")).not_to_contain_text("Recherche")
+    for _ in range(100):
+        if last_filter().get("from") == start and last_filter().get("to") == end:
+            return
+        page.wait_for_timeout(50)
+    assert last_filter().get("from") == start and last_filter().get("to") == end
 
 
 @pytest.mark.e2e
@@ -241,6 +326,7 @@ def test_catalogue_409_is_bounded_and_retry_reloads_real_postgresql(seeded, serv
 
 @pytest.mark.e2e
 def test_webgl_unavailable_keeps_accessible_race_details(seeded, server):
+    SHOTS.mkdir(parents=True, exist_ok=True)
     with sync_playwright() as playwright:
         browser = playwright.chromium.launch(args=["--disable-webgl"])
         page = browser.new_page(viewport={"width": 390, "height": 844})

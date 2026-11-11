@@ -1,6 +1,12 @@
 # Handoff Developer — lot5
 
-Branche `feature/map-experience`, Draft PR https://github.com/TheoxProject/RaceAtlas/pull/7, base intégrée `3bd018bff1b60f3831606348831fd72375f557dd`. Dernier jalon **code testé** publié : **7f85cf4df97adf110e1fe10f9e75606cfa777583**. Le commit contenant ce handoff et le checkpoint final constitue le candidat ; relever HEAD et le comparer au distant/PR avant revue. Aucun APPROVE lot5 ni merge acquis. Après publication finale, éditions suivies arrêtées.
+Branche `feature/map-experience`, Draft PR https://github.com/TheoxProject/RaceAtlas/pull/7, base intégrée `3bd018bff1b60f3831606348831fd72375f557dd`. Ancien candidat **4ce971f6a96d7d0ccbec75553db07f1f3389c388** : revue indépendante **REQUEST CHANGES** et CI307PASS/6FAIL. Correction cycle1 en cours ; le commit contenant ce checkpoint est un jalon de correction, **pas encore le candidat final approuvé**. Aucun APPROVE lot5 ni merge acquis.
+
+## Correction cycle1 — état de publication intermédiaire
+
+F1 : répertoires captures créés avec parents, scénario sansWebGL autonome ; un dixième E2E initialise un parent absent sous tmp_path. F2 : crédits dans une rangée auto dimensionnée de la carte ; bottom sheet mobile occupe seulement la rangée supérieure, quatre liens réellement hit-testés avant/exploration/détails. F3/F4 : date d'ancrage civile, année ISO distincte et label contextuel ; années/semaines entières validées au blur/Entrée, semaines hors maximum bornées ; passage initial2027-01-01 →2026W53 tout en gardant initialement l'année civile2027. Changements explicites des périodes synchronisent l'ancrage sans caméra. F5 : sept textes UTF8 OpenAPI restaurés, schémas/version/route options inchangés.
+
+Régressions ciblées :23frontend PASS11,57s,26contrats PASS, lint/build PASS ; mobile et WebGL intégrés PASS, nouveau parcours NouvelAn PASS12,65s. Capture caméra après marqueur+700ms pour laisser finir sa transition initiale500ms ; assertion exacte conservée. Attendus de test initialement erronés corrigés contre fixture multijour2026-12-31..2027-01-02 et nom exact, sans masquer une régression. Captures mobile/détails inspectées avec crédits visibles. Campagne complète et nouvelle revue du SHA final restent à faire ; les résultats historiques ci-dessous décrivent l'ancien candidat et ne valident pas encore ce correctif.
 
 ## Livré et fichiers
 

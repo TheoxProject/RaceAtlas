@@ -1,12 +1,27 @@
-import { DEPARTMENTS, MONTHS, SPORTS, TYPES, weeksInYear } from './catalog.js';
+import { changePeriod, DEPARTMENTS, MONTHS, SPORTS, TYPES, weeksInYear } from './catalog.js';
 
 export function PeriodControls({ period, setPeriod }) {
-  const change = patch => setPeriod(value => ({ ...value, ...patch, week: Math.min(patch.week ?? value.week, weeksInYear(patch.year ?? value.year)) }));
+  const change = patch => setPeriod(value => changePeriod(value, patch));
+  const weekMode = period.mode === 'week', year = weekMode ? period.isoYear ?? period.year : period.year;
+  const commitYear = event => {
+    const value = Number(event.target.value);
+    if (Number.isInteger(value) && value >= 1900 && value <= 2200) change(weekMode ? { isoYear: value } : { year: value });
+    else event.target.value = year;
+  };
+  const commitWeek = event => {
+    const value = Number(event.target.value);
+    if (Number.isInteger(value) && value >= 1) {
+      const week = Math.min(value, weeksInYear(year));
+      event.target.value = week;
+      change({ week });
+    }
+    else event.target.value = period.week;
+  };
   return <section className="period-controls" aria-label="Période des courses">
     <div className="segmented">{[['year', 'Année'], ['month', 'Mois'], ['week', 'Semaine ISO']].map(([value, label]) => <button key={value} aria-pressed={period.mode === value} onClick={() => change({ mode: value })}>{label}</button>)}</div>
-    <label>Année<input key={period.year} aria-label="Année civile" type="number" min="1900" max="2200" defaultValue={period.year} onBlur={event => { const year = Number(event.target.value); if (year >= 1900 && year <= 2200) change({ year }); else event.target.value = period.year; }} onKeyDown={event => { if (event.key === 'Enter') event.currentTarget.blur(); }} /></label>
+    <label>{weekMode ? 'Année ISO' : 'Année'}<input key={`${period.mode}-${year}`} aria-label={weekMode ? 'Année ISO' : 'Année civile'} type="number" min="1900" max="2200" step="1" defaultValue={year} onBlur={commitYear} onKeyDown={event => { if (event.key === 'Enter') event.currentTarget.blur(); }} /></label>
     {period.mode === 'month' && <label>Mois<select aria-label="Mois" value={period.month} onChange={event => change({ month: Number(event.target.value) })}>{MONTHS.map((name, index) => <option key={name} value={index + 1}>{name}</option>)}</select></label>}
-    {period.mode === 'week' && <label>Semaine ISO<input type="number" min="1" max={weeksInYear(period.year)} value={period.week} onChange={event => { const week = Number(event.target.value); if (week >= 1) change({ week }); }} /></label>}
+    {weekMode && <label>Semaine ISO<input key={`${year}-${period.week}`} type="number" min="1" max={weeksInYear(year)} step="1" defaultValue={period.week} onBlur={commitWeek} onKeyDown={event => { if (event.key === 'Enter') event.currentTarget.blur(); }} /></label>}
   </section>;
 }
 
