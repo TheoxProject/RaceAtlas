@@ -10,6 +10,33 @@ const data = (items = fixture.races) => ({ total: items.length, items: items.map
 afterEach(() => { cleanup(); vi.resetAllMocks(); vi.useRealTimers(); });
 function prepare(value = data()) { getJson.mockResolvedValue({ categories: [{ code: 'u15', label: 'U15' }] }); loadSelection.mockResolvedValue(value); }
 
+test('unchanged ISO controls preserve details, requests and the New Year civil anchor', async () => {
+  vi.setSystemTime(new Date('2027-01-01T12:00:00Z'));
+  const race = fixture.races.find(race => race.id === 'race-mtb-multiday');
+  prepare(data([race])); render(<App />);
+  await screen.findByText('Données synthétiques · courses fictives');
+  fireEvent.click(screen.getByRole('button', { name: 'Semaine ISO', exact: true }));
+  await waitFor(() => expect(loadSelection.mock.lastCall[0]).toMatchObject({ from: '2026-12-28', to: '2027-01-03' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Explorer les communes' }));
+  fireEvent.click(screen.getByRole('button', { name: new RegExp(race.name) }));
+  const requests = loadSelection.mock.calls.length;
+  for (const label of ['Année ISO', 'Semaine ISO']) {
+    const input = screen.getByLabelText(label);
+    fireEvent.focus(input); fireEvent.blur(input);
+    input.focus(); fireEvent.keyDown(input, { key: 'Enter' });
+  }
+  fireEvent.click(screen.getByRole('button', { name: 'Semaine ISO', exact: true }));
+  await new Promise(resolve => setTimeout(resolve, 250));
+  expect(loadSelection).toHaveBeenCalledTimes(requests);
+  expect(screen.getByRole('heading', { name: race.name })).toBeTruthy();
+  fireEvent.click(screen.getByRole('button', { name: 'Mois', exact: true }));
+  await waitFor(() => expect(loadSelection.mock.lastCall[0]).toMatchObject({ from: '2027-01-01', to: '2027-01-31' }));
+  expect(screen.getByLabelText('Année civile').value).toBe('2027');
+  expect(screen.getByLabelText('Mois').value).toBe('1');
+  fireEvent.click(screen.getByRole('button', { name: 'Année', exact: true }));
+  await waitFor(() => expect(loadSelection.mock.lastCall[0]).toMatchObject({ from: '2027-01-01', to: '2027-12-31' }));
+});
+
 test('New Year ISO mode uses the containing week and rejects fractional year/week selections', async () => {
   vi.setSystemTime(new Date('2027-01-01T12:00:00Z'));
   prepare(data([])); render(<App />);

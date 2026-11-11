@@ -13,6 +13,22 @@ test('civil and ISO views share the focused date at both New Year boundaries', (
   expect(december).toMatchObject({ year: 2025, isoYear: 2026, week: 1 });
   expect(periodRange(changePeriod(december, { mode: 'week' }))).toEqual({ from: '2025-12-29', to: '2026-01-04' });
 });
+test.each(['2027-01-01', '2025-12-31', '2024-02-29'])('unchanged normalized periods preserve object identity and the civil anchor on %s', date => {
+  const civil = initialPeriod(new Date(`${date}T12:00:00Z`));
+  const week = changePeriod(civil, { mode: 'week' });
+  for (const period of [civil, week]) {
+    for (const patch of [{}, { mode: period.mode }, { year: period.year }, { month: period.month }, { isoYear: period.isoYear }, { week: period.week }]) expect(changePeriod(period, patch)).toBe(period);
+  }
+  const sameWeek = changePeriod(week, { isoYear: week.isoYear, week: week.week, mode: 'month' });
+  expect(sameWeek).toEqual({ ...week, mode: 'month' });
+  expect(periodRange(sameWeek)).toEqual(periodRange({ ...civil, mode: 'month' }));
+});
+test('a week clamped to the already selected ISO week does not reanchor its civil date', () => {
+  const week = changePeriod(initialPeriod(new Date('2027-01-01T12:00:00Z')), { mode: 'week' });
+  expect(changePeriod(week, { week: 54 })).toBe(week);
+  expect(changePeriod(week, { week: 53, mode: 'year' })).toMatchObject({ mode: 'year', year: 2027, month: 1, day: 1 });
+  expect(changePeriod(week, { week: 52 })).toMatchObject({ year: 2026, month: 12, day: 21, week: 52 });
+});
 test('changing the focused month/year recomputes ISO and clamps leap days; changing ISO synchronizes civil month', () => {
   const leap = initialPeriod(new Date('2024-02-29T12:00:00Z'));
   expect(changePeriod(leap, { year: 2025 })).toMatchObject({ year: 2025, month: 2, day: 28, isoYear: 2025, week: 9 });

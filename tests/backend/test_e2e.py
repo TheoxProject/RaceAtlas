@@ -180,9 +180,38 @@ def test_new_year_iso_inputs_and_clean_screenshot_directory(seeded, server, monk
         expect(page.get_by_label("Semaine ISO", exact=True)).to_have_value("53")
         wait_period_filter(page, filters, "2026-12-28", "2027-01-03")
         expect(page.locator(".result-count strong")).to_have_text("1")
-        page.get_by_role("button", name="Explorer les communes").click()
-        expect(page.get_by_role("button", name=re.compile("race-mtb-multiday"))).to_be_visible()
-        page.get_by_role("button", name="Fermer les détails").click()
+        for label, key, return_mode in [
+            ("Année ISO", "Tab", "Année"),
+            ("Année ISO", "Enter", "Mois"),
+            ("Semaine ISO", "Tab", "Mois"),
+            ("Semaine ISO", "Enter", "Année"),
+        ]:
+            page.get_by_role("button", name="Explorer les communes").click()
+            page.get_by_role("button", name=re.compile("race-mtb-multiday")).click()
+            selection_requests = [
+                url for url in filters if re.search(r"/api/v1/(races|map)\?", url)
+            ]
+            field = page.get_by_label(label, exact=True)
+            field.focus()
+            field.press(key)
+            page.get_by_role("button", name="Semaine ISO", exact=True).click()
+            # Longer than the 180 ms debounce: no unchanged selection may trigger a request.
+            page.wait_for_timeout(250)
+            assert [
+                url for url in filters if re.search(r"/api/v1/(races|map)\?", url)
+            ] == selection_requests
+            expect(
+                page.get_by_role("heading", name="Course fictive race-mtb-multiday")
+            ).to_be_visible()
+            page.get_by_role("button", name="Fermer les détails").click()
+            page.get_by_role("button", name=return_mode, exact=True).click()
+            end = "2027-01-31" if return_mode == "Mois" else "2027-12-31"
+            wait_period_filter(page, filters, "2027-01-01", end)
+            expect(page.get_by_label("Année civile")).to_have_value("2027")
+            if return_mode == "Mois":
+                expect(page.get_by_label("Mois", exact=True)).to_have_value("1")
+            page.get_by_role("button", name="Semaine ISO", exact=True).click()
+            wait_period_filter(page, filters, "2026-12-28", "2027-01-03")
         for label, invalid, restored in [
             ("Année ISO", "2026.5", "2026"),
             ("Semaine ISO", "2.5", "53"),

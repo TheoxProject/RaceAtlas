@@ -23,17 +23,20 @@ export function initialPeriod(now = new Date()) {
   return { mode: 'year', ...anchoredPeriod(new Date(Date.UTC(today.year, today.month - 1, today.day))) };
 }
 export function changePeriod(period, patch) {
+  const mode = patch.mode ?? period.mode;
   if (patch.isoYear !== undefined || patch.week !== undefined) {
     const isoYear = patch.isoYear ?? period.isoYear ?? period.year;
     const week = Math.min(patch.week ?? period.week, weeksInYear(isoYear));
+    if (isoYear === (period.isoYear ?? period.year) && week === period.week) return mode === period.mode ? period : { ...period, mode };
     return { ...period, ...patch, ...anchoredPeriod(isoMonday(isoYear, week)) };
   }
   if (patch.year !== undefined || patch.month !== undefined) {
     const year = patch.year ?? period.year, month = patch.month ?? period.month;
+    if (year === period.year && month === period.month) return mode === period.mode ? period : { ...period, mode };
     const lastDay = new Date(Date.UTC(year, month, 0)).getUTCDate();
     return { ...period, ...patch, ...anchoredPeriod(new Date(Date.UTC(year, month - 1, Math.min(period.day ?? 1, lastDay)))) };
   }
-  return { ...period, ...patch };
+  return mode === period.mode ? period : { ...period, mode };
 }
 export function periodRange(period) {
   if (period.mode === 'week') {
