@@ -12,7 +12,7 @@ export function MapView({ features, races, mode, setMode, onReliefError, onSelec
   const [message, setMessage] = useState(''), [ready, setReady] = useState(false);
   useEffect(() => { current.current = { onSelect, chooseCenter, onCenter, races }; });
   useEffect(() => {
-    let map, markers = [], resize, active = true;
+    let map, markers = [], resize, active = true, markerSignature = '';
     const failTerrain = () => {
       if (!map?.getSource('elevation')) return;
       map.setTerrain(null);
@@ -29,7 +29,7 @@ export function MapView({ features, races, mode, setMode, onReliefError, onSelec
       map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'bottom-right');
       map.getCanvas().setAttribute('aria-label', 'Carte des courses en Auvergne-Rhône-Alpes');
       map.on('error', event => {
-        if (event.sourceId === 'elevation' || event.error?.message?.includes('mapterhorn')) failTerrain();
+        if (['elevation', 'terrain-elevation'].includes(event.sourceId) || event.error?.message?.includes('mapterhorn')) failTerrain();
         else setMessage('Le fond de carte est partiellement indisponible. Les courses restent consultables.');
       });
       map.on('webglcontextlost', () => setMessage('L’affichage de la carte est interrompu. Retrouvez les courses avec Explorer les communes.'));
@@ -42,19 +42,29 @@ export function MapView({ features, races, mode, setMode, onReliefError, onSelec
         container.current.dataset.ready = 'true';
       });
       const renderMarkers = () => {
+        if (map.getTerrain()) {
+          const elevation = map.queryTerrainElevation(map.getCenter());
+          if (elevation != null) container.current.dataset.elevation = String(elevation);
+        }
         if (!map.getLayer('race-points')) return;
-        markers.forEach(marker => marker.remove()); markers = [];
-        const seen = new Set();
+        const seen = new Set(), visible = [];
         for (const feature of map.queryRenderedFeatures({ layers: ['race-points'] })) {
           const properties = feature.properties;
           const key = properties.cluster ? `cluster-${properties.cluster_id}` : properties.commune_id;
           if (seen.has(key)) continue;
           seen.add(key);
+          const ids = properties.cluster ? [] : JSON.parse(properties.race_ids);
+          const commune = current.current.races.find(item => ids.includes(item.race.id))?.race.location?.commune_name;
+          visible.push({ feature, properties, key, ids, commune });
+        }
+        const signature = JSON.stringify(visible.map(({ key, properties, commune, feature }) => [key, properties.race_count, properties.race_ids, commune, feature.geometry.coordinates]).sort());
+        if (signature === markerSignature) return;
+        markerSignature = signature;
+        markers.forEach(marker => marker.remove()); markers = [];
+        for (const { feature, properties, ids, commune } of visible) {
           const button = document.createElement('button');
           button.className = properties.cluster ? 'race-marker cluster-marker' : 'race-marker';
           button.textContent = properties.race_count;
-          const ids = properties.cluster ? [] : JSON.parse(properties.race_ids);
-          const commune = current.current.races.find(item => ids.includes(item.race.id))?.race.location?.commune_name;
           button.setAttribute('aria-label', properties.cluster ? `${properties.race_count} courses regroupées, agrandir` : `${properties.race_count} course${properties.race_count > 1 ? 's' : ''} à ${commune || 'cette commune'}`);
           button.addEventListener('click', async event => {
             event.stopPropagation();
@@ -68,7 +78,9 @@ export function MapView({ features, races, mode, setMode, onReliefError, onSelec
           markers.push(new maplibregl.Marker({ element: button }).setLngLat(feature.geometry.coordinates).addTo(map));
         }
       };
-      map.on('idle', renderMarkers);
+      // A failed external source may prevent `idle`; rendering still delivers race points.
+      // Preserve unchanged button nodes so keyboard focus survives ordinary map frames.
+      map.on('render', renderMarkers);
       map.on('click', event => { if (current.current.chooseCenter) current.current.onCenter([event.lngLat.lng, event.lngLat.lat]); });
       resize = new ResizeObserver(() => map.resize()); resize.observe(container.current);
     } catch {
@@ -84,9 +96,13 @@ export function MapView({ features, races, mode, setMode, onReliefError, onSelec
     if (!ready) return;
     const map = mapRef.current;
     container.current.dataset.terrain = mode;
-    if (mode === 'summit' && !message) { map.setTerrain({ source: 'elevation', exaggeration: 1.3 }); map.easeTo({ pitch: 60, duration: 500 }); }
-    else { map.setTerrain(null); /* Period/filter updates never touch this camera. */ }
-  }, [mode, ready, message]);
+    if (mode === 'summit') {
+      // Separate DEM source for terrain avoids sharing hillshade's tile render cache.
+      if (!map.getSource('terrain-elevation')) map.addSource('terrain-elevation', { type: 'raster-dem', url: DEM, tileSize: 512, encoding: 'terrarium', attribution: '© Mapterhorn' });
+      map.setTerrain({ source: 'terrain-elevation', exaggeration: 1.3 }); map.easeTo({ pitch: 60, duration: 500 });
+    }
+    else { map.setTerrain(null); map.easeTo({ pitch: 35, duration: 500 }); /* Period/filter updates never touch this camera. */ }
+  }, [mode, ready]);
   return <>
     <div className={`map-canvas ${chooseCenter ? 'choosing-center' : ''}`} ref={container} />
     {message && <p className="map-warning" role="status">{message}</p>}

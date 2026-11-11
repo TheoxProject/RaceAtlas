@@ -4,8 +4,8 @@ export function PeriodControls({ period, setPeriod }) {
   const change = patch => setPeriod(value => ({ ...value, ...patch, week: Math.min(patch.week ?? value.week, weeksInYear(patch.year ?? value.year)) }));
   return <section className="period-controls" aria-label="Période des courses">
     <div className="segmented">{[['year', 'Année'], ['month', 'Mois'], ['week', 'Semaine ISO']].map(([value, label]) => <button key={value} aria-pressed={period.mode === value} onClick={() => change({ mode: value })}>{label}</button>)}</div>
-    <label>Année<input aria-label="Année civile" type="number" min="1900" max="2200" value={period.year} onChange={event => { const year = Number(event.target.value); if (year >= 1900 && year <= 2200) change({ year }); }} /></label>
-    {period.mode === 'month' && <label>Mois<select value={period.month} onChange={event => change({ month: Number(event.target.value) })}>{MONTHS.map((name, index) => <option key={name} value={index + 1}>{name}</option>)}</select></label>}
+    <label>Année<input key={period.year} aria-label="Année civile" type="number" min="1900" max="2200" defaultValue={period.year} onBlur={event => { const year = Number(event.target.value); if (year >= 1900 && year <= 2200) change({ year }); else event.target.value = period.year; }} onKeyDown={event => { if (event.key === 'Enter') event.currentTarget.blur(); }} /></label>
+    {period.mode === 'month' && <label>Mois<select aria-label="Mois" value={period.month} onChange={event => change({ month: Number(event.target.value) })}>{MONTHS.map((name, index) => <option key={name} value={index + 1}>{name}</option>)}</select></label>}
     {period.mode === 'week' && <label>Semaine ISO<input type="number" min="1" max={weeksInYear(period.year)} value={period.week} onChange={event => { const week = Number(event.target.value); if (week >= 1) change({ week }); }} /></label>}
   </section>;
 }
@@ -26,7 +26,7 @@ export function Filters({ value, onChange, options, optionsError, retryOptions, 
       <p className="hint">« Toutes » doit correspondre à une même liste d’engagement.</p>
       {optionsError ? <div role="alert"><p>Catégories indisponibles.</p><button onClick={retryOptions}>Réessayer les catégories</button></div> : options ? <div className="check-grid categories">{options.categories.length ? options.categories.map(category => <label key={category.code}><input type="checkbox" checked={value.categories.includes(category.code)} onChange={() => toggle('categories', category.code)} />{category.label}</label>) : <p className="hint">Aucune catégorie renseignée.</p>}</div> : <p className="hint">Chargement des catégories…</p>}
     </fieldset>
-    <fieldset><legend>Où rouler ?</legend><label>Zone<select value={geography.mode} onChange={event => {
+    <fieldset><legend>Où rouler ?</legend><label>Zone<select aria-label="Zone" value={geography.mode} onChange={event => {
       const mode = event.target.value;
       if (mode === 'radius' && !center) { setChooseCenter(true); return; }
       setChooseCenter(false);
