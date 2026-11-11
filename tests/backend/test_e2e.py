@@ -32,6 +32,24 @@ def open_map(page, server, *, now="2026-11-11T12:00:00Z", **kwargs):
     expect(page.locator(".map-canvas")).to_have_attribute("data-ready", "true", timeout=20000)
 
 
+def assert_camera_unchanged(actual, expected):
+    assert actual.keys() == expected.keys()
+    for key in expected:
+        if key == "center":
+            # Sub-millimetre coordinate roundoff is not a reset; all other fields stay exact.
+            assert actual[key] == pytest.approx(expected[key], abs=1e-9, rel=0)
+        else:
+            assert actual[key] == expected[key], key
+
+
+def wait_camera_pitch(page, pitch):
+    page.wait_for_function(
+        "pitch => JSON.parse(document.querySelector('.map-canvas').dataset.camera).pitch === pitch",
+        arg=pitch,
+        timeout=10000,
+    )
+
+
 @pytest.mark.e2e
 def test_compiled_react_flask_postgresql(seeded, server):
     with sync_playwright() as playwright:
@@ -60,12 +78,12 @@ def test_compiled_react_flask_postgresql(seeded, server):
             "return marker && marker.getAttribute('style') !== previous; }",
             arg=previous_marker,
         )
-        assert camera(page) == before
+        assert_camera_unchanged(camera(page), before)
         page.get_by_role("button", name="Mois", exact=True).click()
         expect(page.get_by_label("Mois", exact=True)).to_be_visible()
         page.get_by_label("Mois", exact=True).select_option("2")
         expect(page.locator(".result-count")).to_contain_text("0 course")
-        assert camera(page) == before
+        assert_camera_unchanged(camera(page), before)
         page.get_by_role("button", name="Année", exact=True).click()
         expect(page.locator(".result-count")).to_contain_text("12 courses")
         page.get_by_role("button", name="Explorer les communes").click()
@@ -99,7 +117,7 @@ def test_compiled_react_flask_postgresql(seeded, server):
         page.wait_for_function(
             "Number(document.querySelector('.map-canvas').dataset.elevation) > 100"
         )
-        page.wait_for_timeout(700)
+        wait_camera_pitch(page, 60)
         assert camera(page)["pitch"] == 60
         page.screenshot(path=str(SHOTS / "summit.png"))
         assert not errors
@@ -172,9 +190,19 @@ def test_new_year_iso_inputs_and_clean_screenshot_directory(seeded, server, monk
         expect(page.get_by_label("Année civile")).to_have_value("2027")
         expect(page.locator(".result-count strong")).to_have_text("1")
         expect(page.locator(".race-marker")).to_be_visible(timeout=15000)
-        # Capture after the initial 500 ms camera transition, before changing any period.
-        page.wait_for_timeout(700)
+        initial_camera = camera(page)
+        page.get_by_role("button", name="Zoom in", exact=True).click()
+        page.wait_for_function(
+            "zoom => JSON.parse(document.querySelector('.map-canvas').dataset.camera)"
+            ".zoom === zoom",
+            arg=initial_camera["zoom"] + 1,
+            timeout=10000,
+        )
         before = camera(page)
+        assert before["zoom"] == initial_camera["zoom"] + 1
+        # This comparator must reject an actual reset to the recorded initial camera.
+        with pytest.raises(AssertionError):
+            assert_camera_unchanged(initial_camera, before)
         page.get_by_role("button", name="Semaine ISO", exact=True).click()
         expect(page.get_by_label("Année ISO")).to_have_value("2026")
         expect(page.get_by_label("Semaine ISO", exact=True)).to_have_value("53")
@@ -203,6 +231,7 @@ def test_new_year_iso_inputs_and_clean_screenshot_directory(seeded, server, monk
             expect(
                 page.get_by_role("heading", name="Course fictive race-mtb-multiday")
             ).to_be_visible()
+            assert_camera_unchanged(camera(page), before)
             page.get_by_role("button", name="Fermer les détails").click()
             page.get_by_role("button", name=return_mode, exact=True).click()
             end = "2027-01-31" if return_mode == "Mois" else "2027-12-31"
@@ -210,6 +239,7 @@ def test_new_year_iso_inputs_and_clean_screenshot_directory(seeded, server, monk
             expect(page.get_by_label("Année civile")).to_have_value("2027")
             if return_mode == "Mois":
                 expect(page.get_by_label("Mois", exact=True)).to_have_value("1")
+            assert_camera_unchanged(camera(page), before)
             page.get_by_role("button", name="Semaine ISO", exact=True).click()
             wait_period_filter(page, filters, "2026-12-28", "2027-01-03")
         for label, invalid, restored in [
@@ -236,7 +266,7 @@ def test_new_year_iso_inputs_and_clean_screenshot_directory(seeded, server, monk
         page.get_by_label("Année civile").press("Enter")
         expect(page.get_by_label("Année civile")).to_have_value("2027")
         wait_period_filter(page, filters, "2027-01-01", "2027-12-31")
-        assert camera(page) == before
+        assert_camera_unchanged(camera(page), before)
         browser.close()
 
 
@@ -293,10 +323,7 @@ def test_base_map_warning_does_not_silently_disable_summit(seeded, server):
         expect(page.get_by_role("button", name=re.compile("Summit"))).to_have_attribute(
             "aria-pressed", "true"
         )
-        page.wait_for_function(
-            "JSON.parse(document.querySelector('.map-canvas').dataset.camera).pitch === 60",
-            timeout=10000,
-        )
+        wait_camera_pitch(page, 60)
         assert camera(page)["pitch"] == 60
         browser.close()
 

@@ -1,47 +1,40 @@
-# Handoff Developer — lot5, correction cycle2 F6
+# Handoff Developer — lot5, correction cycle3 F7 tests seulement
 
-Branche `feature/map-experience`, Draft PR https://github.com/TheoxProject/RaceAtlas/pull/7, base intégrée **3bd018bff1b60f3831606348831fd72375f557dd**. Dernier candidat revu **fc8f540c4263c9b70de1b8a291ff98806b37299f** : CI43025992904 SUCCESS315PASS133,58s, revue indépendante315PASS252,70s mais **REQUEST CHANGES F6**. F1–F5 fermés par Tester. Le commit contenant ce handoff est le candidat C2 ; relever HEAD local/distant/PR. Après push, source et documents figés. **Aucun APPROVE ni merge lot5 acquis.**
+Branche `feature/map-experience`, Draft PR https://github.com/TheoxProject/RaceAtlas/pull/7, base intégrée **3bd018bff1b60f3831606348831fd72375f557dd**. Dernier candidat revu **5cd0c5839ce596d0e0426613659422b8dbb416cd** : Tester REQUEST CHANGES F7, F1–F6 CLOSED ; CI43028158824 FAILURE314PASS/1FAIL, attente Summit fragile. Le commit contenant ce handoff constitue le candidat C3 ; relever HEAD local/distant/PR, puis aucun writer pendant revue. **Aucun APPROVE ni merge acquis ; dernier cycle borné, pas d'approbation par épuisement.**
 
-## Correctif minimal et périmètre
+## Correction et garanties
 
-F6 : simple Tab/Entrée sur année ISO2026 ou semaine53 inchangée déplaçait l'ancre du2027-01-01 au lundi2026-12-28 ; le retour civil affichait2026 ouDécembre2026 sans nouvelle sélection réelle. `changePeriod` conserve désormais strictement l'objet et la date d'ancrage quand année/mois/semaine normalisés ne changent pas. Une vraie bascule de mode conserve cette date ; un mode déjà actif est aussi un no-op. Une année/mois/semaine réellement modifiée continue de recalculer l'ancre, avec bornage des semaines et jours bissextiles existant. Aucun changement Filters/validation numérique/MapView/API/backend/migration/contrat.
+Scope C3 : seulement `tests/backend/test_e2e.py`, présent handoff, checkpoint et instructions locales. Aucun produit JS/Python, MapView, contrat, dépendance ou fixture modifié. F7 ne démontrait pas un défaut produit : localement centre≈2e-12degrés différent avec zoom/bearing/pitch strictement identiques ; en CI pitch35 lu après700ms alors que l'animation n'avait pas fini.
 
-Fichiers C2 : `frontend/src/catalog.js` (quatre lignes ajoutées, un retour ajusté), `catalog.test.js`, `App.test.jsx`, scénario NouvelAn existant dans `tests/backend/test_e2e.py`, présent handoff, checkpoint et mise à jour bornée des comptes de tests dans usage local. Aucune nouvelle dépendance ni fixture.
+Les deux parcours Summit partagent désormais une attente bornée10s sur le pitch60 réellement enregistré par moteur au moveend, puis conservent assertion60 stricte et preuve DEM décodé>100/mode. Les700ms fixes de caméra disparaissent. Le comparateur commun autorise uniquement **centre abs1e-9degré, rel0** (≈0,1mm), toutes les clés et autres valeurs zoom/bearing/pitch strictes. Les trois anciennes égalités de dictionnaires passent par ce même contrôle.
 
-Régressions : identité stricte aux dates2027-01-01/2025-12-31/2024-02-29, clamp54→semaine53 déjà sélectionnée sans réancrage, vraie semaine52/année/mois toujours changés. Dans App, détails ouverts, blur/Entrée ISO et bouton du mode courant ne relancent pas le loader et ne ferment pas les détails. Navigateur réel : matrice quatre cas ISOyear/week×Tab/Enter, requêtes catalogue/carte stables après debounce180ms, détails conservés, retourAnnée2027 ouMoisJanvier2027. Les anciens tests décimales, valeurs vides/négatives, semaines52/53/54, course multijour, caméra exacte et parentcaptures absent restent en place.
+La chronologie utilise maintenant une caméra effectivement non initiale : clic du vrai contrôle MapLibreZoomin, attente zoom final initial+1 dans datasetcamera (mis à jour au moveend), puis baseline. Un contrôle négatif avec pytest.raises prouve que le comparateur refuse la caméra initiale enregistrée. Comparaisons répétées après no-ops et retoursAnnée/Mois, puis après changements réels ; un reset de zoom ne peut satisfaire la baseline. Aucun attendu métier supprimé, aucun timeout accru aveuglément.
 
-## Commandes et résultats C2 réels
+## Tests C3 réellement exécutés
 
-Dépendances/cache Python3.12.14, Node24.22.1, PostgreSQL17.11 et Chromium réutilisés, aucune réinstallation. Depuis frontend :
-
-```powershell
-node node_modules/eslint/bin/eslint.js . --max-warnings 0
-node node_modules/vitest/vitest.mjs run --pool=threads --maxWorkers=1
-node node_modules/vite/bin/vite.js build
-```
-
-**28tests frontend PASS9,87s**, code0 sans erreur de runner :22catalogue +6App. ESLint PASS ; build37modules PASS3,99s, JS1183,90kB/330,87kB gzip etCSS81,76kB/13,15kB gzip. Avertissement moteur>500kB conservé, aucun seuil masqué.
-
-Depuis racine :
+Python3.12.14, PostgreSQL17.11 et Chromium caches réutilisés ; build frontend5cd inchangé, aucun reinstall/initdb ni source produit édité.
 
 ```powershell
 $python = 'C:/Users/theop/.codex/worktrees/1a1e/RaceAtlas/.venv/Scripts/python.exe'
 $env:TEST_DATABASE_URL = 'postgresql+psycopg://raceatlas_local@127.0.0.1:55434/raceatlas_lot2_test'
 $env:RACEATLAS_DISPOSABLE_DB = '1'
 $env:PLAYWRIGHT_BROWSERS_PATH = 'C:/Users/theop/.codex/worktrees/1a1e/RaceAtlas/.local-tools/browsers'
-& $python -m pytest tests/backend/test_e2e.py -k new_year -q --tb=short
+& $python -m pytest tests/backend/test_e2e.py -k 'compiled_react_flask_postgresql or new_year or base_map_warning' -q --tb=short
 & $python -m ruff check raceatlas migrations tests/backend
 & $python -m ruff format --check raceatlas migrations tests/backend
-node --test tests/contracts/contracts.test.mjs
 git diff --check
 ```
 
-**E2E NouvelAn1PASS34,00s**,10désélectionnés, code0 ; Chromium/WebGL réel et React compilé→Flask→PostgreSQL, style/DEM synthétiques interceptés, aucun fournisseur contacté. Migrations upgrade/check/downgrade/upgrade/check de la fixture incluses.26contrats PASS ; lint/format Python et diff PASS. Pas de campagne backend complète redondante : catalogue/DB/loader/MapView inchangés dans C2. Les315PASS indépendants et la CI verte de fc8 sont des preuves historiques ; **une nouvelle CI complète315 et revue du SHA C2 sont obligatoires**, sans prétendre avoir exécuté315localement sur ce correctif.
+**3passed,8deselected in36,87s**, code0 dès première campagne C3 : principal React→Flask→PostgreSQL/mise à jour source et centre/Summit, chronologie NouvelAn avec zoom7,5 non initial et matriceF6, fond503 avec Summit. Migrations upgrade/check/downgrade/upgrade/check de la fixture incluses. Ruff37 lint/format et diff PASS. Moteur WebGL réel, style et DEM synthétiques interceptés, aucun fournisseur contacté.
 
-## Revue indépendante et suite
+Réutilisation explicite des preuves **5cd** inchangé pour produit :28frontend Developer PASS9,87s (22catalogue+6App),26contrats, ESLint/build PASS ; TesterC2 a aussi passé22+6 isolés après timeout initial workerApp non compté PASS, build/pip/statique/contrats. Sonde indépendante F6 : quatre cas ISOyear/week×Tab/Enter, détails/pasrefetch/retours2027Janvier et trois no-ops civils PASS ; crédits mobiles/WebGL autonome PASS. Ces succès ne transformaient pas son E2E caméra en PASS et ne masquaient pas la CI314/1.
 
-Tester relève le SHA final/propreté/base, lit le petit diff depuisfc8 et vérifie notamment les quatre interactions sans changement, retours civils et absence de requête/réinitialisation des détails. Les preuves315backend/11WebGL surfc8 et les critères complets restent à évaluer avec les régressions ciblées appropriées au nouveau SHA. Utiliser uniquement `raceatlas_lot2_review`, opt-in jetable, jamais `_test` ni `_map_demo` en parallèle. Ne pas initdb/reseed aveuglément ; reviewer12fixtures après anciennes sondes. Aucun writer pendant revue et aucun APPROVE valable pour un SHA différent.
+Backend/MapView/loader/catalogue inchangés depuis validation indépendante **fc8**315tests dont11Chromium PASS252,70s et CI315PASS133,58s. Aucune nouvelle campagne complète backend/frontend redondante C3. **Nouvelle CI complète315 et revue du SHA C3 obligatoires** ; aucun315local C3 revendiqué. Bundle historique5cd1183,90kB/330,87kB gzip, avertissement moteur conservé.
 
-Tous tests Developer terminés code0, aucun processus Python/preview restant ; PostgreSQL local conservé actif. Cache Chromium et commandes dans CURRENT_STATE. Aucun défaut connu restant après C2, avis indépendant à obtenir. Aucun benchmark matériel mobile/régional exhaustif, audit complet des licences terrain, compatibilité FFC réelle ou liveSummit/SLA revendiqué. Seul smokeAltitude historique limité vu ; ne pas relancer les appels externes aveuglément.
+## Revue et exploitation
 
-Après intégration5 : validation progressive durable AGENTS/workflow, README/CI main/contrôle SHA, configs Render Free monolitheFlask/Waitress et NeonTLS sans service distant, lot6 calendrier puis rapport pré-déploiement propriétaire, lots7/8 et RC. Qualification FFC limitée Coordinator séparée, droits/incertitudes préservés. Aucun déploiement, dépense, mutation distante, collecte massive/récurrente ou tag/publication finale. Décisions propriétaire Altitude initial et mois calendrier conservé au retour carte inchangées.
+Tester confirme SHA final/propreté/base et scope test-only, contrôle tolérance absolue stricte/attentes effectives/baseline zoomée/contrôle négatif puis rejoue les trois parcours et les sondes utiles ; évalue les critères complets avec preuves réutilisées clairement rattachées aux SHA historiques. Si échec persiste, remonter le blocage sans étendre arbitrairement la limite des cycles. Aucune auto-approbation Developer. Utiliser uniquement `raceatlas_lot2_review`, opt-in jetable ; jamais `_test` ni `_map_demo` simultanément. Ne pas initdb/reseed aveuglément.
+
+Session95430 terminée code0 ; aucun Python/preview Developer restant, PostgreSQL local conservé actif. Aucune performance mobile physique/régionale exhaustive, liveSummit/SLA ou audit complet de droits revendiqué. Ancien smokeAltitude limité vu, ne pas relancer les fournisseurs aveuglément. Aucun déploiement, dépense, mutation distante, collecte massive/récurrente ou tag/publication finale.
+
+Après intégration5 : workflow validation progressive, README/CI main/contrôle SHA, configs Render Free monolitheFlask/Waitress et NeonTLS sans service distant ; lot6 calendrier puis rapport pré-déploiement propriétaire, lots7/8 et RC. Qualification FFC limitée Coordinator séparée avec droits/incertitudes préservés. Décisions propriétaire Altitude initial et mois calendrier conservé au retour carte inchangées.
