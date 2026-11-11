@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raceatlas.example.invalid/contracts/catalog-options/1.0.0",
+  "title": "RaceAtlas category filter options",
+  "type": "object",
+  "properties": {
+    "contract_version": { "const": "1.0.0" },
+    "categories": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "string", "pattern": "^[a-z][a-z0-9_]{1,63}$" },
+          "label": { "type": "string", "minLength": 1 }
+        },
+        "required": ["code", "label"],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": ["contract_version", "categories"],
+  "additionalProperties": false
+}

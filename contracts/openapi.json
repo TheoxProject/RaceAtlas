@@ -2,8 +2,8 @@
   "openapi": "3.1.0",
   "info": {
     "title": "RaceAtlas catalogue — contrat de conception",
-    "version": "1.0.0",
-    "description": "Routes non implémentées. Données synthétiques pour première carte."
+    "version": "1.1.0",
+    "description": "API catalogue, carte et options de filtres. Les réponses catalogue restent au contrat 1.0.0."
   },
   "paths": {
     "/api/v1/races": {
@@ -222,6 +222,33 @@
               "application/json": {
                 "schema": {
                   "$ref": "./catalog.schema.json#/$defs/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service indisponible",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./catalog.schema.json#/$defs/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/catalog/options": {
+      "get": {
+        "operationId": "getCatalogOptions",
+        "responses": {
+          "200": {
+            "description": "Référentiel dynamique des catégories, indépendant de la sélection courante",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./catalog-options.schema.json"
                 }
               }
             }

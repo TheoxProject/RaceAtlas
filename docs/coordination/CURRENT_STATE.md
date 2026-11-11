@@ -1,49 +1,45 @@
 # Point de reprise RaceAtlas
 
-Dernier checkpoint UTC : **2026-11-11T07:38:37Z**. Lot4 API catalogue/filtres prêt pour gel/revue, **pas encore intégré ni approuvé**.
+Dernier checkpoint UTC : 2026-11-11T13:31:36Z. **Lot5 correction cycle3 F7 tests/documentation validée localement ; aucun APPROVE ni merge lot5.**
 
-## Git et tâches
+## État Git et prochaine action
 
-- Worktree isolé `C:/Users/theop/.codex/worktrees/add4/RaceAtlas`, branche `feature/catalog-filters`.
-- Base vérifiée `origin/main` : `48a2c3766276c92b2074139847c95e8d6a7b3916`.
-- Dernier jalon code local/distant : `9364442f4c6034b389dcac80cd46105d045b687e`. Le commit contenant ce checkpoint et le handoff final est le candidat à relever avec `git rev-parse HEAD`, puis comparer au distant et à la PR.
-- Draft PR https://github.com/TheoxProject/RaceAtlas/pull/6. CI jalon code `9364442` verte https://github.com/TheoxProject/RaceAtlas/actions/runs/42980914993 ; **CI du candidat final à vérifier**, aucune preuve ancienne ne vaut pour le nouveau SHA.
-- Mission `docs/lot-4/mission.md`, handoff `docs/lot-4/developer-handoff.md`, usage `docs/lot-4/local-development.md`.
+- Worktree isolé `C:/Users/theop/.codex/worktrees/add4/RaceAtlas`, branche `feature/map-experience`, Developer seul writer pendant correction ; aucun fichier préexistant révoqué.
+- Base `origin/main` **3bd018bff1b60f3831606348831fd72375f557dd**, lots0–4 intégrés. Draft PR https://github.com/TheoxProject/RaceAtlas/pull/7.
+- Dernier candidat revu/local/distant **5cd0c5839ce596d0e0426613659422b8dbb416cd** : Tester **REQUEST CHANGES F7**, F1–F6 CLOSED. CI43028158824 FAILURE314PASS/1FAIL (mainE2E Summit pitch35 lu avant fin de mouvement). Rapport `.local-tools/tester-report-lot5.md` ; C2 sondes no-op/détails/requêtes ont PASS, chronologie locale échoue uniquement centre arrondi≈2e-12degrés, zoom/bearing/pitch identiques.
+- Le commit contenant ce checkpoint publie C3 ; relever son SHA local/distant/PR et sa propre CI. **C3 modifie seulement test_e2e.py et trois documents, aucun produit JS/Python/contrat.** Après push, éditions suivies arrêtées.
 
-| Tâche | Responsable | État |
-|---|---|---|
-| L4-01 mission/checkpoint/Draft PR | Coordinator | DONE |
-| L4-02 validation/sélection/filtres | Developer | DONE, validations locales réussies |
-| L4-03 pagination/carte/couverture/intégration | Developer | DONE, handoff livré |
-| L4-04 revue indépendante SHA figé | Tester | TODO, aucun SHA lot4 approuvé |
-| L4-05 CI/fusion/bilan | Coordinator | TODO, aucun merge lot4 |
+| Tâche | État / preuve |
+|---|---|
+| L5-01/02/03 carte/API/détails | Livrés, comportement et contrats validés progressivement |
+| L5-C1 F1–F5 et fond pending | CLOSED indépendant surfc8 ;315tests/11Chromium PASS252,70s et CI315PASS133,58s |
+| L5-C2 F6 no-op période | CLOSED indépendant sur5cd : quatre combinaisons ISOyear/week×Tab/Enter, détails/pasrefetch/retours2027Janvier PASS |
+| L5-C3 F7 harness caméra | DONE local : attente réelle pitch, centre abs1e-9deg rel0, autres champs stricts, baseline zoomée et contrôle négatif reset |
+| L5-04 revue finale C3 | TODO exact nouveau SHA, troisième et dernier cycle ; aucune approbation par épuisement |
+| L5-05 CI/fusion | TODO, nouvelle CI complète315 et APPROVE exact obligatoires |
 
-## Livraison et preuves actuelles
+**Prochaine action sûre unique :** Coordinator confirme le SHA final local/distant/PR, surveille sa CI complète et demande la revue indépendante ciblée C3 avec évaluation finale du lot. Aucun writer pendant revue. Si défaut persiste, le rapporter sans contourner la limite des cycles ; aucun merge avant tous les gates.
 
-GET catalogue/carte via un sélecteur SQL partagé, catégories dynamiques, ET dans un seul scope confirmé, règles/restrictions intactes, dates civiles inclusives et saison source indépendante. Recherche nom/commune/organisateur normalisée NFD et espaces Unicode ; JSON/paramètres/types stricts, erreurs publiques structurées sans détails SQL. Jsonschema4.25.1 promu en dépendance runtime épinglée.
+## Preuves C3 et exigences conservées
 
-Pagination triée date/ID, curseur lié au filtre et à la version, invalidation409. Rayon à deux flux indépendants partageant offset/limite : confirmées dans `total`, candidates non localisées à part ; des pages vides avec continuation sont attendues, parcourir jusqu'à `next_cursor=null`. Une Feature par course au centre communal ; regroupement visuel au lot5. Graphes chargés uniquement pour la page<=200, compteurs SQL.
+**3E2E PASS36,87s**,8désélectionnés, première campagne C3 code0 : main React→Flask→PostgreSQL/SQL actualisé/Summit, NouvelAn/ISO/matriceF6/invalides, fond503 avec Summit. Les deux tests Summit attendent réellement le pitch60 enregistré au moveend (maximum10s), puis assertion60 stricte ; élévationDEM réelle>100 et mode conservés. Les700ms fixes pour caméra sont supprimés, pas remplacés par un délai plus long.
 
-Nouvelle migration **b7f4208ac112** après **8a95eb41f220** : singleton epoch/révision et triggers statement sur dix tables métier/audits, normalisation SQL sans extension, ordre monotone `ImportRun.catalog_order`. Anciennes migrations inchangées, aucun GRANT/SECURITY DEFINER. Audits historiques préordre conservativement incomplets ; dernière tentative sélectionnée par ordre de création DB, jamais UUID/horloge source. Dernier succès conservé après échec ; exhaustivité intrinsèque toujours inconnue. Une requête lit version/compteurs/items/couverture dans un snapshot PostgreSQL read-only REPEATABLE READ, puis restaure le pool.
+Comparateur partagé : seules les deux coordonnées du centre admettent **abs1e-9degré, rel0** (≈0,1mm maximum, contre≈2e-12 observés). Tous les autres champs, clés et zoom/bearing/pitch restent stricts. Trois anciennes égalités dictionnaires utilisent ce même comparateur. La chronologie effectue un vrai clic navigationZoomin, attend le zoom final initial+1 enregistré par moteur, puis prend la baseline ; contrôle négatif prouve que le comparateur rejette la caméra initiale. Invariance vérifiée après no-ops et retoursAnnée/Mois, puis changements réels, sans réinitialiser ce zoom non initial.
 
-**Résultats Developer sur code9364442 :304/304pytest PASS en90,46s**, aucun skip, dont99tests catalogue et3Chromium antérieurs. Migration upgrade/check/downgrade/upgrade/check exécutée. Les neuf scénarios contractuels passent par Flask/PostgreSQL, puis parcours limite1 ; tests rayon sans confirmées et avec continuation, catégories u15/recherche Unicode, triggers/rollback/seed/import, commit concurrent réel entre compteurs et graphes, fixture→adaptateur→sync→catalogue/carte, centres communs, couverture échec/reprise/historique et erreurs malformées.26contrats Node PASS ; Ruff lint/format35fichiers PASS ; frontend ESLint PASS, Vitest3/3PASS (threads1), build Vite PASS ; pip check PASS ; diff-check PASS.
+Aucun source produit modifié.28tests frontend C2 PASS9,87s (22catalogue+6App),26contrats/build/lint frontend de5cd réutilisés explicitement ; pas de nouvelles campagnes redondantes. Ruff37 lint/format et diff PASS C3. Migrations roundtrip de la fixture E2E jetable incluses.315tests indépendants surfc8 restent historiques ; **nouvelleCI complète sur C3 obligatoire**, aucun315local C3 revendiqué.
 
-Première expansion ciblée :15échecs/58succès ; défaut réel NBSP corrigé dans normalisation SQL, chaînes NUL/surrogates isolés rejetées avant DB. Les autres échecs provenaient d'attendus nouveaux incorrects (Error plat et suppression raw SQL contraire aux FK), corrigés. Puis98tests ciblés PASS, extension finale incluse dans304tests globaux. Aucun défaut local restant connu, aucune revue indépendante acquise.
+C2 produit : ancre conservée pour année/mois/semaine normalisés inchangés, même objet/no-refetch/détails maintenus ; vrais changements et bornages conservés. SourceJS depuis5cd inchangé. MapLibre5.11.0 ; réponses catalogue1.0/options1.0/OpenAPIcollection1.1, migrationb7f4208ac112 inchangés. Bundle historique5cd1183,90kB/330,87gzip ; avertissement taille moteur conservé.
 
-## Intégration antérieure confirmée
+## Suite après intégration5 et limites
 
-Lot3 DONE : https://github.com/TheoxProject/RaceAtlas/pull/5. Tester **APPROVE** SHA **54a14472222c0278017074a82ab097f3de8b50ac**, CI https://github.com/TheoxProject/RaceAtlas/actions/runs/42899767502 **success**, check integrated vert au même SHA, aucun autre statut requis en attente. Merge GitHub confirmé **48a2c3766276c92b2074139847c95e8d6a7b3916**, arbre identique au SHA approuvé (`git diff --exit-code` réussi). Workflow PR, pas de CI push main distincte attendue.205tests backend,26contrats et22assertions indépendantes PASS ; rapport PR#5 et `.local-tools/tester-report-lot3.md`. Lots0/1/2 et politique agents également intégrés (lot2PR#4, SHA revu511208b, mergef33d837).
+TODO : AGENTS/workflow validation progressive, surveillance CI après push/contrôle SHA/tests main après merge ; README ; configs Render Free monolitheFlask/Waitress et NeonTLS sans création/déploiement/mutation distante. Lot6 calendrier mensuel puis rapport pré-déploiement propriétaire ; lots7 comptes/planning/ICS,8 exploitation/notifications/RC. Qualification FFC limitée Coordinator, incompatibilités HTML/droits à documenter séparément ; aucun importlive/récurrent/bulk autorisé.
 
-## Environnement et restrictions
+Choix propriétaire acquis : Altitude2,5D initial, Summit3D à la demande ; calendrier sélectionne le mois affiché et le conserve au retour carte, autres filtres/caméra préservés. Aucun arbitrage en attente. Seul smokeAltitude historique limité vu ; Summitlive expiré/non qualifié, ne pas relancer aveuglément. Droits FFC/terrain, performances matérielles mobiles/régionales restent gates avant release. Aucun déploiement, dépense, mutation distante ou tag/publication finale autorisé.
 
-Python3.12.14 réutilisé : `C:/Users/theop/.codex/worktrees/1a1e/RaceAtlas/.venv/Scripts/python.exe`. Pip check via runtime `C:/Users/theop/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/python.exe -m pip --python <venvpython> check`. Node cache Codex ; `frontend/node_modules` local, build prêt. Binaires locaux eslint/bin/eslint.js, vitest/vitest.mjs, vite/bin/vite.js ; Vitest `--pool=threads --maxWorkers=1` fonctionne ici (3tests exécutés), aucun changement produit pour le runner.
+## Environnement et processus
 
-PostgreSQL17.11 actif seulement `127.0.0.1:55434`, cluster existant `.local-tools/pgdata-lot2-native`, log `.local-tools/postgres-lot2.log`. Redémarré à la reprise sans réinitialisation. Bases jetables séparées `raceatlas_lot2_test` Developer et `raceatlas_lot2_review` Tester ; utilisateur `raceatlas_local`, URL `postgresql+psycopg://raceatlas_local@127.0.0.1:55434/<base>`, opt-in `RACEATLAS_DISPOSABLE_DB=1`. Browser `PLAYWRIGHT_BROWSERS_PATH=C:/Users/theop/.codex/worktrees/1a1e/RaceAtlas/.local-tools/browsers`. Tous les tests Developer terminés, aucun test actif ; cluster conservé. Ne pas initdb/reseed aveuglément ni partager les bases pendant tests. Ancien cluster incomplet `.local-tools/pgdata-lot2` et deps partielles à ignorer.
+Python3.12.14 `C:/Users/theop/.codex/worktrees/1a1e/RaceAtlas/.venv/Scripts/python.exe`, Node24.22.1, frontend/node_modules et build5cd réutilisés. pnpm10.20 compatible en cache, ne pas employer wrapper11 contre store10. Chromium : `PLAYWRIGHT_BROWSERS_PATH=C:/Users/theop/.codex/worktrees/1a1e/RaceAtlas/.local-tools/browsers`.
 
-Exécution native DB/Chromium et Git métadonnées partagées requiert hors sandbox autorisé. Aucun rejet auto-review. Connecteur création PR403 historique, fallback Git autorisé ; ne pas relancer les scripts ignorés lot2/lot3 de merge ciblant anciennes PR/bases. Ne pas stopper de processus Node sans propriété prouvée.
+PostgreSQL17.11 actif uniquement127.0.0.1:55434, cluster `.local-tools/pgdata-lot2-native`, utilisateur `raceatlas_local`. Developer `raceatlas_lot2_test`, Tester `raceatlas_lot2_review`, URL `postgresql+psycopg://raceatlas_local@127.0.0.1:55434/<base>`, opt-in `RACEATLAS_DISPOSABLE_DB=1`. Bases distinctes, fixtures synthétiques ; preview `_map_demo` séparée. Session Developer95430 terminée code0, aucun test/preview Developer restant ; PostgreSQL conservé actif. Ne pas initdb/reseed/réinstaller aveuglément ni arrêter tous les Node/Postgres.
 
-Choix propriétaire explicites futurs lots5/6 : **Altitude2.5D initial, Summit3D à la demande ; ouvrir le calendrier passe la période partagée au mois affiché, conservé au retour carte, autres filtres et caméra préservés.** Aucun arbitrage en attente. Aucune collecte FFC live/régionale, synchronisation récurrente, dépense, mutation distante/production, déploiement ou publication finale autorisé. Données synthétiques et géocodeur injecté hors réseau ; droits/qualification FFC live ouverts. Rectangle de géocodage : plausibilité, pas preuve GIS. Pas de benchmark sur corpus FFC régional réel.
-
-## Prochaine action sûre
-
-Coordinator : relever et confirmer le **SHA final du commit de handoff** local/distant/PR, puis demander au Tester la revue indépendante de ce SHA avec sa seule base `_review` et contrôler la CI de ce même SHA. Aucune édition suivie après gel ; preuves de revue/CI dans la PR. Le lot n'est DONE qu'après tous les gates et merge GitHub confirmé. Ne pas fusionner sur la seule preuve304pytest locale.
+Git/DB/browser natifs autorisés nécessaires ; connecteur créationPR403 historique, fallback Git autorisé sans secret. Aucun reset/forcepush/main direct ; scripts ignorés anciens lots à ne pas relancer. Rapports/scripts/captures ignorés ne prouvent jamais une fusion. Tester/CI doivent viser le SHA final, même pour changement uniquement documentaire.
