@@ -1,24 +1,28 @@
 # Point de reprise RaceAtlas
 
-Dernier checkpoint UTC : **2026-11-11T13:40:34Z**. Lots0–5 intégrés ; préparation V1 en cours, **aucun déploiement**.
+Dernier checkpoint UTC : **2026-11-11T19:20:37Z**. Lots0–5 intégrés ; préparation V1 en cours, **aucun déploiement**.
 
 ## Git et tâche active
 
 - Worktree isolé réutilisé après propreté/arrêt des tests : `C:/Users/theop/.codex/worktrees/add4/RaceAtlas`, branche **feature/v1-readiness**. Le checkout personnel main est préservé.
-- Base locale/distante vérifiée : **5f8229245f31ff64f678cad9df331f7302bef76f** (`origin/main`). HEAD avant premier commit de préparation = cette base ; le commit contenant ce checkpoint sera le jalon RDY-01, à relever et publier avant revue.
-- Nouvelle PR Draft à ouvrir après premier commit. Aucun SHA de préparation approuvé ; CI à contrôler après chaque push.
+- Base locale/distante vérifiée : **5f8229245f31ff64f678cad9df331f7302bef76f** (`origin/main`). Dernier jalon local/distant RDY-01 : **136768cd6499f18858e27834926bd3bf216150f7**, CI43031656451 success, Tester APPROVE ciblé documentation/workflow ; ce verdict ne vaut pas approbation finale de la PR.
+- Draft PR https://github.com/TheoxProject/RaceAtlas/pull/8. Le commit contenant ce checkpoint sera le jalon RDY-02 CI, à relever local/distant/PR et figer pour revue ciblée. Sa propre CI reste à contrôler, aucun résultat hérité comme vert courant.
 - Mission/critères : `docs/readiness/mission.md`. Notes techniques de préparation ignorées : `.local-tools/next-readiness-notes.md` ; ne pas les présenter comme configurations testées.
 
 | Tâche | Responsable | État |
 |---|---|---|
-| RDY-01 politique progressive, README, intégration5, qualification FFC | Coordinator | IN_PROGRESS, documents préparés, revue ciblée à obtenir |
-| RDY-02 CI SHA courant/échecs/main | Developer après libération | TODO |
+| RDY-01 politique progressive, README, intégration5, qualification FFC | Coordinator | DONE, APPROVE ciblé136768cd, CI verte ; pas de verdict final |
+| RDY-02 CI SHA courant/échecs/main | Developer | Implémenté/testé ciblé ; CI réelle et revue du nouveau SHA TODO |
 | RDY-03 Render/Neon/TLS/build/start sans activation | Developer | TODO |
 | RDY-04 preview privée/health/redémarrage/backup et tests locaux | Developer | TODO |
 | RDY-05 revue finale/CI/fusion/main | Coordinator/Tester | TODO |
 | Lot6 calendrier puis rapport pré-déploiement | Équipe | TODO après intégration/CI main ; décision de mois déjà acquise |
 
-**Prochaine action sûre unique :** publier le premier commit documentaire et ouvrir sa Draft PR, surveiller sa CI puis demander une revue indépendante ciblée RDY-01 du SHA figé. Ne pas éditer les sources suivies pendant cette revue. Développer ensuite CI/configuration dans cette PR ; aucune fusion sur un seul avis intermédiaire.
+**Prochaine action sûre unique :** après push RDY-02, Coordinator confirme son SHA et sa CI puis demande la revue ciblée de la garde de tête courante et signalisation des échecs. Toutes éditions suivies arrêtées pendant revue ; après libération seulement, développer configuration/guard/hosting dans la même PR. Aucune fusion sur un avis intermédiaire.
+
+RDY-02 : checkout explicitement sur source PRhead ou SHA push, sans credentials persistés ; garde GitHEAD et ref PR publique anonyme au début/fin ; annulation anciens runs et pushmain ajouté. Aucun contrôle existant retiré, jobintegrated/contentsread conservés. Échec→annotation/résumé du SHA et JUnit/copies de sept PNG synthétiques connus vers RUNNER_TEMP non caché, rétention1jour ; pas de capture provider-altitude, logs console/env ou dossier.local-tools entier. Aucune permission write, bot, schedule ou déploiement ajouté. Sérialisation fail-fast conservée plutôt qu'un split sans gain démontré.
+
+Sondes natives ciblées : syntaxe Bash des deux scripts PASS ; checkout136/refPR8 actuels acceptés sans credentials ; mauvais SHA local puis refPR7 différente refusés code1 attendu ; chemin push sansPR accepté. Staging réel : sept PNG seulement,683478octets, aucun provider/env. Scripts ignorés `.local-tools/ci-check-source-probe.sh`, `ci-stage-probe.sh`, répertoire temporaire référencé dans `ci-probe-temp-path.txt`. Aucune campagne backend redondante ; CI complète réelle de ce jalon nécessaire. ParseurYAML absent du cachePython, aucune dépendance installée ni validationYAML locale inventée. Nit copiable SHA intégration5 corrigé sur autorisation Coordinator.
 
 ## Lot5 réellement intégré
 
