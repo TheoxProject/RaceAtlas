@@ -1,4 +1,45 @@
-# Handoff Developer — lot6, jalon CAL-01
+# Handoff Developer — lot 6, jalon CAL-02
+
+## Jalon courant à revoir
+
+Branche `feature/monthly-calendar`, PR https://github.com/TheoxProject/RaceAtlas/pull/9, base **8ce46a3fc1129a905d2e9f1fc8552e3cf4d0a56f**. Parent avant publication : **bbd7625897040519a5e11ba9dd495c9cda605387**, CI `43219642754` SUCCESS : 386 pytest en 117,48 s, 60 frontend et tous contrôles. Tester APPROVE ciblé de ce parent : `.local-tools/tester-report-lot6-clock.md`, 4 PASS / 49,81 s et 165 sondes. Cela valide le correctif Clock inchangé, pas CAL-02. Relever le nouveau SHA publié, puis geler pour CI et revue ciblée. CAL-03 complète restera obligatoire.
+
+Livraison : `Calendar.jsx`, `calendar.css` et tests du composant ; App et tests ; MapView visibilité/resize seulement ; trois nouveaux E2E ; whitelist CI bornée, README et documents du lot. CAL-01, catalog.js, API, modèles, migrations, dépendances, terrain et harness Clock inchangés.
+
+La bascule sélectionne le mois civil partagé, retour Carte le conserve. Contrôles fonctionnels année/mois, navigation bornée, table lundi–dimanche avec boutons indépendants, marges désactivées. Deux chips maximum (une visible sur mobile), accès à toutes les courses par jour, détails RaceDetails communs et candidates rayon séparées. Les objets et témoins de scopes sélectionnés restent ceux du loader unique. Résultats liés au filtre/tentative pour cacher immédiatement les anciennes courses durant le debounce ; abort, 409 et retry conservés. Saisies inchangées gardent détail/ancre/requêtes. Choix de centre depuis calendrier ouvre la carte visible, avec formulaire existant.
+
+MapView reste monté ; wrapper visible `display: contents` pour préserver la grille et la rangée crédits d'origine, masqué `display: none` avec tous ses contrôles/attributions. ResizeObserver ignore l'état masqué ; resize au retour, aucune reconstruction de caméra. Les tests partent de zoom 7.5 et Summit réel 60°, DEM >100, puis conservent centre/zoom/bearing/pitch et identité du nœud.
+
+### Commandes et résultats CAL-02
+
+Depuis `frontend`, Node 24/dépendances existants :
+
+```powershell
+node node_modules/vitest/vitest.mjs run src/App.test.jsx --pool=threads --maxWorkers=1
+node node_modules/vitest/vitest.mjs run src/Calendar.test.jsx --pool=threads --maxWorkers=1
+node node_modules/eslint/bin/eslint.js . --max-warnings 0
+node node_modules/vite/bin/vite.js build
+```
+
+**8 App PASS / 10,18 s ; 4 composant PASS / 3,39 s ; ESLint PASS ; dernier build PASS / 3,90 s.** Run groupé bloqué après App : NON PASS, Node 23324 identifié par commande exacte puis arrêté. Runs isolés terminés code 0, configuration Vitest inchangée. L'attendu initial « 0 course » corrigé en « 0 courses » ; contrôle d'absence immédiate des anciennes données PASS.
+
+Depuis racine, Python 3.12.14/Chromium/cache et DB locale `raceatlas_lot2_test` avec opt-in :
+
+```powershell
+python -m pytest tests/backend/test_calendar_e2e.py tests/backend/test_e2e.py -q --tb=short
+python -m ruff check raceatlas migrations tests/backend
+python -m ruff format --check raceatlas migrations tests/backend
+node --test tests/contracts/contracts.test.mjs
+git diff --check
+```
+
+Premier E2E : 2 PASS / 1 FAIL en 51,60 s, sélecteur chip/ligne ambigu, corrigé en bornant au panneau. Inspection visuelle : fond vert/actions tassées par priorité CSS corrigés ; **3 E2E PASS / 63,36 s**. Ciblé suivant : **3 PASS / 1 FAIL en 55,15 s**, nouveaux accès réels aux 31 janvier / 30 novembre PASS mais ancien mobile a reproduit un recouvrement des crédits par le panneau. Wrapper corrigé en `display: contents`, sans toucher le test existant. **Dernier run carte + calendrier : 15 PASS en 170,41 s, code 0**, aucun processus restant. Il couvre aussi les 12 cas carte existants : données PG/refresh, credits mobile/détails, cluster, DEM/base failure, WebGL indisponible et erreurs/retry. Aucun backend complet local répété. Ruff check/format --check PASS (**40 fichiers**), **26 contrats et diff PASS**. Le build a d'abord été relancé avant application effective du script de correction (mauvais répertoire, pas une preuve du correctif) ; le script a ensuite été exécuté depuis racine, puis lint/build réels PASS 3,90 s avant ce dernier run.
+
+Trois parcours nouveaux couvrent : ISO 2026 W53 / civil janvier 2027, course 31 décembre–2 janvier et compteur distinct ; caméra Summit non initiale conservée ; parité carte/calendrier catégories ET/OU et témoin de scope, non-localisée hors rayon et candidate exclue du rayon ; mobile 390 px, 11 courses accessibles, détails/retour, erreur/retry. Dernières semaines atteignables par scroll et clic (jour vide/panneau refermé), pas seulement visibles sur capture. Pas de scroll horizontal.
+
+Captures synthétiques inspectées : `.local-tools/lot6-screenshots/{desktop,mobile,day-details,candidates}.png`. Les nouveaux tests capturent aussi au point d'échec avec timeout 5 s. CI copie uniquement ces quatre PNG réguliers non symlinks vers `calendar-<nom>.png`, sans écraser les preuves carte, rétention un jour inchangée. Aucun dump HTML/env/console ou données fournisseur. Pas de disponibilité GPU/fournisseurs/droits FFC, service distant ou déploiement qualifiés. Revue ciblée puis acceptation complète du SHA final requises ; arrêter les éditions après gel.
+
+## Historique CAL-01 et correction d'horloge
 
 Branche `feature/monthly-calendar`, Draft PR https://github.com/TheoxProject/RaceAtlas/pull/9, base **8ce46a3fc1129a905d2e9f1fc8552e3cf4d0a56f**. CAL-01 **eba50f3735c6d19344ca9221da5f5adecf55a77d** a reçu APPROVE ciblé. Parent du correctif actuel : **6982fddc5825e53f0e3eabd28dc0fdf27f9bd27a**, CI instrumentée `43179912170` : **383 PASS / 2 FAIL**. Ce commit corrige uniquement le harness de date ; relever son SHA publié pour CI et revue ciblée renouvelées. Aucun verdict final ou merge lot 6.
 

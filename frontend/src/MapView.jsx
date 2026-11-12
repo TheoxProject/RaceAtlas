@@ -7,10 +7,10 @@ const STYLE = 'https://tiles.openfreemap.org/styles/liberty';
 const DEM = 'https://tiles.mapterhorn.com/tilejson.json';
 const empty = { type: 'FeatureCollection', features: [] };
 
-export function MapView({ features, races, mode, setMode, onReliefError, onSelect, chooseCenter, onCenter }) {
+export function MapView({ features, races, mode, setMode, onReliefError, onSelect, chooseCenter, onCenter, visible = true }) {
   const container = useRef(null), mapRef = useRef(null), current = useRef({});
   const [message, setMessage] = useState(''), [ready, setReady] = useState(false);
-  useEffect(() => { current.current = { onSelect, chooseCenter, onCenter, races }; });
+  useEffect(() => { current.current = { onSelect, chooseCenter, onCenter, races, visible }; });
   useEffect(() => {
     let map, markers = [], resize, active = true, markerSignature = '';
     const failTerrain = () => {
@@ -84,7 +84,7 @@ export function MapView({ features, races, mode, setMode, onReliefError, onSelec
       // Preserve unchanged button nodes so keyboard focus survives ordinary map frames.
       map.on('render', renderMarkers);
       map.on('click', event => { if (current.current.chooseCenter) current.current.onCenter([event.lngLat.lng, event.lngLat.lat]); });
-      resize = new ResizeObserver(() => map.resize()); resize.observe(container.current);
+      resize = new ResizeObserver(() => { if (current.current.visible) map.resize(); }); resize.observe(container.current);
     } catch {
       queueMicrotask(() => { if (active) setMessage('La carte est indisponible sur cet appareil. Retrouvez les courses avec Explorer les communes.'); });
     }
@@ -105,6 +105,7 @@ export function MapView({ features, races, mode, setMode, onReliefError, onSelec
     }
     else { map.setTerrain(null); map.easeTo({ pitch: 35, duration: 500 }); /* Period/filter updates never touch this camera. */ }
   }, [mode, ready]);
+  useEffect(() => { if (visible && ready) mapRef.current?.resize(); }, [visible, ready]);
   return <>
     <div className={`map-canvas ${chooseCenter ? 'choosing-center' : ''}`} ref={container} />
     {message && <p className="map-warning" role="status">{message}</p>}

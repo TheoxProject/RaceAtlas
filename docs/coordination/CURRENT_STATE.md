@@ -1,8 +1,20 @@
 # Point de reprise RaceAtlas
 
-Dernier checkpoint UTC : **2026-11-12T12:37:09Z**. Lots 0–5 et préparation V1 intégrés ; **CAL-01 approuvé sur son périmètre ; correctif du harness Date seule en validation**. Aucune UI calendrier ni déploiement livré.
+Dernier checkpoint UTC : **2026-11-12T13:00:57Z**. Lots 0–5 et préparation V1 intégrés ; **CAL-02 calendrier testé, jalon à geler pour revue ciblée ; lot 6 non intégré**. Aucun déploiement.
 
-## Git et tâche active
+## Jalon CAL-02 courant
+
+Parent local/distant avant publication : **bbd7625897040519a5e11ba9dd495c9cda605387**, CI `43219642754` SUCCESS (386 pytest en 117,48 s, 60 frontend, lint/format/contrats/build et gardes source avant/après). Tester APPROVE ciblé exact, rapport `.local-tools/tester-report-lot6-clock.md` : 4 PASS en 49,81 s et 165 sondes. Le défaut de virtualisation de l'horloge est validé sur son périmètre ; aucune modification du harness ou des dépendances dans CAL-02.
+
+Ce commit ajoute la vraie bascule Carte/Calendrier, le mois civil partagé et la navigation mensuelle bornée, une table lundi–dimanche avec boutons de jour et chips limitées (toutes les courses accessibles dans le panneau du jour), les détails communs et candidates rayon séparées. Un seul filtre/loader/API ; résultat attaché à l'objet filtre et à la tentative pour masquer immédiatement l'ancienne sélection pendant le debounce. No-ops conservés. MapView reste monté dans un wrapper masqué ; seules visibilité/resize sont adaptées, aucune logique terrain/caméra réécrite. Retour Carte conserve mois, filtres, zoom et Summit. Choisir un centre depuis le calendrier ouvre la carte visible ; formulaire coordonnées existant conservé.
+
+Preuves ciblées : App **8 PASS en 10,18 s**, composant **4 PASS en 3,39 s** ; ESLint/build PASS (dernier build 3,90 s). Ruff check et format --check complets PASS, 40 fichiers ; 26 contrats/diff PASS. Premier E2E : 2 PASS / 1 FAIL en 51,60 s, sélecteur ambigu chip/ligne du même nom ; sélecteur borné au panneau. Après correction de la priorité CSS observée visuellement : **3 E2E PASS en 63,36 s**. Ciblé suivant : 3 PASS / 1 FAIL en 55,15 s, vrai recouvrement crédits/panneau mobile. Wrapper corrigé en `display: contents` visible, `display: none` masqué pour conserver la rangée crédits d'origine ; aucun test existant affaibli. **Dernier run carte + calendrier complet : 15 PASS en 170,41 s, code 0**, dont dernières semaines atteignables, crédits mobile/détails, cluster, DEM/base failure et caméra Summit non initiale conservée. Aucun backend complet local répété. Run Vitest groupé bloqué après App : NON PASS, runner Node 23324 identifié par commande exacte puis arrêté ; exécutions isolées terminées code 0, aucune configuration modifiée. Aucun test Developer encore actif.
+
+Captures synthétiques `.local-tools/lot6-screenshots/{desktop,mobile,day-details,candidates}.png` inspectées ; corrections du fond/placement des actions et bande crédits effectuées, aucun scroll horizontal à 390 px. Dernière semaine accessible par scroll, vérification explicite 31 janvier / 30 novembre ajoutée. CI étendue uniquement à ces quatre noms PNG réguliers non symlinks, destination préfixée `calendar-`, rétention un jour ; aucune archive large. Pas de données fournisseur, API/modèle/migration/hosting/compte ou dépendance modifiés.
+
+**Prochaine action sûre :** publier ce jalon et geler son SHA pour revue ciblée et CI. Ensuite arrêt des éditions jusqu'à libération. CAL-03 revue complète de l'acceptation et CAL-04 intégration restent TODO ; aucune APPROVE antérieure transférée au nouveau SHA. Handoff/commandes : `docs/lot-6/developer-handoff.md` et `local-development.md`.
+
+## Historique avant CAL-02
 
 - Worktree isolé `C:/Users/theop/.codex/worktrees/add4/RaceAtlas`, réutilisé propre après arrêt des agents/tests ; branche **feature/monthly-calendar**. Le checkout personnel main reste préservé.
 - Base locale/distante vérifiée : **8ce46a3fc1129a905d2e9f1fc8552e3cf4d0a56f**, `origin/main`, CI main verte. Dernier cadrage local/distant : **3f454b0f98f19883c915b9bda28fadb39aca11fd**, CI43094428404 success ; cette preuve initiale ne valide pas le helper suivant.
@@ -12,12 +24,12 @@ Dernier checkpoint UTC : **2026-11-12T12:37:09Z**. Lots 0–5 et préparation V1
 |---|---|---|
 | CAL-00 mission/checkpoint/Draft | Coordinator | DONE, PR9 et CI de cadrage vérifiées |
 | CAL-01 dates/projection/état partagé | Developer | APPROVE ciblé exacteba50f3 ; calculs inchangés depuis |
-| CAL-CI ancien test Summit/base en panne | Developer/Coordinator | IN_PROGRESS, Date seule remplace Clock ; CI/revue courantes requises |
-| CAL-02 calendrier responsive/détails/parité | Developer | TODO |
+| CAL-CI ancien test Summit/base en panne | Developer/Coordinator | DONE ciblé exact bbd7625, CI et APPROVE acquis |
+| CAL-02 calendrier responsive/détails/parité | Developer | IN_PROGRESS, jalon intégré en validation ciblée |
 | CAL-03 intégration/captures/revue finale/CI | Developer/Tester | TODO |
 | CAL-04 fusion/main et rapport pré-déploiement | Coordinator | TODO ; aucune activation autorisée |
 
-**Prochaine action sûre unique :** publier le correctif tests + preuves, geler son SHA pour Tester et surveiller sa CI. Aucune UI/App/MapView/Filters avant décision Coordinator. Aucun avis intermédiaire ne vaut APPROVE final.
+La section suivante conserve les preuves du correctif d'horloge précédent ; le prochain travail autorisé figure au jalon CAL-02 ci-dessus. Aucun avis intermédiaire ne vaut APPROVE final.
 
 Correction de format uniquement après CI `43219175247` sur **9e3c3bc26b0840a6df7e0223655b092395ddeeef** : échec `ruff format --check` pour `tests/backend/test_e2e.py`, aucun test backend/frontend exécuté dans ce run. Après libération Tester, `ruff format tests/backend/test_e2e.py` reformate un fichier ; comparaison AST avant/après identique. `ruff check raceatlas migrations tests/backend` PASS et `ruff format --check raceatlas migrations tests/backend` PASS (**39 fichiers déjà formatés**), puis diff PASS. Les 4 parcours ciblés précédents sont réutilisés explicitement pour la logique inchangée ; aucun nouveau run navigateur pour cette présentation seule. Nouvelle CI et revue du SHA publié encore requises.
 

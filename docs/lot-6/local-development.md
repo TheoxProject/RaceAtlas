@@ -1,6 +1,27 @@
-# Lot6 — calculs mensuels et validation locale
+# Lot 6 — calendrier mensuel et validation locale
 
-Le jalon CAL-01 apporte seulement les fonctions pures de `frontend/src/calendar.js`. La carte existante reste affichée : le calendrier visuel, ses détails et sa conservation de caméra viendront à CAL-02/03 après revue du jalon.
+CAL-02 ajoute la vue mensuelle en cours de revue. Entrer depuis Année/Semaine sélectionne le mois civil affiché, revenir Carte conserve mois/filtres/caméra. Les contrôles du calendrier restent mensuels et bornés à 1900–2200. Le bouton de chaque jour donne accès à toutes ses courses, même si seules une ou deux chips sont visibles. Les dernières semaines restent accessibles par le scroll du calendrier. Les détails et filtres sont partagés, sans recalcul des catégories côté calendrier. En rayon, les localisations à confirmer restent consultables à part, exclues des jours/totaux confirmés.
+
+La carte reste montée lorsqu'elle est masquée ; le retour conserve zoom et Summit. Pour changer le centre depuis le calendrier, choisir l'option ouvre la carte visible ; les coordonnées peuvent aussi être saisies dans le formulaire. Aucun compte, page liste séparée, export ICS ou déploiement ajouté.
+
+Tests ciblés supplémentaires depuis `frontend` :
+
+```powershell
+node node_modules/vitest/vitest.mjs run src/App.test.jsx --pool=threads --maxWorkers=1
+node node_modules/vitest/vitest.mjs run src/Calendar.test.jsx --pool=threads --maxWorkers=1
+```
+
+Après build et configuration de la base PostgreSQL jetable `_test`/`_review` et de Chromium selon le [guide carte](../lot-5/local-development.md), depuis racine :
+
+```powershell
+python -m pytest tests/backend/test_calendar_e2e.py tests/backend/test_e2e.py -q --tb=short
+python -m ruff check raceatlas migrations tests/backend
+python -m ruff format --check raceatlas migrations tests/backend
+```
+
+Le helper `set_civil_date` fige uniquement Date avant les imports ; performance, timers et RAF restent natifs. Ne pas réintroduire `page.clock.set_fixed_time` avec Playwright 1.56 : reculs de performance reproduits, correctif validé sur bbd7625897040519a5e11ba9dd495c9cda605387. Styles/DEM synthétiques interceptés et MapLibre réel ; captures bornées `.local-tools/lot6-screenshots/{desktop,mobile,day-details,candidates}.png`. Ces tests ne qualifient pas les fournisseurs, FFC ou un environnement distant. Résultats et SHA courant au [handoff](developer-handoff.md).
+
+## Calculs CAL-01 inchangés
 
 ## Contrat interne
 
@@ -24,4 +45,4 @@ git diff --check
 
 Le fichier calendrier contient32cas ciblés. Sur ce poste Windows, un run groupé avec le catalogue inchangé a bloqué au démarrage d'un worker ; il a été arrêté après identification exacte du PID et n'est pas une réussite. Un run calendrier seul terminé avec code0 est disponible ; ne pas modifier Vitest pour masquer l'incident, ne pas arrêter tous les Node et ne pas relancer le backend385 inchangé pour ce helper isolé. La CI du SHA courant reste obligatoire.
 
-Aucune base ni ressource externe n'est nécessaire à ces tests. Les futurs E2E du lot utiliseront les bases jetables distinctes et les styles/DEM interceptés décrits au checkpoint ; ne pas lancer leur setup/reseed avant l'attribution CAL-03. Aucun smoke fournisseur, import FFC, service distant ou déploiement autorisé par ces commandes.
+Aucune base ni ressource externe n'est nécessaire aux tests des fonctions pures. Les E2E ci-dessus utilisent les bases jetables distinctes et les styles/DEM interceptés décrits au checkpoint ; vérifier l'état des processus et PostgreSQL avant leur setup. Aucun smoke fournisseur, import FFC, service distant ou déploiement autorisé par ces commandes.

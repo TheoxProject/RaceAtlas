@@ -105,3 +105,49 @@ test('a stale unabortable response cannot overwrite a later selection', async ()
   expect(screen.getByText('Aucune course dans cette sélection')).toBeTruthy();
   expect(screen.queryByText('Données synthétiques · courses fictives')).toBeNull();
 });
+
+test('calendar opens the civil month from ISO and returns to that month with shared details and no-op requests', async () => {
+  vi.setSystemTime(new Date('2027-01-01T12:00:00Z'));
+  const race = fixture.races.find(race => race.id === 'race-mtb-multiday');
+  prepare(data([race])); render(<App />);
+  await screen.findByText('Données synthétiques · courses fictives');
+  fireEvent.click(screen.getByRole('button', { name: 'Semaine ISO', exact: true }));
+  await waitFor(() => expect(loadSelection.mock.lastCall[0]).toMatchObject({ from: '2026-12-28' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Calendrier', exact: true }));
+  expect(screen.queryByRole('button', { name: 'Année', exact: true })).toBeNull();
+  expect(screen.getByRole('status').textContent).toBe('Recherche des courses…');
+  await screen.findByText('1 course ce mois-ci');
+  expect(loadSelection.mock.lastCall[0]).toMatchObject({ from: '2027-01-01', to: '2027-01-31' });
+  fireEvent.click(screen.getAllByRole('button', { name: new RegExp(race.name) })[0]);
+  expect(screen.getByRole('heading', { name: race.name })).toBeTruthy();
+  const requests = loadSelection.mock.calls.length;
+  fireEvent.blur(screen.getByLabelText('Année civile'));
+  fireEvent.change(screen.getByLabelText('Mois'), { target: { value: '1' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Calendrier', exact: true }));
+  await new Promise(resolve => setTimeout(resolve, 200));
+  expect(loadSelection).toHaveBeenCalledTimes(requests);
+  expect(screen.getByRole('heading', { name: race.name })).toBeTruthy();
+  fireEvent.click(screen.getByRole('button', { name: 'Carte', exact: true }));
+  expect(screen.getByLabelText('Mois').value).toBe('1');
+  expect(screen.getByRole('button', { name: 'Mois', exact: true }).getAttribute('aria-pressed')).toBe('true');
+  expect(loadSelection).toHaveBeenCalledTimes(requests);
+});
+
+test('calendar immediately hides old data under a new month, including debounce and delayed response', async () => {
+  vi.setSystemTime(new Date('2027-01-01T12:00:00Z'));
+  const race = fixture.races.find(race => race.id === 'race-mtb-multiday');
+  prepare(data([race])); render(<App />);
+  await screen.findByText('Données synthétiques · courses fictives');
+  fireEvent.click(screen.getByRole('button', { name: 'Calendrier', exact: true }));
+  await screen.findByText('1 course ce mois-ci');
+  let resolveNext;
+  loadSelection.mockImplementationOnce(() => new Promise(resolve => { resolveNext = resolve; }));
+  fireEvent.click(screen.getByRole('button', { name: 'Mois suivant' }));
+  expect(screen.getByRole('heading', { name: 'Février 2027' })).toBeTruthy();
+  expect(screen.getByRole('status').textContent).toBe('Recherche des courses…');
+  expect(screen.queryByText('1 course ce mois-ci')).toBeNull();
+  expect(screen.queryByRole('button', { name: new RegExp(race.name) })).toBeNull();
+  await waitFor(() => expect(resolveNext).toBeTypeOf('function'));
+  resolveNext(data([]));
+  await screen.findByText('0 courses ce mois-ci');
+});
