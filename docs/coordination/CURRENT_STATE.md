@@ -1,22 +1,26 @@
 # Point de reprise RaceAtlas
 
-Dernier checkpoint UTC : **2026-11-11T20:10:11Z**. Lots0–5 et préparation V1 intégrés ; **lot6 calendrier mensuel en cadrage**. Aucun déploiement.
+Dernier checkpoint UTC : **2026-11-12T07:27:49Z**. Lots0–5 et préparation V1 intégrés ; **lot6 CAL-01 validé localement, prêt pour gel/revue ciblée**. Aucune UI calendrier ni déploiement encore livré.
 
 ## Git et tâche active
 
 - Worktree isolé `C:/Users/theop/.codex/worktrees/add4/RaceAtlas`, réutilisé propre après arrêt des agents/tests ; branche **feature/monthly-calendar**. Le checkout personnel main reste préservé.
-- Base locale/distante vérifiée : **8ce46a3fc1129a905d2e9f1fc8552e3cf4d0a56f**, `origin/main`, CI main verte. HEAD avant le commit de cadrage = cette base ; relever le SHA du commit contenant ce checkpoint et le publier avant développement.
-- Draft PR lot6 à ouvrir après ce premier commit. Aucun SHA lot6 approuvé, aucune CI lot6 présumée. Mission : `docs/lot-6/mission.md` ; planning indépendant ignoré `.local-tools/lot6-planning.md`.
+- Base locale/distante vérifiée : **8ce46a3fc1129a905d2e9f1fc8552e3cf4d0a56f**, `origin/main`, CI main verte. Dernier cadrage local/distant : **3f454b0f98f19883c915b9bda28fadb39aca11fd**, CI43094428404 success ; cette preuve initiale ne valide pas le helper suivant.
+- Draft PR https://github.com/TheoxProject/RaceAtlas/pull/9. Le commit contenant ce checkpoint publie CAL-01 : relever son SHA local/distant/PR et sa propre CI. Aucun SHA lot6 approuvé. Mission : `docs/lot-6/mission.md`, handoff et usage local ; planning indépendant ignoré `.local-tools/lot6-planning.md`.
 
 | Tâche | Responsable | État |
 |---|---|---|
-| CAL-00 mission/checkpoint/Draft | Coordinator | IN_PROGRESS |
-| CAL-01 dates/projection/état partagé | Developer | TODO, puis revue ciblée du jalon figé |
+| CAL-00 mission/checkpoint/Draft | Coordinator | DONE, PR9 et CI de cadrage vérifiées |
+| CAL-01 dates/projection/état partagé | Developer | DONE local,32tests PASS ; revue ciblée du nouveau SHA TODO |
 | CAL-02 calendrier responsive/détails/parité | Developer | TODO |
 | CAL-03 intégration/captures/revue finale/CI | Developer/Tester | TODO |
 | CAL-04 fusion/main et rapport pré-déploiement | Coordinator | TODO ; aucune activation autorisée |
 
-**Prochaine action sûre unique :** publier le cadrage et ouvrir la Draft PR, contrôler sa CI, puis déléguer CAL-01 avec fichiers/critères bornés. Un seul writer ; geler les jalons importants pour revue ciblée et terminer par un APPROVE complet du SHA final. Aucune fusion sur une preuve intermédiaire.
+**Prochaine action sûre unique :** Coordinator confirme le SHA CAL-01 publié et surveille sa CI, puis demande sa revue indépendante ciblée. Éditions suivies arrêtées après ce push. CAL-02/UI ne commence qu'après libération explicite ; le lot nécessitera encore un APPROVE complet du SHA final, aucune fusion sur ce jalon intermédiaire.
+
+CAL-01 : uniquement `frontend/src/calendar.js`, ses tests et trois documents du lot. `catalog.js` et App/MapView/Filters/CSS inchangés. Fonctions pures réutilisant `changePeriod`/`periodRange` : mois civil partagé, navigation bornée1900–2200, grille UTC lundi–dimanche, hors mois distincts/sans épreuve, clipping multijour inclusif et déduplication par raceID. Les objets API et témoins de scope restent intacts. En rayon, candidates non localisées séparées des cellules/totaux confirmés ; hors rayon elles restent dans le calendrier. Aucun calcul d'admissibilité client ni appel API/DB.
+
+**32 tests calendrier PASS3,27s, code0 le12novembre**, fichiers préservés après interruption ; couverture bissextiles/siècles, mois aux limites dimanche,2026-12-31..2027-01-02, frontière Paris/ISO, identité des no-ops, vrais changements/bornes, total distinct et scopes/candidates. ESLint/build PASS7,75s et26contrats/diff PASS acquis le11novembre sur les mêmes fichiers avant interruption ; aucune campagne385backend redondante. Run groupé calendar+catalog bloqué au démarrage du second worker :31tests calendrier avaient passé mais run **NON PASS**, arrêté seulement après vérification NodePID34828/parent38448/commande exacte, session25917 exit1. Reprise isolée32PASS3,62s puis confirmation12novembre3,27s ; aucun paramètre Vitest modifié. Dernier runner isolé terminé code0, aucun processus Developer laissé actif. Aucune UI, capture ou intégration calendrier prétendue avant CAL-02/03.
 
 ## Intégrations acquises
 
