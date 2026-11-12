@@ -1,6 +1,6 @@
 """Relational foundation; synthetic IDs are accepted, new IDs default to UUIDs."""
 
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from uuid import uuid4
 
 from sqlalchemy import (
@@ -17,8 +17,10 @@ from sqlalchemy import (
     MetaData,
     String,
     UniqueConstraint,
+    func,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+from sqlalchemy.types import TypeDecorator
 
 DEPARTMENTS = "'01','03','07','15','26','38','42','43','63','69','73','74'"
 
@@ -343,3 +345,61 @@ class GeocodeCache(Base):
     diagnostic: Mapped[str | None] = mapped_column(String)
     checked_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+class PrivateUTCDateTime(TypeDecorator):
+    """Keep PostgreSQL timestamptz while exposing private timestamps as aware UTC."""
+
+    impl = DateTime(timezone=True)
+    cache_ok = True
+
+    def process_bind_param(self, value, dialect):
+        if value is not None:
+            if value.tzinfo is None or value.utcoffset() is None:
+                raise ValueError("Private timestamps require timezone-aware values.")
+            return value.astimezone(timezone.utc)
+        return None
+
+    def process_result_value(self, value, dialect):
+        return value.astimezone(timezone.utc) if value is not None else None
+
+
+class Account(Base):
+    """Private identity only; no credentials or authenticated session in ACC-01."""
+
+    __tablename__ = "account"
+    __table_args__ = (
+        UniqueConstraint("email_normalized"),
+        CheckConstraint(
+            "email_normalized = lower(btrim(email_normalized))", name="email_normalized"
+        ),
+        CheckConstraint(
+            "email_normalized ~ '^[^[:space:][:cntrl:]@]+@[^[:space:][:cntrl:]@]+$'",
+            name="email_shape",
+        ),
+    )
+    id: Mapped[str] = mapped_column(String(64), primary_key=True, default=opaque_id)
+    email_normalized: Mapped[str] = mapped_column(String(254))
+    created_at: Mapped[datetime] = mapped_column(PrivateUTCDateTime(), server_default=func.now())
+
+
+class SavedEntry(Base):
+    __tablename__ = "saved_entry"
+    __table_args__ = (
+        UniqueConstraint("account_id", "scope_id"),
+        CheckConstraint(
+            "status IN ('interested','planned','registered','completed')", name="status"
+        ),
+        CheckConstraint("revision >= 1", name="revision"),
+        CheckConstraint("updated_at >= created_at", name="time_order"),
+    )
+    id: Mapped[str] = mapped_column(String(64), primary_key=True, default=opaque_id)
+    account_id: Mapped[str] = mapped_column(ForeignKey("account.id", ondelete="CASCADE"))
+    scope_id: Mapped[str] = mapped_column(
+        ForeignKey("entry_scope.id", ondelete="RESTRICT"), index=True
+    )
+    status: Mapped[str] = mapped_column(String)
+    revision: Mapped[int] = mapped_column(default=1, server_default="1")
+    created_at: Mapped[datetime] = mapped_column(PrivateUTCDateTime(), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(PrivateUTCDateTime(), server_default=func.now())
+    scope: Mapped[EntryScope] = relationship()

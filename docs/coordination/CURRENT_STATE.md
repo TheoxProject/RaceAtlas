@@ -1,17 +1,17 @@
 # Point de reprise RaceAtlas
 
-Dernier checkpoint UTC : **2026-11-12T18:00:31Z**. Lots0–6 et PRE-01 intégrés, **lot7 ACC-01 en cadrage**. Aucun déploiement.
+Dernier checkpoint UTC : **2026-11-12T18:21:37Z**. Lots 0–6 et PRE-01 intégrés, **ACC-01 modèle/service/migration testés, à publier/geler pour revue ciblée et CI**. Lot 7 non terminé. Aucun déploiement.
 
 ## Git et prochaine action
 
-Worktree isolé C:/Users/theop/.codex/worktrees/add4/RaceAtlas ; checkout personnel main préservé. Branche **feature/accounts-and-planning**, créée propre depuis origin/main **51856c9940a2b0e16c9f05d61a9f1726ae8701d9** après CI main verte. Le commit contenant ce cadrage sera relevé après publication, puis Draft PR à ouvrir immédiatement. Les agents PRE-01 ont terminé tests/lectures et libéré les sources.
+Worktree isolé C:/Users/theop/.codex/worktrees/add4/RaceAtlas ; checkout personnel main préservé. Branche **feature/accounts-and-planning**, depuis origin/main **51856c9940a2b0e16c9f05d61a9f1726ae8701d9** après CI main verte. Parent local/distant **c9696821e7f01afc72ed30837ee5388fd71e5c48**, Draft PR https://github.com/TheoxProject/RaceAtlas/pull/11. Developer seul writer, aucune commande Tester active ; changements WIP conservés avant tests, pas de verdict ou CI présumés.
 
-**Prochaine action sûre :** publier mission/checkpoint/décisions et ouvrir la Draft, puis attribuer ACC-01 seulement au Developer. Surveiller sa CI. Aucun login/compte connecté temporaire, email réel, service/domaine/DNS ou DB distante à créer pour ce jalon.
+**Prochaine action sûre :** publier ce jalon cohérent, transmettre son SHA gelé pour Tester/CI et arrêter les éditions. Aucun ancien verdict transféré ; aucune clôture globale lot 7. Aucun login/compte connecté temporaire, email réel, service/domaine/DNS ou DB distante.
 
 | Tâche | État |
 |---|---|
-| ACC-00 mission/Draft | IN_PROGRESS, Coordinator |
-| ACC-01 identité et sauvegardes par scope | TODO, Developer à attribuer |
+| ACC-00 mission/Draft | DONE, PR11 |
+| ACC-01 identité et sauvegardes par scope | Testé, à publier/geler pour revue ciblée |
 | ACC-02 credentials/sessions/CSRF/récupération | TODO, périmètre ultérieur |
 | PLAN-01 API privée/statuts/ICS | TODO |
 | ACC-UI parcours intégré | TODO |
@@ -19,6 +19,10 @@ Worktree isolé C:/Users/theop/.codex/worktrees/add4/RaceAtlas ; checkout person
 | ACC-FINAL | TODO, aucune clôture lot7 par simulation seule |
 
 Mission : docs/lot-7/mission.md. Le service ACC-01 doit être privé/scoppé par acteur fiable, sans route auth factice ni header de bypass ; FKscope restrictif et preuve réelle de conservation favoris pendant sync. IDs source/listes non durables restent inconnus. Les phases suivantes sont détaillées après ce premier jalon.
+
+Interface : `Account` opaque/email privé trim+lower unique, sans suppression de points/plus-tags, validation minimale non RFC/délivrabilité. L'acteur du service est obligatoirement un **Account persistant attaché à la même Session ORM** ; ACC-02 devra charger ce compte depuis l'auth serveur, jamais prendre un ID acteur de requête ou passer une instance détachée. `SavedEntry` stocke scope seul, FK RESTRICT, compte CASCADE privé, quatre statuts déclaratifs. Révision privée positive initiale 1, +1 uniquement sur vrai statut ; no-op garde ID/created/updated/revision. Upsert PostgreSQL atomique et rafraîchissement ORM déjà chargé ; aucun compteur public modifié. Migration `c40a7162b901` après `b7f4208ac112`. Fixtures test réinitialisent aussi account, sans changer les données source. Interface et commandes détaillées dans docs/lot-7/developer-handoff.md et local-development.md.
+
+Avant tests : `pg_ctl status` a confirmé PostgreSQL existant PID 38028, port 55434 ; aucun pytest/Vitest/A-B concurrent. Caches réutilisés, `_test` uniquement, pas initdb ou campagne 389 complète. Premier run **36 PASS / 4 FAIL en 16,06 s** : timestamps PG retournés en fuseau Paris (deux cas), filtre API obligatoire manquant dans un test et diagnostic ambigu attendu incorrect. Conversion ORM UTC limitée aux nouveaux champs privés, gardant SQL timestamptz ; tests explicites UTC/Paris/Honolulu. Appel API/diagnostic de preuve corrigés. **43 ACC-01 PASS en 24,49 s**, **88 fondation/catalogue/snapshot PASS en 52,38 s**, code 0 ; cycles upgrade/check/downgrade base/upgrade/check réussis. Ruff lint/format **43 fichiers**, **26 contrats/diff PASS**. Aucun test actif. Isolation, contraintes, no-ops/révision, deux connexions concurrentes et vrais imports synthétiques (nom/report/réorganisation attestée/replay/refus/absence) exercés. Frontend et sources publiques inchangés, pas de build/rerun frontend local ; CI complète et revue exacte du nouveau SHA restent nécessaires.
 
 ## Intégrations vérifiées
 
