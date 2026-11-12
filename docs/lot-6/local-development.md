@@ -21,6 +21,8 @@ python -m ruff format --check raceatlas migrations tests/backend
 
 Le helper `set_civil_date` fige uniquement Date avant les imports ; performance, timers et RAF restent natifs. Ne pas réintroduire `page.clock.set_fixed_time` avec Playwright 1.56 : reculs de performance reproduits, correctif validé sur bbd7625897040519a5e11ba9dd495c9cda605387. Styles/DEM synthétiques interceptés et MapLibre réel ; captures bornées `.local-tools/lot6-screenshots/{desktop,mobile,day-details,candidates}.png`. Ces tests ne qualifient pas les fournisseurs, FFC ou un environnement distant. Résultats et SHA courant au [handoff](developer-handoff.md).
 
+La synchronisation de sélection du calendrier possède un budget de test explicite de 15 s ; ce n'est pas un SLA produit et cela ne change pas l'attente caméra 60° limitée à 10 s. Le parcours Summit→ISO→Calendrier mesure les phases API/ready sur l'horloge monotone hôte. Résumé synthétique local `selection-timing.json` dans le même dossier ignoré, trace limitée à 24 événements classés, sans URL/query/headers/body/env ; cette mesure inclut le transport et l'observateur, pas uniquement le rendu. Seuls les quatre PNG connus sont copiés par la CI ; un échec de disponibilité joint aussi un résumé borné à l'erreur.
+
 ## Calculs CAL-01 inchangés
 
 ## Contrat interne

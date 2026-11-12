@@ -1,8 +1,18 @@
 # Point de reprise RaceAtlas
 
-Dernier checkpoint UTC : **2026-11-12T13:00:57Z**. Lots 0–5 et préparation V1 intégrés ; **CAL-02 calendrier testé, jalon à geler pour revue ciblée ; lot 6 non intégré**. Aucun déploiement.
+Dernier checkpoint UTC : **2026-11-12T13:20:11Z**. Lots 0–5 et préparation V1 intégrés ; **CAL-02 correction 1/3 testée, à geler après publication pour revue complète renouvelée ; lot 6 non intégré**. Aucun déploiement.
 
-## Jalon CAL-02 courant
+## Correction CAL-02 cycle 1 — état courant
+
+Parent local/distant : **8a433fe3d8374173b985ced3dc4db33ff0e9dda2**, PR9, branche `feature/monthly-calendar`, même worktree isolé/base. CI `43223402589` **FAIL : 388 PASS / 1 FAIL en 180,80 s**, 66 frontend PASS. Tester REQUEST CHANGES exact (`.local-tools/tester-report-lot6.md`) : F6-01 titre de jour périmé dans les panneaux globaux ; F6-02 disponibilité calendrier attendue avec défaut Playwright 5 s. La capture CI montre déjà janvier prêt après l'échec et les API 200 : aucun deadlock ou défaut moteur démontré. Tous processus Tester terminés avant libération.
+
+F6-01 : le footer nomme explicitement le contexte des non-localisées/candidates et Explorer remet le contexte global, sans changer le mois, les filtres ou les détails/no-ops. Régression App : jour vide 12 novembre → footer affiche course 11 novembre → retour Carte/Explorer global, titre correct et aucune requête supplémentaire. F6-02 : budget de synchronisation sélection explicite 15 s, non SLA produit. Instrumentation tests seule, horloge hôte monotone, événements API classés avec compteur/status et 24 entrées maximum ; aucun URL, query, header, body, env ou HTML enregistré. Résumé local `.local-tools/lot6-screenshots/selection-timing.json`, erreur JSON bornée si disponibilité échoue. Whitelist CI PNG inchangée.
+
+Première mesure Summit/ISO→Calendrier : clic→ready **3813 ms**, dernière fin API observée **3141 ms**, lecture ready **672 ms** après. Six événements (cinq 200, une requête annulée pendant transition) ; le créneau inclut la sélection ISO démarrant pendant l'action de clic, pas uniquement les requêtes mensuelles. Mesures de réception côté test, avec coût de l'observateur/transport ; elles ne démontrent pas la cause complète de l'ancien échec CI. Aucun retry conditionné au vert. Caméra 60°/10 s et DEM >100 stricts conservés, aucun moteur/MapView/CSS/calcul/API/contrat/dépendance/CI modifié.
+
+App **9 PASS en 9,38 s**, ESLint/build PASS (**3,35 s**), Ruff check et format --check complets PASS (**40 fichiers**), 26 contrats/diff PASS. Un premier run App a trouvé un sélecteur ambigu chip/ligne dans la nouvelle régression ; borné au panneau puis neuf cas PASS. Premier ciblé réel : **3 PASS / 1 FAIL en 72,45 s**, nouvelle reproduction mobile gênée par le panneau fixe qui couvre le footer. Reproduction déplacée sur desktop comme le cas indépendant, sans CSS modifié ; anciens tests mobiles conservés. **Ciblé final : 4 PASS, 11 désélectionnés, 44,93 s, code 0**, aucun processus restant. Mesure finale : clic→ready **3672 ms**, dernière fin API **2844 ms**, intervalle **828 ms**, trois 200 et une annulation de transition. Ne pas relancer 389 backend ou 15 E2E inchangés. Prochaine action : publier correctif + preuves, geler le SHA pour revue complète renouvelée et CI, puis arrêter les éditions.
+
+## Historique du jalon CAL-02 initial
 
 Parent local/distant avant publication : **bbd7625897040519a5e11ba9dd495c9cda605387**, CI `43219642754` SUCCESS (386 pytest en 117,48 s, 60 frontend, lint/format/contrats/build et gardes source avant/après). Tester APPROVE ciblé exact, rapport `.local-tools/tester-report-lot6-clock.md` : 4 PASS en 49,81 s et 165 sondes. Le défaut de virtualisation de l'horloge est validé sur son périmètre ; aucune modification du harness ou des dépendances dans CAL-02.
 

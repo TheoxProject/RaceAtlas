@@ -1,6 +1,32 @@
 # Handoff Developer — lot 6, jalon CAL-02
 
-## Jalon courant à revoir
+## Correction cycle 1/3 — nouveau candidat
+
+Parent local/distant **8a433fe3d8374173b985ced3dc4db33ff0e9dda2**, branche/PR/base inchangées. CI `43223402589` **388 PASS / 1 FAIL en 180,80 s**, frontend 66 PASS ; Tester REQUEST CHANGES exact, rapport `.local-tools/tester-report-lot6.md`. Aucun ancien APPROVE transféré : nouveau SHA à publier, geler et soumettre à la revue complète renouvelée et à sa CI.
+
+- **F6-01** : App réinitialise le titre de contexte pour Explorer global et nomme explicitement les courses non localisées/candidates du footer. Régression App et réelle desktop : ouvrir le 12 novembre vide, puis footer avec course du 11 novembre, revenir Carte même mois et ouvrir Explorer ; les dates du jour ne restent pas attachées à la sélection globale. Période/filtres, détails partagés et no-ops restent conservés.
+- **F6-02** : `ready_calendar` alloue explicitement 15 s à la disponibilité de sélection (aria-busy puis total exact, budget restant partagé). Le défaut Playwright 5 s n'était pas un SLA produit. Capture CI exacte `.local-tools/ci-cal02-8a-desktop.png` : janvier déjà prêt/chips 1 et 2, API 200 ; aucune panne permanente ou cause moteur démontrée. Caméra 60° / délai 10 s et DEM >100 inchangés.
+- Instrumentation tests : phases horloge hôte monotone depuis le clic Summit/ISO→Calendrier, événements `requestfinished`/`requestfailed` classés races/map/version-check/options, compteur/statuts, trace plafonnée à 24. Aucun URL/query/header/body/env ou HTML enregistré. Résumé local ignoré `lot6-screenshots/selection-timing.json` ; JSON borné dans l'erreur/JUnit si échec, capture PNG existante au point d'échec. Whitelist CI non élargie.
+
+Première mesure : clic→ready **3813 ms** ; dernière fin API **3141 ms** ; intervalle API→lecture ready **672 ms**. Six événements : cinq 200, une annulation pendant transition. Mesure du run final : clic→ready **3672 ms**, dernière fin API **2844 ms**, intervalle **828 ms**, trois 200 et une annulation. Le créneau démarre avant l'action du bouton Calendrier et inclut la sélection ISO qui s'amorce pendant celle-ci. Ces temps hôte incluent réception/transport et instrumentation ; ils ne prouvent pas à eux seuls la cause de l'ancien timeout. Pas de retry jusqu'au vert.
+
+Commandes actuelles :
+
+```powershell
+# Depuis frontend
+node node_modules/vitest/vitest.mjs run src/App.test.jsx --pool=threads --maxWorkers=1
+node node_modules/eslint/bin/eslint.js . --max-warnings 0
+node node_modules/vite/bin/vite.js build
+# Depuis racine, DB locale _test + opt-in et Chromium existants
+python -m pytest tests/backend/test_calendar_e2e.py tests/backend/test_e2e.py -k 'calendar or compiled_mobile_filters' -q --tb=short
+python -m ruff check raceatlas migrations tests/backend
+python -m ruff format --check raceatlas migrations tests/backend
+git diff --check
+```
+
+**9 App PASS / 9,38 s**, ESLint/build PASS (**3,35 s**), Ruff lint et format PASS (**40 fichiers**), **26 contrats et diff PASS**. Nouveau sélecteur App initialement ambigu chip/ligne, borné au panneau avant ce run vert. Premier ciblé : **3 PASS / 1 FAIL en 72,45 s**, car la reproduction supplémentaire placée sur mobile ne pouvait cliquer le footer sous le panneau fixe. Reproduction placée sur desktop comme celle du Tester ; aucune CSS modifiée, tous anciens tests mobiles conservés. **Ciblé final : 4 PASS, 11 désélectionnés, 44,93 s, code 0** ; aucun processus restant. Aucun backend complet local ou suite carte complète inchangée répété ; CAL-01, composant et autres E2E explicitement réutilisés depuis 8a433fe (preuves ci-dessous et revue indépendante), sources correspondantes inchangées. Aucun MapView/CSS/moteur/API/contrat/dépendance/CI modifié dans ce cycle. Après publication : arrêt des éditions jusqu'à nouvelle libération.
+
+## Historique du jalon initial
 
 Branche `feature/monthly-calendar`, PR https://github.com/TheoxProject/RaceAtlas/pull/9, base **8ce46a3fc1129a905d2e9f1fc8552e3cf4d0a56f**. Parent avant publication : **bbd7625897040519a5e11ba9dd495c9cda605387**, CI `43219642754` SUCCESS : 386 pytest en 117,48 s, 60 frontend et tous contrôles. Tester APPROVE ciblé de ce parent : `.local-tools/tester-report-lot6-clock.md`, 4 PASS / 49,81 s et 165 sondes. Cela valide le correctif Clock inchangé, pas CAL-02. Relever le nouveau SHA publié, puis geler pour CI et revue ciblée. CAL-03 complète restera obligatoire.
 

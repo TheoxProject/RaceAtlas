@@ -62,7 +62,7 @@ export function App() {
           <div className="map-topline"><div className="result-count" aria-live="polite">{state.status === 'loading' ? 'Recherche des courses…' : state.status === 'error' ? 'Sélection indisponible' : <><strong>{data.total}</strong> course{data.total !== 1 && 's'} {isRadius ? 'dans le rayon' : 'à explorer'}<span>{groups.length} commune{groups.length !== 1 && 's'} localisée{groups.length !== 1 && 's'}</span></>}</div>
             <div className="terrain-switch" aria-label="Relief de la carte"><button aria-pressed={mode === 'altitude'} onClick={() => setMode('altitude')}>△ Altitude <small>2,5D</small></button><button disabled={terrainFailed} aria-pressed={mode === 'summit'} onClick={() => setMode('summit')}>▲ Summit <small>3D</small></button></div>
           </div>
-          <div className="map-actions"><button className="mobile-only" onClick={() => setFiltersOpen(true)}>☷ Filtres</button><button onClick={() => { setExplore(!explore); setGroupIds(null); setSelected(null); }} aria-expanded={explore}>Explorer les communes</button><button className="refresh-button" aria-label="Actualiser les courses" onClick={() => setAttempt(value => value + 1)}>↻</button></div>
+          <div className="map-actions"><button className="mobile-only" onClick={() => setFiltersOpen(true)}>☷ Filtres</button><button onClick={() => { setExplore(!explore); setGroupIds(null); setSelected(null); setDayTitle(null); }} aria-expanded={explore}>Explorer les communes</button><button className="refresh-button" aria-label="Actualiser les courses" onClick={() => setAttempt(value => value + 1)}>↻</button></div>
           {chooseCenter && <div className="center-instruction" role="status">Cliquez sur la carte pour choisir votre point de recherche.</div>}
           </div>
           {view === 'calendar' && <>
@@ -80,7 +80,7 @@ export function App() {
             </>}
           </aside>}
         </div>
-        <footer className="workspace-footer"><span><i />{allSynthetic ? 'Données synthétiques · courses fictives' : 'Centres de communes · départs à vérifier'}</span>{data?.unlocated_count > 0 && <button className="text-button" onClick={() => { setGroupIds([...unlocated]); setSelected(null); setExplore(true); }}>{data.unlocated_count} localisation{data.unlocated_count > 1 && 's'} à préciser ↗</button>}<span>{data?.coverage.last_successful_sync_at ? `Dernière synchronisation réussie : ${formatDate(data.coverage.last_successful_sync_at.slice(0, 10))}` : 'Couverture de la source non établie'}</span></footer>
+        <footer className="workspace-footer"><span><i />{allSynthetic ? 'Données synthétiques · courses fictives' : 'Centres de communes · départs à vérifier'}</span>{data?.unlocated_count > 0 && <button className="text-button" onClick={() => { setDayTitle(isRadius ? 'Localisations à confirmer' : 'Courses non localisées'); setGroupIds([...unlocated]); setSelected(null); setExplore(true); }}>{data.unlocated_count} localisation{data.unlocated_count > 1 && 's'} à préciser ↗</button>}<span>{data?.coverage.last_successful_sync_at ? `Dernière synchronisation réussie : ${formatDate(data.coverage.last_successful_sync_at.slice(0, 10))}` : 'Couverture de la source non établie'}</span></footer>
       </section>
     </div>
   </main>;

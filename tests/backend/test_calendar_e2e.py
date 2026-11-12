@@ -1,6 +1,9 @@
+import json
 import re
+import time
 from contextlib import contextmanager
 from pathlib import Path
+from urllib.parse import parse_qs, urlsplit
 
 import pytest
 import test_e2e as map_tests
@@ -17,6 +20,71 @@ SHOTS = Path(__file__).resolve().parents[2] / ".local-tools" / "lot6-screenshots
 server = map_tests.server
 
 
+def install_selection_timing(page):
+    """Host monotonic phases only; never retain URLs, query values or response bodies."""
+    pending = {}
+
+    def started(request):
+        trace = getattr(page, "_calendar_timing", None)
+        if trace is None:
+            return
+        parsed = urlsplit(request.url)
+        kind = {
+            "/api/v1/races": "races",
+            "/api/v1/map": "map",
+            "/api/v1/catalog/options": "options",
+        }.get(parsed.path)
+        if kind == "races" and parse_qs(parsed.query).get("limit") == ["1"]:
+            kind = "version-check"
+        if kind:
+            pending[request] = (trace, kind)
+
+    def completed(request, failed=False):
+        entry = pending.pop(request, None)
+        if entry is None:
+            return
+        trace, kind = entry
+        response = None if failed else request.response()
+        event = {
+            "kind": kind,
+            "phase": "failed" if failed else "finished",
+            "status": response.status if response else None,
+            "ms": round((time.monotonic() - trace["start"]) * 1000, 2),
+        }
+        trace["api_count"] += 1
+        trace["last_api_finished_ms"] = event["ms"]
+        if len(trace["events"]) < 24:
+            trace["events"].append(event)
+
+    page.on("request", started)
+    page.on("requestfinished", completed)
+    page.on("requestfailed", lambda request: completed(request, failed=True))
+
+
+def begin_selection_timing(page, label):
+    page._calendar_timing = {
+        "label": label,
+        "start": time.monotonic(),
+        "api_count": 0,
+        "events": [],
+    }
+
+
+def selection_timing(page, phase):
+    trace = getattr(page, "_calendar_timing", None)
+    if trace is None:
+        return {"phase": phase, "budget_ms": 15000}
+    result = {key: value for key, value in trace.items() if key != "start"}
+    result.update(
+        phase=phase, click_elapsed_ms=round((time.monotonic() - trace["start"]) * 1000, 2)
+    )
+    if phase == "ready":
+        page._calendar_timing = None
+    SHOTS.mkdir(parents=True, exist_ok=True)
+    (SHOTS / "selection-timing.json").write_text(json.dumps(result, indent=2), encoding="utf-8")
+    return result
+
+
 @contextmanager
 def calendar_page(server, shot, *, mobile=False, now="2026-11-11T12:00:00Z"):
     SHOTS.mkdir(parents=True, exist_ok=True)
@@ -28,6 +96,7 @@ def calendar_page(server, shot, *, mobile=False, now="2026-11-11T12:00:00Z"):
         )
         errors = []
         page.on("pageerror", lambda error: errors.append(str(error)))
+        install_selection_timing(page)
         try:
             open_map(page, server, now=now)
             yield page
@@ -43,10 +112,26 @@ def calendar_page(server, shot, *, mobile=False, now="2026-11-11T12:00:00Z"):
 
 
 def ready_calendar(page, total):
-    expect(page.locator(".calendar-view")).to_have_attribute("aria-busy", "false")
-    expect(page.locator(".calendar-summary")).to_have_text(
-        f"{total} course{'s' if total != 1 else ''} ce mois-ci"
-    )
+    # Selection readiness has an explicit budget; the strict camera deadline is unchanged.
+    deadline = time.monotonic() + 15
+    phase = "selection-busy"
+    try:
+        expect(page.locator(".calendar-view")).to_have_attribute(
+            "aria-busy", "false", timeout=15000
+        )
+        phase = "selection-total"
+        expect(page.locator(".calendar-summary")).to_have_text(
+            f"{total} course{'s' if total != 1 else ''} ce mois-ci",
+            timeout=max(1, int((deadline - time.monotonic()) * 1000)),
+        )
+    except AssertionError:
+        raise AssertionError(
+            "Calendar selection not ready within 15000ms: "
+            + json.dumps(selection_timing(page, phase), ensure_ascii=True)
+        ) from None
+    timing = selection_timing(page, "ready")
+    if "label" in timing:
+        print("CALENDAR_SELECTION_TIMING " + json.dumps(timing, ensure_ascii=True))
 
 
 def reach_last_day(page, date, month_title):
@@ -76,6 +161,7 @@ def test_calendar_new_year_multiday_and_live_map_camera(seeded, server):
         page.evaluate("document.querySelector('.map-canvas').__calendarIdentity = 'same-instance'")
         page.get_by_role("button", name="Semaine ISO", exact=True).click()
         expect(page.get_by_label("Année ISO")).to_have_value("2026")
+        begin_selection_timing(page, "summit-iso-to-calendar")
         page.get_by_role("button", name="Calendrier", exact=True).click()
         ready_calendar(page, 1)
         expect(page.get_by_role("heading", name="Janvier 2027")).to_be_visible()
@@ -152,6 +238,21 @@ def test_calendar_shared_scope_filters_and_radius_candidates(seeded, server):
         assert sorted(page.locator(".race-row strong").all_text_contents()) == or_names
         page.get_by_role("button", name="Fermer les détails").click()
         page.get_by_role("button", name="Réinitialiser les filtres").click()
+        ready_calendar(page, 11)
+        page.locator('td[data-date="2026-11-12"] .calendar-day').click()
+        expect(page.get_by_text("Aucune course ce jour.")).to_be_visible()
+        expect(page.locator(".results-heading")).to_have_text(re.compile("12 nov. 2026"))
+        page.get_by_role("button", name="1 localisation à préciser ↗").click()
+        expect(page.locator(".results-heading span")).to_have_text("Courses non localisées")
+        expect(page.locator(".results-panel .race-row")).to_have_count(1)
+        expect(page.locator(".results-panel .race-row")).to_contain_text("11 nov. 2026")
+        page.get_by_role("button", name="Fermer les détails").click()
+        page.get_by_role("button", name="Carte", exact=True).click()
+        page.get_by_role("button", name="Explorer les communes").click()
+        expect(page.locator(".results-heading span")).to_have_text("Les courses de votre sélection")
+        expect(page.locator(".race-row")).to_have_count(11)
+        page.get_by_role("button", name="Fermer les détails").click()
+        page.get_by_role("button", name="Calendrier", exact=True).click()
         ready_calendar(page, 11)
         page.locator('td[data-date="2026-11-11"] .calendar-day').click()
         expect(page.get_by_role("button", name=re.compile("race-unlocated"))).to_be_visible()
