@@ -6,6 +6,8 @@ La base intégrée est **7b733d86d99a354fdcfe2bf1ecbde519ef78a68f** ([lot 6](../
 
 ## Décision proposée
 
+**Décision du propriétaire du 12 novembre 2026 : premier déploiement privé après le lot 8, au stade candidat V1.** Le choix fixe le calendrier ; les opérations de création, déploiement, migrations et envois restent soumises aux préconditions et à une autorisation explicite. Voir la [confirmation d'intégration](predeployment-integration.md).
+
 **Recommandation : attendre le candidat de livraison après le lot 8**, tout en développant le lot 7 localement avec transport email simulé. Cela permet de valider comptes/récupération, sauvegarde/restauration et exploitation avant d'héberger des données à conserver. L'attente ne règle pas à elle seule les droits fournisseur/FFC : ces conditions restent explicites.
 
 | Moment possible | Ce que cela permet | Préconditions supplémentaires |

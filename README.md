@@ -10,6 +10,8 @@ Entrer dans le calendrier depuis Année/Semaine sélectionne le mois civil affic
 
 [Rapport concret de pré-déploiement](docs/readiness/predeployment-report.md), [checkpoint opérationnel](docs/coordination/CURRENT_STATE.md), [préparation hébergement intégrée](docs/readiness/integration.md). Le rapport est préparatoire : comptes/plafonds réels, licences complètes, expéditeur et validations distantes restent ouverts ; aucune activation par fusion ou silence.
 
+Le premier jalon du lot 7 prépare uniquement une identité privée et les sauvegardes par liste d'engagement : statuts déclaratifs, révision privée, isolation entre comptes et conservation pendant les imports. Il ne connecte aucun utilisateur et n'ajoute pas encore auth, interface ou ICS. [Périmètre et validation ACC-01](docs/lot-7/developer-handoff.md), [guide local](docs/lot-7/local-development.md). Le premier déploiement reste prévu après le lot 8, sous autorisation séparée ; aucun expéditeur email réel n'est validé.
+
 ## Développement local
 
 Prérequis : Python 3.12, Node.js 24, pnpm 10.20.0 et PostgreSQL 17.11 local. Les [instructions Windows d'installation](docs/lot-1/local-development.md) décrivent la création des bases et les dépendances. Les [commandes et scénarios actuels de carte](docs/lot-5/local-development.md) précisent les tests WebGL hors réseau et leurs limites.

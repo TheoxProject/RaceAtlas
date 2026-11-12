@@ -39,7 +39,10 @@ def database():
 def session(database):
     with database.begin() as connection:
         connection.execute(
-            text("TRUNCATE import_run, geocode_cache, competition, commune, category, race CASCADE")
+            text(
+                "TRUNCATE account, import_run, geocode_cache, competition, "
+                "commune, category, race CASCADE"
+            )
         )
     with Session(database) as session:
         yield session
