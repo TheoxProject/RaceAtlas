@@ -1,6 +1,6 @@
 # Point de reprise RaceAtlas
 
-Dernier checkpoint UTC : **2026-11-12T12:32:27Z**. Lots 0–5 et préparation V1 intégrés ; **CAL-01 approuvé sur son périmètre ; correctif du harness Date seule en validation**. Aucune UI calendrier ni déploiement livré.
+Dernier checkpoint UTC : **2026-11-12T12:37:09Z**. Lots 0–5 et préparation V1 intégrés ; **CAL-01 approuvé sur son périmètre ; correctif du harness Date seule en validation**. Aucune UI calendrier ni déploiement livré.
 
 ## Git et tâche active
 
@@ -18,6 +18,8 @@ Dernier checkpoint UTC : **2026-11-12T12:32:27Z**. Lots 0–5 et préparation V1
 | CAL-04 fusion/main et rapport pré-déploiement | Coordinator | TODO ; aucune activation autorisée |
 
 **Prochaine action sûre unique :** publier le correctif tests + preuves, geler son SHA pour Tester et surveiller sa CI. Aucune UI/App/MapView/Filters avant décision Coordinator. Aucun avis intermédiaire ne vaut APPROVE final.
+
+Correction de format uniquement après CI `43219175247` sur **9e3c3bc26b0840a6df7e0223655b092395ddeeef** : échec `ruff format --check` pour `tests/backend/test_e2e.py`, aucun test backend/frontend exécuté dans ce run. Après libération Tester, `ruff format tests/backend/test_e2e.py` reformate un fichier ; comparaison AST avant/après identique. `ruff check raceatlas migrations tests/backend` PASS et `ruff format --check raceatlas migrations tests/backend` PASS (**39 fichiers déjà formatés**), puis diff PASS. Les 4 parcours ciblés précédents sont réutilisés explicitement pour la logique inchangée ; aucun nouveau run navigateur pour cette présentation seule. Nouvelle CI et revue du SHA publié encore requises.
 
 ## Correctif du harness, 12 novembre
 

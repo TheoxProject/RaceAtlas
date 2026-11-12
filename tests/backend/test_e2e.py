@@ -81,11 +81,14 @@ def test_civil_date_preserves_native_animation_clock(monkeypatch):
 
         def capture_native_then_install(script):
             # One init script fixes ordering: native references precede the actual helper.
-            add_script(script="""globalThis.nativeClock = {
+            add_script(
+                script="""globalThis.nativeClock = {
                 Date, performance, now: performance.now,
                 setTimeout, clearTimeout, setInterval, clearInterval,
                 requestAnimationFrame, cancelAnimationFrame
-            };""" + script)
+            };"""
+                + script
+            )
 
         monkeypatch.setattr(page, "add_init_script", capture_native_then_install)
         set_civil_date(page, "2026-12-31T23:30:00Z")
@@ -129,9 +132,14 @@ def test_civil_date_preserves_native_animation_clock(monkeypatch):
                 stillFixed: Date.now() === fixed && +new Date() === fixed};
         }""")
         assert result == {
-            "dates": True, "identities": True, "paris": "2027-01-01",
-            "clockInstalled": False, "monotone": True, "progressed": True,
-            "frame": True, "stillFixed": True,
+            "dates": True,
+            "identities": True,
+            "paris": "2027-01-01",
+            "clockInstalled": False,
+            "monotone": True,
+            "progressed": True,
+            "frame": True,
+            "stillFixed": True,
         }
         browser.close()
 
