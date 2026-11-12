@@ -1,22 +1,27 @@
 # Point de reprise RaceAtlas
 
-Dernier checkpoint UTC : **2026-11-12T07:27:49Z**. Lots0–5 et préparation V1 intégrés ; **lot6 CAL-01 validé localement, prêt pour gel/revue ciblée**. Aucune UI calendrier ni déploiement encore livré.
+Dernier checkpoint UTC : **2026-11-12T08:03:48Z**. Lots0–5 et préparation V1 intégrés ; **CAL-01 approuvé sur son périmètre, CI bloquée par l'ancien scénario Summit ; diagnostic instrumenté en cours**. Aucune UI calendrier ni déploiement livré.
 
 ## Git et tâche active
 
 - Worktree isolé `C:/Users/theop/.codex/worktrees/add4/RaceAtlas`, réutilisé propre après arrêt des agents/tests ; branche **feature/monthly-calendar**. Le checkout personnel main reste préservé.
 - Base locale/distante vérifiée : **8ce46a3fc1129a905d2e9f1fc8552e3cf4d0a56f**, `origin/main`, CI main verte. Dernier cadrage local/distant : **3f454b0f98f19883c915b9bda28fadb39aca11fd**, CI43094428404 success ; cette preuve initiale ne valide pas le helper suivant.
-- Draft PR https://github.com/TheoxProject/RaceAtlas/pull/9. Le commit contenant ce checkpoint publie CAL-01 : relever son SHA local/distant/PR et sa propre CI. Aucun SHA lot6 approuvé. Mission : `docs/lot-6/mission.md`, handoff et usage local ; planning indépendant ignoré `.local-tools/lot6-planning.md`.
+- Draft PR https://github.com/TheoxProject/RaceAtlas/pull/9. Jalon CAL-01 publié/revu **eba50f3735c6d19344ca9221da5f5adecf55a77d**, APPROVE ciblé uniquement. Le commit contenant ce checkpoint ajoute le diagnostic CI : relever son SHA local/distant/PR et sa propre CI. Aucun verdict final lot6. Mission : `docs/lot-6/mission.md`, handoff et usage local.
 
 | Tâche | Responsable | État |
 |---|---|---|
 | CAL-00 mission/checkpoint/Draft | Coordinator | DONE, PR9 et CI de cadrage vérifiées |
-| CAL-01 dates/projection/état partagé | Developer | DONE local,32tests PASS ; revue ciblée du nouveau SHA TODO |
+| CAL-01 dates/projection/état partagé | Developer | APPROVE ciblé exacteba50f3 ; calculs inchangés depuis |
+| CAL-CI ancien test Summit/base en panne | Developer/Coordinator | IN_PROGRESS, instrumentation tests seulement ; cause non prouvée |
 | CAL-02 calendrier responsive/détails/parité | Developer | TODO |
 | CAL-03 intégration/captures/revue finale/CI | Developer/Tester | TODO |
 | CAL-04 fusion/main et rapport pré-déploiement | Coordinator | TODO ; aucune activation autorisée |
 
-**Prochaine action sûre unique :** Coordinator confirme le SHA CAL-01 publié et surveille sa CI, puis demande sa revue indépendante ciblée. Éditions suivies arrêtées après ce push. CAL-02/UI ne commence qu'après libération explicite ; le lot nécessitera encore un APPROVE complet du SHA final, aucune fusion sur ce jalon intermédiaire.
+**Prochaine action sûre unique :** Coordinator confirme le nouveau SHA de diagnostic et observe sa CI instrumentée. Si le timeout revient, lire snapshot/trace et `summit.png` avant toute correction ; un PASS seul ne prouve pas la cause. Aucune intégration App/MapView/Filters ni UI publique avant décision. Un composant mensuel isolé peut être préparé localement sans nouveau push pendant ce run, sur autorisation Coordinator. Aucun avis intermédiaire ne vaut APPROVE final.
+
+CI43175452166 **FAIL384PASS/1FAIL**, job131038502526 : ancien `test_base_map_warning_does_not_silently_disable_summit`, attente pitch60 expirée10s après DEM>100 et modeSummit. Helper calendrier non branché, MapView/calculs/testsJS inchangés ; aucun défaut calendrier attribué à cet échec. Rapport CAL-01 `.local-tools/tester-report-lot6-cal01.md`.
+
+Le présent commit ajoute uniquement diagnostics tests/support et documents. Premier run détaillé ignoré1PASS26,58s : DEM arrivé avec moteur39,95°/dataset35°, puis les deux60° et moving/easing=false après511ms ; aucun pageerror/perte de contexte. Cause CI **non prouvée**. Version finale du harness **1PASS12,16s** : binding vers Python du dernier snapshot/trace avant timeout, temps hôte monotone vs performance/Date/frames, moteur vs dataset, moving/easing, terrain/élévation, mode/warning, contexte et stop/_stop avec origine courte. Aucune évaluation JS au timeout ; screenshot `summit.png` limité5s et JSON<=12000caractères joints à l'erreur/JUnit. Pas de headers/env/HTML/console bruts. Attente10s, pitch60 strict, DEM>100, clock et rendu inchangés. Ce PASS de harness ne ferme pas le défaut. Artefacts ignorés `.local-tools/map-animation-diagnostic/` ; aucune boucle de retries ou nouvelle campagne385backend.
 
 CAL-01 : uniquement `frontend/src/calendar.js`, ses tests et trois documents du lot. `catalog.js` et App/MapView/Filters/CSS inchangés. Fonctions pures réutilisant `changePeriod`/`periodRange` : mois civil partagé, navigation bornée1900–2200, grille UTC lundi–dimanche, hors mois distincts/sans épreuve, clipping multijour inclusif et déduplication par raceID. Les objets API et témoins de scope restent intacts. En rayon, candidates non localisées séparées des cellules/totaux confirmés ; hors rayon elles restent dans le calendrier. Aucun calcul d'admissibilité client ni appel API/DB.
 

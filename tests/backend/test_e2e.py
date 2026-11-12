@@ -1,9 +1,11 @@
+import json
 import re
 import threading
 from pathlib import Path
 
 import pytest
-from map_support import camera, intercept_map, launch
+from map_support import camera, camera_diagnostic, install_camera_diagnostic, intercept_map, launch
+from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 from playwright.sync_api import expect, sync_playwright
 from sqlalchemy import text
 from werkzeug.serving import make_server
@@ -43,11 +45,24 @@ def assert_camera_unchanged(actual, expected):
 
 
 def wait_camera_pitch(page, pitch):
-    page.wait_for_function(
-        "pitch => JSON.parse(document.querySelector('.map-canvas').dataset.camera).pitch === pitch",
-        arg=pitch,
-        timeout=10000,
-    )
+    try:
+        page.wait_for_function(
+            "pitch => JSON.parse(document.querySelector('.map-canvas').dataset.camera)"
+            ".pitch === pitch",
+            arg=pitch,
+            timeout=10000,
+        )
+    except PlaywrightTimeoutError as error:
+        diagnostic = camera_diagnostic(page)
+        try:
+            SHOTS.mkdir(parents=True, exist_ok=True)
+            page.screenshot(path=str(SHOTS / "summit.png"), timeout=5000)
+        except Exception as screenshot_error:
+            diagnostic["screenshot_error"] = type(screenshot_error).__name__
+        raise AssertionError(
+            f"Pitch {pitch} not reached within 10000ms; bounded camera diagnostic: "
+            + json.dumps(diagnostic, ensure_ascii=True)
+        ) from error
 
 
 @pytest.mark.e2e
@@ -311,6 +326,7 @@ def test_base_map_warning_does_not_silently_disable_summit(seeded, server):
         browser = launch(playwright)
         page = browser.new_page()
         open_map(page, server, base_failure=True)
+        assert install_camera_diagnostic(page)
         expect(
             page.get_by_text("Le fond de carte est partiellement indisponible.", exact=False)
         ).to_be_visible()
@@ -325,6 +341,7 @@ def test_base_map_warning_does_not_silently_disable_summit(seeded, server):
         )
         wait_camera_pitch(page, 60)
         assert camera(page)["pitch"] == 60
+        assert "snapshot" in camera_diagnostic(page)
         browser.close()
 
 

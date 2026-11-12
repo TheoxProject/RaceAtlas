@@ -1,6 +1,18 @@
 # Handoff Developer — lot6, jalon CAL-01
 
-Branche `feature/monthly-calendar`, Draft PR https://github.com/TheoxProject/RaceAtlas/pull/9, base **8ce46a3fc1129a905d2e9f1fc8552e3cf4d0a56f**. Cadrage **3f454b0f98f19883c915b9bda28fadb39aca11fd**, CI43094428404 success, preuve initiale seulement. Le commit contenant ce handoff publie CAL-01 ; relever HEAD local/distant/PR puis geler pour Tester. **Aucun verdict CAL-01 ou final, aucun merge lot6.**
+Branche `feature/monthly-calendar`, Draft PR https://github.com/TheoxProject/RaceAtlas/pull/9, base **8ce46a3fc1129a905d2e9f1fc8552e3cf4d0a56f**. CAL-01 **eba50f3735c6d19344ca9221da5f5adecf55a77d** a reçu APPROVE ciblé, mais CI43175452166 échoue sur un ancien scénario Summit (384PASS/1FAIL). Le commit contenant ce handoff ajoute seulement le diagnostic de cet échec ; relever son SHA local/distant/PR. **Pas de correction déclarée ou verdict final, aucun merge lot6.**
+
+## Diagnostic CI prioritaire, produit inchangé
+
+`tests/backend/map_support.py` et `test_e2e.py` ajoutent au scénario concerné un observateur du moteur existant via la fibre React19.2 épinglée, sans modifier MapView. Le binding transmet avant l'échec un cache borné au processus Python : caméra réelle et dataset séparés, moving/easing, terrain/élévation, mode/warning, contexte/erreurs agrégées, préférence reduced-motion, performance/Date/frames et temps monotone hôte. Trace60événements et12appelsstop/_stop maximum avec stacks courtes expurgées des URL. Aucun header/env/HTML/console brut enregistré.
+
+Au timeout réel, lecture du cache hôte **sans réévaluation JS potentiellement bloquée**, puis capture `summit.png` avec plafond5s ; JSON réduit à12000caractères dans l'erreur/JUnit. Le nom PNG est déjà dans la whitelist synthétique de CI. Tous critères métier, clock, rendu et attente10s restent identiques, avec pitch60 strict et DEM>100. La réception d'un snapshot hôte est vérifiée dans le chemin local réussi.
+
+Reproduction détaillée préalable :1PASS26,58s, fichier ignoré `.local-tools/diagnose-map-animation.py`. Elle a montré un moteur39,95° contre dataset35° lors de l'arrivée du DEM, puis les deux60° avec fin d'animation511ms, terrain présent et aucun pageerror. Cause du timeout CI non prouvée ; ni délai augmenté, ni workaround produit, ni attribution supposée à une issue upstream. Artefacts détaillés `.local-tools/map-animation-diagnostic/`.
+
+Version finale du harness avec binding : **1PASS12,16s,10désélectionnés**, commande native `python -m pytest tests/backend/test_e2e.py -k base_map_warning -q --tb=short`, uniquement DB `_test` et ressources offline. Première version du collecteur avant demande de cache hôte :1PASS7,65s, pas une correction ou une clôture. Ruff/diff contrôlés après instrumentation. Un PASS du diagnostic ne ferme pas le défaut ; la prochaine CI instrumentée fournit une nouvelle observation, pas une relance jusqu'au vert. Aucun processus de test restant.
+
+CAL-01 calculs et testsJS restent exactement ceux approuvés ci-dessous. Le composant calendrier isolé peut être préparé séparément sur autorisation, sans intégrer App/MapView/Filters ou pousser avant fin de cette CI. L'UI et la fusion restent suspendues à la décision Coordinator.
 
 ## Fichiers et interface livrés
 
