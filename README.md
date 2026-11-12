@@ -4,11 +4,11 @@ Découvrir et organiser les compétitions cyclistes d'Auvergne-Rhône-Alpes, ave
 
 ## État du projet
 
-Les lots 0–5 sont intégrés : modèle et migrations PostgreSQL, adaptateur HTML hors réseau, synchronisation auditable sur observations autorisées, API de catalogue et carte interactive. Altitude 2,5D s'ouvre par défaut ; Summit active le terrain 3D. Les filtres couvrent périodes civiles/ISO, disciplines/types, catégories OU/ET dans une même liste, recherche, départements et rayon. Les points représentent les centres de communes, jamais des départs inventés ; les courses non localisées restent consultables.
+Les lots 0–6 sont intégrés : modèle et migrations PostgreSQL, adaptateur HTML hors réseau, synchronisation auditable sur observations autorisées, API de catalogue, carte interactive et calendrier mensuel partagé. Altitude 2,5D s'ouvre par défaut ; Summit active le terrain 3D. Les filtres couvrent périodes civiles/ISO, disciplines/types, catégories OU/ET dans une même liste, recherche, départements et rayon. Les points représentent les centres de communes, jamais des départs inventés ; les courses non localisées restent consultables.
 
-La branche du lot 6 ajoute le calendrier mensuel partagé : entrer depuis Année/Semaine sélectionne le mois civil affiché ; revenir sur la carte conserve ce mois, les filtres et la caméra. Les jours ouvrent toutes leurs courses et les détails communs ; une épreuve multijour ne compte qu'une fois dans le total. Ce jalon reste soumis à revue et CI, voir le [guide calendrier](docs/lot-6/local-development.md). Les comptes et la planification/ICS arrivent au lot 7, les notifications internes et l'exploitation au lot 8. Aucun déploiement ni collecte récurrente n'est activé. **La compatibilité de l'adaptateur avec les pages FFC réelles n'est pas acquise** : deux exemples ciblés échouent explicitement ; les droits de réutilisation restent à clarifier. Voir la [qualification limitée](docs/readiness/ffc-qualification.md).
+Entrer dans le calendrier depuis Année/Semaine sélectionne le mois civil affiché ; revenir sur la carte conserve ce mois, les filtres et la caméra. Les jours ouvrent toutes leurs courses et les détails communs ; une épreuve multijour ne compte qu'une fois dans le total. Voir les [preuves d'intégration](docs/lot-6/integration.md) et le [guide calendrier](docs/lot-6/local-development.md). Les comptes email/mot de passe, récupération par email et planification/ICS arrivent au lot 7 ; aucun domaine ni expéditeur email disponible pour le moment. Les notifications internes et l'exploitation arrivent au lot 8. Aucun déploiement ni collecte récurrente n'est activé. **La compatibilité de l'adaptateur avec les pages FFC réelles n'est pas acquise** : deux exemples ciblés échouent explicitement ; les droits de réutilisation restent à clarifier. Voir la [qualification limitée](docs/readiness/ffc-qualification.md).
 
-[Intégration du lot 5 et preuves](docs/lot-5/integration.md), [checkpoint opérationnel](docs/coordination/CURRENT_STATE.md), [préparation V1 en cours](docs/readiness/mission.md).
+[Rapport concret de pré-déploiement](docs/readiness/predeployment-report.md), [checkpoint opérationnel](docs/coordination/CURRENT_STATE.md), [préparation hébergement intégrée](docs/readiness/integration.md). Le rapport est préparatoire : comptes/plafonds réels, licences complètes, expéditeur et validations distantes restent ouverts ; aucune activation par fusion ou silence.
 
 ## Développement local
 
@@ -49,9 +49,9 @@ pnpm --dir frontend build
 .venv\Scripts\python.exe -m pytest -q
 ```
 
-Les E2E exécutent réellement React → Flask → PostgreSQL et MapLibre/Chromium avec fond et DEM synthétiques interceptés. Ils ne qualifient pas les droits FFC, la disponibilité des fournisseurs ou tous les GPU mobiles. La branche de préparation ajoute les contrôles CI du SHA courant et après fusion ; les résultats effectifs figurent dans le checkpoint et les PR.
+Les E2E exécutent réellement React → Flask → PostgreSQL et MapLibre/Chromium avec fond et DEM synthétiques interceptés. Ils ne qualifient pas les droits FFC, la disponibilité des fournisseurs ou tous les GPU mobiles. La CI contrôle le SHA courant et après fusion ; les résultats effectifs figurent dans le checkpoint et les PR.
 
-La cible préparée est un monolithe Flask/Waitress sur Render Free avec Neon Free. La création des services, les mutations distantes, tout déploiement et la publication finale restent soumis à l'autorisation du propriétaire. Les configurations et le rapport de pré-déploiement seront vérifiés avant activation ; le rapport est prévu après le lot 6.
+La cible préparée est un monolithe Flask/Waitress sur Render Free Frankfurt avec Neon Free proche si disponible. La création des services, les mutations distantes, tout déploiement et la publication finale restent soumis à l'autorisation du propriétaire. Le [rapport après lot 6](docs/readiness/predeployment-report.md) expose les étapes, hypothèses de ressources, limites et trois moments possibles de premier déploiement ; attendre le candidat après lot 8 est recommandé, sans engager cette décision.
 
 - [Dossier versionné du lot 0](docs/lot-0/README.md)
 - [Contrat JSON Schema](contracts/catalog.schema.json)

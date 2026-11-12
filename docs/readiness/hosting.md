@@ -1,12 +1,12 @@
 # Préparer une preview privée Render Free / Neon Free
 
-Configuration préparatoire, vérifiée localement le **11 novembre 2026**. Aucun service, compte payant, déploiement, handshake Neon ou mutation distante n'a été effectué. L'import du Blueprint créerait un service et pourrait lancer son premier déploiement : **ne pas l'importer avant autorisation du propriétaire**, même avec les déploiements automatiques désactivés. Le rapport de pré-déploiement demandé après le lot 6 précédera cette décision.
+Configuration préparatoire, vérifiée localement le **11 novembre 2026**, références de quotas/régions revérifiées le **12 novembre**. Aucun service, compte payant, déploiement, handshake Neon ou mutation distante n'a été effectué. L'import du Blueprint créerait un service et pourrait lancer son premier déploiement : **ne pas l'importer avant autorisation du propriétaire**, même avec les déploiements automatiques désactivés. Le [rapport de pré-déploiement après le lot 6](predeployment-report.md) rassemble estimations, blocages et trois moments possibles avant cette décision ; il n'autorise aucune activation.
 
 ## Architecture et commandes préparées
 
 Un seul Web Service Python sert Flask, les API et `frontend/dist`. Waitress 3.0.2 est déjà épinglé dans les dépendances ; aucun service Node permanent ni base Render n'est ajouté. Le catalogue utilise PostgreSQL standard et les migrations existantes, sans extension PostGIS ou SDK Neon.
 
-- Blueprint : [`ops/render.yaml`](../../ops/render.yaml), branche `main`, plan `free`, `autoDeployTrigger: "off"`, `previews.generation: "off"` à la racine. Le champ des previews du service est omis : il n'accepte pas `off`, et son absence désactive les PR previews.
+- Blueprint : [`ops/render.yaml`](../../ops/render.yaml), branche `main`, plan `free`, région `frankfurt`, `autoDeployTrigger: "off"`, `previews.generation: "off"` à la racine. Le champ des previews du service est omis : il n'accepte pas `off`, et son absence désactive les PR previews. `frankfurt` est une valeur de la [référence officielle](https://render.com/docs/blueprint-spec) ; préparer Neon `aws-eu-central-1` si disponible en Free dans le compte. Rien n'est créé et la proximité n'implique pas de réseau privé inter-fournisseurs.
 - Build : `bash ops/build.sh`. Dépendances Python de production, pnpm 10.20.0 et lockfile gelé, outils frontend de build inclus via `--prod=false`, compilation React. Python 3.12.14 et Node 24.22.1 sont explicites ; les scripts Bash restent en LF grâce à `ops/.gitattributes`.
 - Start : `python -m raceatlas.serve`, Waitress sur `0.0.0.0:$PORT`, quatre threads. **Ni le build ni le démarrage n'exécutent Alembic, seed ou synchronisation.** Le launcher n'ouvre pas de connexion DB à sa création ; les requêtes DB autorisées et la readiness le font ensuite.
 
@@ -73,7 +73,7 @@ Référence des outils : [PostgreSQL 17, pg_dump](https://www.postgresql.org/doc
 
 ## Limites gratuites à revérifier avant activation
 
-Constat documentaire du **11 novembre 2026**, pas une inspection de comptes ou une garantie de facturation :
+Constat documentaire revérifié le **12 novembre 2026**, pas une inspection de comptes ou une garantie de facturation :
 
 | Fournisseur | Limites pertinentes et conduite prévue |
 |---|---|
@@ -81,6 +81,10 @@ Constat documentaire du **11 novembre 2026**, pas une inspection de comptes ou u
 | Neon Free | 100 CU-heures/projet/mois, 1 GB PostgreSQL/projet et 5 GB de transfert public/projet/mois ; veille après 5 minutes. 100 CU-heures correspondent à 400 heures à 0,25 CU, pas un mois constamment actif. Limites compute/transfert : suspension ; stockage saturé : écritures refusées. Historique de restauration gratuit borné, insuffisant pour remplacer une sauvegarde indépendante. |
 
 Sources : [Render Free](https://render.com/docs/free), [plans Neon](https://neon.com/docs/introduction/plans). Ne pas ajouter de carte, souscrire, créer de service ou modifier une limite de dépense sans autorisation. L'usage des comptes et l'épuisement réel des quotas ne sont pas connus ; préférer l'indisponibilité explicite à un coût inattendu. Aucun SLA, performance régionale, qualification GPU physique ou droit FFC/fournisseur de cartes n'est établi par cette préparation.
+
+Le plan service Free est publié à 0,1 CPU / 512 MB ([compute Render](https://render.com/docs/compute-plans)) ; le workspace Hobby inclut 500 minutes Starter/mois ([pipeline](https://render.com/docs/build-pipeline)). Quotas effectifs et consommation partagée doivent être contrôlés avant toute activation. Les [scénarios de ressources](predeployment-report.md#estimations-sous-hypothèses-pas-mesures-de-production) sont des hypothèses, pas des mesures distantes.
+
+Les cartes ont des obligations propres : le href Mapterhorn pointe désormais vers la page d'attribution officielle, mais son JSON distinct a répondu 403 au GET standard du 12 novembre, sans nouvelle tentative ou contournement. Cette correction n'est pas un audit de licences. FFC reste bloquée selon sa [qualification limitée](ffc-qualification.md). Comptes email/mot de passe et récupération sont le choix du propriétaire pour le lot 7 ; aucun domaine/expéditeur disponible, aucun email réel envoyé. Développement local simulé possible ; qualification de délivrabilité toujours ouverte.
 
 ## Vérification locale de cette préparation
 

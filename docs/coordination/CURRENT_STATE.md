@@ -1,23 +1,29 @@
 # Point de reprise RaceAtlas
 
-Dernier checkpoint UTC : **2026-11-12T17:33:01Z**. **Lots 0–6 intégrés**, rapport pré-déploiement après lot 6 en préparation. Aucun déploiement.
+Dernier checkpoint UTC : **2026-11-12T17:45:08Z**. **Lots 0–6 intégrés**, PRE-01 rapport pré-déploiement préparé/testé, à publier et geler pour revue exacte. Aucun déploiement.
 
 ## État Git et tâche active
 
 - Worktree isolé : C:/Users/theop/.codex/worktrees/add4/RaceAtlas. Checkout personnel main préservé.
-- Branche active : **feature/predeployment-report**, créée depuis origin/main **7b733d86d99a354fdcfe2bf1ecbde519ef78a68f**, propre avant cadrage. Le commit contenant ce checkpoint porte le cadrage initial ; relever son SHA local/distant et ouvrir la Draft PR avant implémentation.
-- Mission : docs/readiness/predeployment-mission.md. Aucun agent n'édite actuellement les sources ; les tests/revues du lot 6 sont terminés et les sources libérées.
+- Branche active : **feature/predeployment-report**, depuis origin/main **7b733d86d99a354fdcfe2bf1ecbde519ef78a68f**. Parent local/distant de ce jalon **b762a55798e2747ed115a0301f8cba26910c5f6a**, Draft PR https://github.com/TheoxProject/RaceAtlas/pull/10. Relever le nouveau SHA publié et surveiller sa CI ; aucun résultat de cadrage ne l'approuve.
+- Mission : docs/readiness/predeployment-mission.md. Developer seul writer ; toutes éditions s'arrêtent après publication pour revue indépendante. Handoff : docs/readiness/predeployment-handoff.md ; rapport : docs/readiness/predeployment-report.md.
 
 | Tâche | État | Responsable |
 |---|---|---|
-| PRE-00 cadrage et Draft | IN_PROGRESS | Coordinator |
-| PRE-01 rapport/configuration/attribution | TODO | Developer à attribuer |
+| PRE-00 cadrage et Draft | DONE, PR10 | Coordinator |
+| PRE-01 rapport/configuration/attribution | Testé, à publier/geler | Developer |
 | PRE-02 revue exacte et CI | TODO | Tester/Coordinator |
 | PRE-03 intégration/main et rapport propriétaire | TODO | Coordinator |
 | Lot 7 comptes/planning/ICS | TODO | après ce jalon indépendant |
 | Expéditeur réel du lot 7 | BLOCKED | aucun domaine/expéditeur disponible |
 
-**Prochaine action sûre :** publier ce cadrage sur la branche et ouvrir sa Draft PR, puis attribuer PRE-01 au seul Developer. Vérifier le SHA distant et surveiller sa CI. Ne pas déployer, créer un service ou rejouer migrations/collectes externes.
+**Prochaine action sûre :** publier ce jalon cohérent, transmettre son SHA gelé pour Tester et CI ; arrêter les éditions. Aucun ancien verdict transféré. Ne pas déployer, importer Blueprint, créer un compte/service, muter une DB distante, payer, envoyer un email ou collecter.
+
+PRE-01 livre un rapport concret : variables/TLS/Basic, migrations manuelles, santé, sauvegarde/restauration encore à exercer au lot 8, limites primaires datées et sept scénarios chiffrés explicitement hypothétiques. Trois moments possibles de premier déploiement, attente du candidat après lot 8 recommandée ; aucune option choisie par silence. Email/mot de passe acquis mais domaine/expéditeur absents, développement local simulé possible sans délivrabilité validée. Comptes/plafonds réels inconnus.
+
+Seules adaptations techniques : `region: frankfurt` du Blueprint inactif et href Mapterhorn vers `/attribution`. Moteur, quatre crédits, API/backend/migrations/dépendances/tests inchangés. Sources publiques Render/Neon/PostgreSQL/OpenFreeMap/Mapterhorn consultées le 12 novembre ; JSON Mapterhorn 403 antérieur non retenté, aucun changement UA/mirror/téléchargement ou GET FFC. Correction du lien sans prétendre à un audit global.
+
+Validation : YAML via parser cache et gardes d'inactivité PASS, valeur de région conforme à référence officielle ; **31 liens locaux et arithmétique PASS**. ESLint PASS, build **6,50 s** ; E2E crédits mobile + retour calendrier/carte desktop **2 PASS, 13 désélectionnés, 45,80 s**, code 0. Diff PASS. PG existant vérifié (`pg_ctl status`, PID 38028/port55434), caches réutilisés et tests seulement `_test` avec opt-in. Aucun processus Developer retenu, aucune campagne 389 backend répétée. Les preuves hosting/lot6 intégrées restent réutilisées explicitement ; aucun build Render/handshake Neon/restore complet distant testé. Commandes exactes et limites au handoff.
 
 ## Intégration acquise du lot 6
 
