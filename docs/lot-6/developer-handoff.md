@@ -1,8 +1,30 @@
 # Handoff Developer — lot6, jalon CAL-01
 
-Branche `feature/monthly-calendar`, Draft PR https://github.com/TheoxProject/RaceAtlas/pull/9, base **8ce46a3fc1129a905d2e9f1fc8552e3cf4d0a56f**. CAL-01 **eba50f3735c6d19344ca9221da5f5adecf55a77d** a reçu APPROVE ciblé, mais CI43175452166 échoue sur un ancien scénario Summit (384PASS/1FAIL). Le commit contenant ce handoff ajoute seulement le diagnostic de cet échec ; relever son SHA local/distant/PR. **Pas de correction déclarée ou verdict final, aucun merge lot6.**
+Branche `feature/monthly-calendar`, Draft PR https://github.com/TheoxProject/RaceAtlas/pull/9, base **8ce46a3fc1129a905d2e9f1fc8552e3cf4d0a56f**. CAL-01 **eba50f3735c6d19344ca9221da5f5adecf55a77d** a reçu APPROVE ciblé. Parent du correctif actuel : **6982fddc5825e53f0e3eabd28dc0fdf27f9bd27a**, CI instrumentée `43179912170` : **383 PASS / 2 FAIL**. Ce commit corrige uniquement le harness de date ; relever son SHA publié pour CI et revue ciblée renouvelées. Aucun verdict final ou merge lot 6.
 
-## Diagnostic CI prioritaire, produit inchangé
+## Correctif Date seule — preuves actuelles
+
+Fichiers modifiés : `tests/backend/map_support.py`, `test_e2e.py`, ce handoff et le checkpoint. Aucun changement produit, calcul calendrier, dépendance, MapView ou animation. L'UI reste suspendue.
+
+La CI a capturé une animation à 56,435° (dataset 35°), terrain réel 829,22, moving/easing vrais et contexte intact, avec reculs de performance. Le ClockController réellement embarqué par Playwright Python 1.56 (driver 1.56.1) a aussi été reproduit indépendamment : `[1000, 10, 1000]`, recul −990 ms. `set_fixed_time` installe implicitement les timers, RAF et performance ; MapLibre capture performance à l'import. [Issue primaire 37700](https://github.com/microsoft/playwright/issues/37700) et [correctif 37820](https://github.com/microsoft/playwright/pull/37820), consultés le 12 novembre 2026. Preuve minimale réutilisée du Tester : `.local-tools/tester-playwright-clock-minimal.cjs` ; rapport `.local-tools/tester-review-lot6-camera-diagnostic.md`.
+
+Campagne A/B prédéfinie terminée, aucun retry conditionné au succès : deux mêmes cas par exécution (`compiled_react_flask_postgresql` et `base_map_warning`), pages neuves et assertions identiques. A1/A2/A3 Clock existant : chacun 2 PASS, 24,53 / 27,36 / 34,09 s, avec 6 / 10 / 7 reculs de performance. B1/B2/B3 Date seule : chacun 2 PASS, 19,33 / 25,08 / 24,17 s, aucun recul, date métier identique et fonctions natives inchangées. Les six résultats détaillés restent ignorés dans `.local-tools/clock-ab/<label>/result.json` ; commandes `python .local-tools/clock-ab-run.py playwright A1` ou `date-only B1`, labels jusqu'à 3. Ne pas les relancer aveuglément.
+
+Cela prouve la contamination d'horloge et justifie son retrait ; aucun timeout complet n'a été reproduit dans ce bornage et la causalité du second échec CI (refresh PostgreSQL) n'est pas démontrée. L'observateur moteur/IPC, identique dans les deux variantes du cas base warning, influence potentiellement l'ordonnancement. Le scénario principal n'a pas cette instrumentation lourde. Aucune attribution démontrée à un défaut GPU/MapLibre.
+
+`set_civil_date(page, iso)` ajoute un script avant navigation/imports : seule Date sans argument et `Date.now()` sont figées, les arguments explicites et statiques sont conservés par Proxy. Les trois usages de Clock sont remplacés. Le nouveau test navigateur contrôle appels/constructeur/sous-classe, arguments explicites dont undefined invalide, now/parse/UTC, Paris au 1er janvier 2027, identité des fonctions natives performance/timers/RAF, progression monotone et date toujours fixe. Le parcours Nouvel An exerce toujours ISO 2026 W53 / civil 2027 et caméra zoomée. Les vrais parcours MapLibre gardent animation, attente 10 s, pitch exact 60° et terrain > 100, sans jumpTo.
+
+Commande native ciblée :
+
+```powershell
+python -m pytest tests/backend/test_e2e.py -k 'civil_date or compiled_react_flask_postgresql or base_map_warning or new_year_iso' -q --tb=short
+python -m ruff check tests/backend/test_e2e.py tests/backend/map_support.py
+git diff --check
+```
+
+Environnement : venv Python 3.12.14, Chromium/cache existants, DB locale `raceatlas_lot2_test` avec opt-in ; ressources carte/DEM synthétiques et aucune requête fournisseur. Aucun processus A/B ou pytest restant avant ce run, vérifié nativement. Résultat ciblé : **4 PASS, 8 désélectionnés, 64,05 s**, code 0 le 12 novembre 2026 ; Ruff et diff PASS. Pas de nouvelle campagne backend complète ou frontend inchangé ; CI complète et Tester sur le nouveau SHA restent requis. Après publication : arrêter les éditions jusqu'au verdict du Coordinator.
+
+## Historique du diagnostic CI, produit inchangé
 
 `tests/backend/map_support.py` et `test_e2e.py` ajoutent au scénario concerné un observateur du moteur existant via la fibre React19.2 épinglée, sans modifier MapView. Le binding transmet avant l'échec un cache borné au processus Python : caméra réelle et dataset séparés, moving/easing, terrain/élévation, mode/warning, contexte/erreurs agrégées, préférence reduced-motion, performance/Date/frames et temps monotone hôte. Trace60événements et12appelsstop/_stop maximum avec stacks courtes expurgées des URL. Aucun header/env/HTML/console brut enregistré.
 

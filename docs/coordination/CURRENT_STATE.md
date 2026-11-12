@@ -1,23 +1,33 @@
 # Point de reprise RaceAtlas
 
-Dernier checkpoint UTC : **2026-11-12T08:03:48Z**. Lots0–5 et préparation V1 intégrés ; **CAL-01 approuvé sur son périmètre, CI bloquée par l'ancien scénario Summit ; diagnostic instrumenté en cours**. Aucune UI calendrier ni déploiement livré.
+Dernier checkpoint UTC : **2026-11-12T12:32:27Z**. Lots 0–5 et préparation V1 intégrés ; **CAL-01 approuvé sur son périmètre ; correctif du harness Date seule en validation**. Aucune UI calendrier ni déploiement livré.
 
 ## Git et tâche active
 
 - Worktree isolé `C:/Users/theop/.codex/worktrees/add4/RaceAtlas`, réutilisé propre après arrêt des agents/tests ; branche **feature/monthly-calendar**. Le checkout personnel main reste préservé.
 - Base locale/distante vérifiée : **8ce46a3fc1129a905d2e9f1fc8552e3cf4d0a56f**, `origin/main`, CI main verte. Dernier cadrage local/distant : **3f454b0f98f19883c915b9bda28fadb39aca11fd**, CI43094428404 success ; cette preuve initiale ne valide pas le helper suivant.
-- Draft PR https://github.com/TheoxProject/RaceAtlas/pull/9. Jalon CAL-01 publié/revu **eba50f3735c6d19344ca9221da5f5adecf55a77d**, APPROVE ciblé uniquement. Le commit contenant ce checkpoint ajoute le diagnostic CI : relever son SHA local/distant/PR et sa propre CI. Aucun verdict final lot6. Mission : `docs/lot-6/mission.md`, handoff et usage local.
+- Draft PR https://github.com/TheoxProject/RaceAtlas/pull/9. CAL-01 publié/revu **eba50f3735c6d19344ca9221da5f5adecf55a77d**, APPROVE ciblé uniquement. Parent local/distant avant ce correctif : **6982fddc5825e53f0e3eabd28dc0fdf27f9bd27a**, CI instrumentée `43179912170` rouge : 383 PASS / 2 FAIL. Le commit contenant ce checkpoint corrige uniquement le harness ; relever son SHA local/distant/PR et attendre sa propre CI et revue. Aucun verdict final lot 6.
 
 | Tâche | Responsable | État |
 |---|---|---|
 | CAL-00 mission/checkpoint/Draft | Coordinator | DONE, PR9 et CI de cadrage vérifiées |
 | CAL-01 dates/projection/état partagé | Developer | APPROVE ciblé exacteba50f3 ; calculs inchangés depuis |
-| CAL-CI ancien test Summit/base en panne | Developer/Coordinator | IN_PROGRESS, instrumentation tests seulement ; cause non prouvée |
+| CAL-CI ancien test Summit/base en panne | Developer/Coordinator | IN_PROGRESS, Date seule remplace Clock ; CI/revue courantes requises |
 | CAL-02 calendrier responsive/détails/parité | Developer | TODO |
 | CAL-03 intégration/captures/revue finale/CI | Developer/Tester | TODO |
 | CAL-04 fusion/main et rapport pré-déploiement | Coordinator | TODO ; aucune activation autorisée |
 
-**Prochaine action sûre unique :** Coordinator confirme le nouveau SHA de diagnostic et observe sa CI instrumentée. Si le timeout revient, lire snapshot/trace et `summit.png` avant toute correction ; un PASS seul ne prouve pas la cause. Aucune intégration App/MapView/Filters ni UI publique avant décision. Un composant mensuel isolé peut être préparé localement sans nouveau push pendant ce run, sur autorisation Coordinator. Aucun avis intermédiaire ne vaut APPROVE final.
+**Prochaine action sûre unique :** publier le correctif tests + preuves, geler son SHA pour Tester et surveiller sa CI. Aucune UI/App/MapView/Filters avant décision Coordinator. Aucun avis intermédiaire ne vaut APPROVE final.
+
+## Correctif du harness, 12 novembre
+
+La CI instrumentée `43179912170` a observé moteur 56,435° contre dataset 35°, moving/easing vrais, DEM 829,22, contexte intact et performance non monotone. L'autre échec concernait le refresh PostgreSQL ; sa causalité exacte reste non démontrée. Python Playwright 1.56 embarque le driver 1.56.1 : `set_fixed_time` installe aussi timers/RAF/performance. Le Tester a reproduit le recul avec le vrai ClockController : `[1000, 10, 1000]` (−990 ms), sans modifier les dépendances. Source primaire : [issue 37700](https://github.com/microsoft/playwright/issues/37700), [correctif 37820](https://github.com/microsoft/playwright/pull/37820), consultés le 12 novembre 2026. MapLibre capture performance à l'import et l'utilise pour l'animation.
+
+Bornage A/B terminé, aucune relance : mêmes deux scénarios et assertions, pages neuves, ressources synthétiques. A1/A2/A3 : chacun 2 PASS, 24,53 / 27,36 / 34,09 s, mais 6 / 10 / 7 reculs de performance. B1/B2/B3 Date seule : chacun 2 PASS, 19,33 / 25,08 / 24,17 s, zéro recul, même date métier, identités natives timers/performance/RAF conservées. JSON ignorés `.local-tools/clock-ab/{A1,A2,A3,B1,B2,B3}/result.json`. La sonde moteur/IPC de base warning est présente dans les deux variantes ; son coût peut influencer l'ordonnancement. Le scénario principal reste sans cette instrumentation lourde. Ces résultats justifient la correction du harness, sans prétendre reproduire/clore les deux échecs CI.
+
+`set_civil_date` installe Date seule avant navigation/import MapLibre, conserve les arguments explicites et statiques natifs ; trois appels remplacés dans les tests. Régression navigateur dédiée : Date callable/constructeur/sous-classe/arguments/now/parse/UTC, Paris au Nouvel An, identités natives et progression monotone timers/RAF. Le parcours Nouvel An conserve les assertions ISO 2026 W53 / civil 2027 et caméra non initiale. Produit, helper calendrier, dépendances, attente 10 s, pitch exact 60° et DEM > 100 inchangés. Aucun saut de caméra. Vérification native des processus : aucun A/B ou pytest restant avant cette campagne ciblée ; ne pas rejouer A/B ni 385 tests backend inchangés. **4 PASS, 8 désélectionnés, 64,05 s**, code 0 ; Ruff/diff PASS. Commandes et limites au handoff. CI et revue du nouveau SHA encore requises.
+
+## Historique du diagnostic (preuves antérieures)
 
 CI43175452166 **FAIL384PASS/1FAIL**, job131038502526 : ancien `test_base_map_warning_does_not_silently_disable_summit`, attente pitch60 expirée10s après DEM>100 et modeSummit. Helper calendrier non branché, MapView/calculs/testsJS inchangés ; aucun défaut calendrier attribué à cet échec. Rapport CAL-01 `.local-tools/tester-report-lot6-cal01.md`.
 

@@ -10,6 +10,33 @@ STYLE_URL = "https://tiles.openfreemap.org/styles/liberty"
 DEM_URL = "https://tiles.mapterhorn.com/tilejson.json"
 
 
+def set_civil_date(page, value):
+    """Freeze business Date before app imports, preserving native animation clocks.
+
+    Playwright 1.56 set_fixed_time also installs virtual performance/timers/RAF;
+    its clock can move backwards (upstream #37700). MapLibre needs native time.
+    Explicit Date arguments and native static methods retain their semantics.
+    """
+    script = r"""(() => {
+        const NativeDate = globalThis.Date;
+        const fixed = NativeDate.parse(VALUE);
+        if (!Number.isFinite(fixed)) throw new Error('Invalid synthetic civil date');
+        const fixedNow = () => fixed;
+        const FixedDate = new Proxy(NativeDate, {
+            apply() { return new NativeDate(fixed).toString(); },
+            construct(target, args, newTarget) {
+                return Reflect.construct(target, args.length ? args : [fixed],
+                    newTarget === FixedDate ? target : newTarget);
+            },
+            get(target, key, receiver) {
+                return key === 'now' ? fixedNow : Reflect.get(target, key, receiver);
+            }
+        });
+        globalThis.Date = FixedDate;
+    })();""".replace("VALUE", json.dumps(value))
+    page.add_init_script(script)
+
+
 def terrain_png():
     def chunk(kind, payload):
         return (
