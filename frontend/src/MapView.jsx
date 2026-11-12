@@ -109,6 +109,6 @@ export function MapView({ features, races, mode, setMode, onReliefError, onSelec
   return <>
     <div className={`map-canvas ${chooseCenter ? 'choosing-center' : ''}`} ref={container} />
     {message && <p className="map-warning" role="status">{message}</p>}
-    <div className="map-attribution"><a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">© OpenStreetMap</a> · <a href="https://openmaptiles.org/" target="_blank" rel="noreferrer">OpenMapTiles</a> · <a href="https://openfreemap.org/" target="_blank" rel="noreferrer">OpenFreeMap</a> · <a href="https://mapterhorn.com/" target="_blank" rel="noreferrer">© Mapterhorn</a></div>
+    <div className="map-attribution"><a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">© OpenStreetMap</a> · <a href="https://openmaptiles.org/" target="_blank" rel="noreferrer">OpenMapTiles</a> · <a href="https://openfreemap.org/" target="_blank" rel="noreferrer">OpenFreeMap</a> · <a href="https://mapterhorn.com/attribution" target="_blank" rel="noreferrer">© Mapterhorn</a></div>
   </>;
 }
