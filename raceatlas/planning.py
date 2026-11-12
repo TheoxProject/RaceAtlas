@@ -62,6 +62,7 @@ def _actor_id(session, actor):
     if (
         not isinstance(actor, Account)
         or object_session(actor) is not session
+        or actor in session.deleted
         or not inspect(actor).persistent
     ):
         raise PlanningNotFound()
@@ -75,8 +76,12 @@ def _status(value):
 
 
 def _target_id(value):
-    if not isinstance(value, str) or not 1 <= len(value) <= 64:
+    if not isinstance(value, str) or not 1 <= len(value) <= 64 or "\x00" in value:
         raise PlanningNotFound()
+    try:
+        value.encode("utf-8")
+    except UnicodeEncodeError:
+        raise PlanningNotFound() from None
     return value
 
 

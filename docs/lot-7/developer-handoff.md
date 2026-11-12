@@ -1,5 +1,20 @@
 # Handoff ACC-01 — identité privée et sauvegardes par scope
 
+## Correction cycle 1/3 — candidat courant
+
+Parent local/distant **5a664068fd6d5faa08c75478f09a2fc50202f504**, même branche/PR11/base. CI `43279377589` SUCCESS du parent, mais Tester REQUEST CHANGES exact (`.local-tools/tester-report-acc01.md`) : deux défauts P2 du contrat interne. Cette CI n'était pas une approbation. Sources libérées, aucune commande Tester active avant correction.
+
+- **ACC01-F1** : `planning._actor_id` refuse aussi un Account présent dans `session.deleted`, avant accès aux attributs potentiellement expirés ou autoflush. SQLAlchemy garde cet objet persistent jusqu'au flush ; l'ancienne garde pouvait rendre `[]` avec attributs chargés ou laisser sortir ObjectDeletedError avec attributs expirés. Même Session/type/persistence toujours requis.
+- **ACC01-F2** : `planning._target_id` refuse NUL et les chaînes non encodables en UTF-8 avant construction de requête. Refus générique `PlanningNotFound` partagé par get/put/update/delete. Aucun UUID obligatoire, aucune interception générale des erreurs du driver. IDs opaques/synthétiques et Unicode UTF-8 valides conservés.
+
+Tests négatifs ajoutés : comptes pending-delete chargés/expirés × six opérations, NUL/surrogates haut/bas × quatre opérations ; zéro SQL observé pendant le refus, SELECT1 puis opération valide dans la même transaction sans rollback correctif. La suppression en attente reste au caller qui décide de la flusher ; les données privées de l'autre compte restent inchangées. Une cible synthétique accent/emoji non UUID exerce get/put/update/delete normalement. Le Tester avait constaté des sessions récupérables même avant correction : **aucune corruption de transaction ou fuite HTTP démontrée ou revendiquée** ; les routes n'existent toujours pas.
+
+Commande ciblée actuelle : `python -m pytest tests/backend/test_planning.py -q --tb=short` : **68 PASS, 25,14 s, code 0**, incluant 25 nouveaux cas et le cycle upgrade/check/downgrade/upgrade/check. Ruff check et format --check complets PASS (**43 fichiers**), **26 contrats et diff PASS**. PostgreSQL existant PID 38028/port55434 et absence de tests concurrents vérifiés avant run ; `_test`/opt-in/caches existants, aucun processus retenu après. Aucun full432/backend/browser répété.
+
+Preuves explicitement réutilisées : 131 tests du parent par Tester (61,70 s) et 88 régressions publiques Developer (52,38 s), sur modèles/migration/conftest/catalogue/source inchangés. Les 43 tests planning initiaux ont aussi été réexécutés dans les 68 actuels. Seuls gardes planning/tests/documents changent ; pas d'auth/API/UI/CI/dépendance ou nouveau périmètre. Après publication, relever le nouveau SHA et geler pour CI et revue renouvelées ; aucun ancien verdict transféré. Arrêt des éditions jusqu'à libération.
+
+## Historique du candidat initial
+
 Branche `feature/accounts-and-planning`, PR https://github.com/TheoxProject/RaceAtlas/pull/11, base **51856c9940a2b0e16c9f05d61a9f1726ae8701d9**. Parent local/distant avant ce jalon **c9696821e7f01afc72ed30837ee5388fd71e5c48**. Relever le SHA publié pour revue ciblée ACC-01 et CI. Une éventuelle intégration de cette fondation ne termine pas le lot 7.
 
 ## Interface à conserver pour ACC-02

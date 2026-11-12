@@ -1,8 +1,16 @@
 # Point de reprise RaceAtlas
 
-Dernier checkpoint UTC : **2026-11-12T18:21:37Z**. Lots 0–6 et PRE-01 intégrés, **ACC-01 modèle/service/migration testés, à publier/geler pour revue ciblée et CI**. Lot 7 non terminé. Aucun déploiement.
+Dernier checkpoint UTC : **2026-11-12T18:36:13Z**. Lots 0–6 et PRE-01 intégrés, **ACC-01 correction cycle 1/3 testée, à publier/geler pour revue renouvelée et CI**. Lot 7 non terminé. Aucun déploiement.
 
-## Git et prochaine action
+## Correction ACC-01 courante
+
+Parent local/distant **5a664068fd6d5faa08c75478f09a2fc50202f504**, même branche `feature/accounts-and-planning` / PR11 / base51856c9. CI parent `43279377589` SUCCESS, mais Tester REQUEST CHANGES exact pour ACC01-F1/F2, rapport `.local-tools/tester-report-acc01.md`. Aucune approbation transférée au nouveau candidat. Sources libérées et tous processus Tester terminés avant correction ; Developer seul writer.
+
+F1 : garde Account pending-delete (`session.deleted`) avant attribut expiré/autoflush, sans relâcher type/persistent/même Session. F2 : identifiants contenant NUL ou non encodables UTF-8 refusés par not_found avant query, sans filtre UUID ni broad catch du driver. Tests : loaded/expired × six opérations, NUL/surrogates × quatre opérations, zéro SQL pendant refus et SELECT1/opération valide sans rollback correctif ; cible synthétique accent/emoji acceptée. Aucun défaut HTTP ou corruption transactionnelle revendiqué (ni démontré par le Tester), aucune route ajoutée.
+
+Validation : **68 planning PASS en 25,14 s**, code 0, cycle migration/check inclus ; Ruff lint/format **43 fichiers**, **26 contrats/diff PASS**. PG existant PID38028/port55434 et absence de tests concurrents vérifiés ; `_test` avec opt-in/caches, aucun test actif. Preuves 131 du parent (Tester) et 88 publiques (Developer) réutilisées explicitement pour chemins inchangés ; 43 planning initiaux rejoués dans 68. Modèle/migration/conftest/source/API/CI/UI/dépendances inchangés. Prochaine action : commit/push cohérent, gel exact pour nouvelle revue/CI puis arrêt édition. Commandes et limites au handoff.
+
+## Historique avant correction
 
 Worktree isolé C:/Users/theop/.codex/worktrees/add4/RaceAtlas ; checkout personnel main préservé. Branche **feature/accounts-and-planning**, depuis origin/main **51856c9940a2b0e16c9f05d61a9f1726ae8701d9** après CI main verte. Parent local/distant **c9696821e7f01afc72ed30837ee5388fd71e5c48**, Draft PR https://github.com/TheoxProject/RaceAtlas/pull/11. Developer seul writer, aucune commande Tester active ; changements WIP conservés avant tests, pas de verdict ou CI présumés.
 

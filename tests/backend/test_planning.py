@@ -7,7 +7,7 @@ from uuid import UUID
 import pytest
 import test_catalog as catalog_tests
 import test_sync as source_tests
-from sqlalchemy import func, select, text
+from sqlalchemy import event, func, inspect, select, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -225,6 +225,113 @@ def test_missing_scope_and_invalid_targets_leave_transaction_usable(seeded):
             put_saved_entry(seeded, alice, value)
     entry = put_saved_entry(seeded, alice, scopes(seeded)[0].id)
     assert get_saved_entry(seeded, alice, entry.id).id == entry.id
+
+
+@pytest.mark.parametrize("expired", [False, True], ids=["loaded", "expired"])
+@pytest.mark.parametrize("operation", ["list", "get", "put", "update", "delete", "delete_account"])
+def test_pending_deleted_actor_is_rejected_before_refresh_or_autoflush(seeded, expired, operation):
+    alice, bob = accounts(seeded)
+    scope_id = scopes(seeded)[0].id
+    own = put_saved_entry(seeded, alice, scope_id)
+    other = put_saved_entry(seeded, bob, scope_id, "registered")
+    account_id, entry_id, other_before = alice.id, own.id, snapshot(other)
+    seeded.commit()
+    if not expired:
+        assert alice.id == account_id
+    seeded.delete(alice)
+    assert inspect(alice).persistent and alice in seeded.deleted
+    queries = []
+
+    def capture(*args):
+        queries.append(1)
+
+    event.listen(seeded.bind, "before_cursor_execute", capture)
+    try:
+        with pytest.raises(PlanningNotFound, match="^Saved entry not found\\.$"):
+            if operation == "list":
+                list_saved_entries(seeded, alice)
+            elif operation == "get":
+                get_saved_entry(seeded, alice, entry_id)
+            elif operation == "put":
+                put_saved_entry(seeded, alice, scope_id)
+            elif operation == "update":
+                update_saved_entry(seeded, alice, entry_id, "completed")
+            elif operation == "delete":
+                delete_saved_entry(seeded, alice, entry_id)
+            else:
+                delete_account(seeded, alice)
+    finally:
+        event.remove(seeded.bind, "before_cursor_execute", capture)
+    assert queries == []
+    assert alice in seeded.deleted and seeded.is_active
+    with seeded.no_autoflush:
+        assert seeded.scalar(select(1)) == 1
+        assert seeded.scalar(select(Account.id).where(Account.id == account_id)) == account_id
+    # The caller, not a rejected service operation, decides when to flush its deletion.
+    seeded.flush()
+    assert snapshot(put_saved_entry(seeded, bob, scope_id, "registered")) == other_before
+
+
+@pytest.mark.parametrize(
+    "target",
+    ["bad\x00scope", "bad\ud800scope", "bad\udfffscope"],
+    ids=["nul", "high-surrogate", "low-surrogate"],
+)
+@pytest.mark.parametrize("operation", ["get", "put", "update", "delete"])
+def test_nonrepresentable_targets_are_generic_and_leave_transaction_usable(
+    seeded, target, operation
+):
+    alice, _ = accounts(seeded)
+    scope_id = scopes(seeded)[0].id
+    before = snapshot(put_saved_entry(seeded, alice, scope_id))
+    queries = []
+
+    def capture(*args):
+        queries.append(1)
+
+    event.listen(seeded.bind, "before_cursor_execute", capture)
+    try:
+        with pytest.raises(PlanningNotFound, match="^Saved entry not found\\.$"):
+            if operation == "get":
+                get_saved_entry(seeded, alice, target)
+            elif operation == "put":
+                put_saved_entry(seeded, alice, target)
+            elif operation == "update":
+                update_saved_entry(seeded, alice, target, "planned")
+            else:
+                delete_saved_entry(seeded, alice, target)
+    finally:
+        event.remove(seeded.bind, "before_cursor_execute", capture)
+    assert queries == [] and seeded.is_active
+    assert seeded.scalar(select(1)) == 1
+    assert snapshot(put_saved_entry(seeded, alice, scope_id)) == before
+
+
+def test_valid_unicode_and_synthetic_targets_are_not_restricted_to_uuids(seeded):
+    alice, _ = accounts(seeded)
+    scope = EntryScope(
+        id="scope-synthétique-🚲",
+        race_id="race-road-split",
+        position=99,
+        kind="entry_list",
+        identity_status="unverified",
+        eligibility_status="unknown",
+        raw_label="Synthetic UTF-8 target",
+    )
+    seeded.add(scope)
+    seeded.flush()
+    entry = SavedEntry(
+        id="saved-synthétique-🚲", account_id=alice.id, scope_id=scope.id, status="interested"
+    )
+    seeded.add(entry)
+    seeded.flush()
+    entry_id = entry.id
+    assert get_saved_entry(seeded, alice, entry_id) is entry
+    assert put_saved_entry(seeded, alice, scope.id) is entry
+    assert update_saved_entry(seeded, alice, entry_id, "planned").revision == 2
+    delete_saved_entry(seeded, alice, entry_id)
+    with pytest.raises(PlanningNotFound):
+        get_saved_entry(seeded, alice, entry_id)
 
 
 def test_account_deletion_cascades_only_its_private_rows(seeded):
