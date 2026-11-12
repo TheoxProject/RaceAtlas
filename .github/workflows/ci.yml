@@ -105,6 +105,12 @@ jobs:
               cp -- "$source" "$RUNNER_TEMP/raceatlas-results/screenshots/$name.png"
             fi
           done
+          for name in desktop mobile day-details candidates; do
+            source=".local-tools/lot6-screenshots/$name.png"
+            if [[ -f "$source" && ! -L "$source" ]]; then
+              cp -- "$source" "$RUNNER_TEMP/raceatlas-results/screenshots/calendar-$name.png"
+            fi
+          done
       - name: Upload synthetic failure evidence for one day
         if: failure()
         uses: actions/upload-artifact@v4

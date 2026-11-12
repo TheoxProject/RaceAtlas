@@ -1,5 +1,5 @@
 import { afterEach, expect, test, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { App } from './App.jsx';
 import { getJson, loadSelection } from './catalog.js';
 import fixture from '../../fixtures/catalog.v1.json';
@@ -104,4 +104,73 @@ test('a stale unabortable response cannot overwrite a later selection', async ()
   await new Promise(resolve => setTimeout(resolve, 20));
   expect(screen.getByText('Aucune course dans cette sélection')).toBeTruthy();
   expect(screen.queryByText('Données synthétiques · courses fictives')).toBeNull();
+});
+
+test('calendar opens the civil month from ISO and returns to that month with shared details and no-op requests', async () => {
+  vi.setSystemTime(new Date('2027-01-01T12:00:00Z'));
+  const race = fixture.races.find(race => race.id === 'race-mtb-multiday');
+  prepare(data([race])); render(<App />);
+  await screen.findByText('Données synthétiques · courses fictives');
+  fireEvent.click(screen.getByRole('button', { name: 'Semaine ISO', exact: true }));
+  await waitFor(() => expect(loadSelection.mock.lastCall[0]).toMatchObject({ from: '2026-12-28' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Calendrier', exact: true }));
+  expect(screen.queryByRole('button', { name: 'Année', exact: true })).toBeNull();
+  expect(screen.getByRole('status').textContent).toBe('Recherche des courses…');
+  await screen.findByText('1 course ce mois-ci');
+  expect(loadSelection.mock.lastCall[0]).toMatchObject({ from: '2027-01-01', to: '2027-01-31' });
+  fireEvent.click(screen.getAllByRole('button', { name: new RegExp(race.name) })[0]);
+  expect(screen.getByRole('heading', { name: race.name })).toBeTruthy();
+  const requests = loadSelection.mock.calls.length;
+  fireEvent.blur(screen.getByLabelText('Année civile'));
+  fireEvent.change(screen.getByLabelText('Mois'), { target: { value: '1' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Calendrier', exact: true }));
+  await new Promise(resolve => setTimeout(resolve, 200));
+  expect(loadSelection).toHaveBeenCalledTimes(requests);
+  expect(screen.getByRole('heading', { name: race.name })).toBeTruthy();
+  fireEvent.click(screen.getByRole('button', { name: 'Carte', exact: true }));
+  expect(screen.getByLabelText('Mois').value).toBe('1');
+  expect(screen.getByRole('button', { name: 'Mois', exact: true }).getAttribute('aria-pressed')).toBe('true');
+  expect(loadSelection).toHaveBeenCalledTimes(requests);
+});
+
+test('calendar immediately hides old data under a new month, including debounce and delayed response', async () => {
+  vi.setSystemTime(new Date('2027-01-01T12:00:00Z'));
+  const race = fixture.races.find(race => race.id === 'race-mtb-multiday');
+  prepare(data([race])); render(<App />);
+  await screen.findByText('Données synthétiques · courses fictives');
+  fireEvent.click(screen.getByRole('button', { name: 'Calendrier', exact: true }));
+  await screen.findByText('1 course ce mois-ci');
+  let resolveNext;
+  loadSelection.mockImplementationOnce(() => new Promise(resolve => { resolveNext = resolve; }));
+  fireEvent.click(screen.getByRole('button', { name: 'Mois suivant' }));
+  expect(screen.getByRole('heading', { name: 'Février 2027' })).toBeTruthy();
+  expect(screen.getByRole('status').textContent).toBe('Recherche des courses…');
+  expect(screen.queryByText('1 course ce mois-ci')).toBeNull();
+  expect(screen.queryByRole('button', { name: new RegExp(race.name) })).toBeNull();
+  await waitFor(() => expect(resolveNext).toBeTypeOf('function'));
+  resolveNext(data([]));
+  await screen.findByText('0 courses ce mois-ci');
+});
+
+test('global and nonlocalized panels replace the previous day context without changing the month', async () => {
+  vi.setSystemTime(new Date('2026-11-12T12:00:00Z'));
+  const race = fixture.races.find(race => race.id === 'race-unlocated');
+  prepare(data([race])); render(<App />);
+  await screen.findByText('Données synthétiques · courses fictives');
+  fireEvent.click(screen.getByRole('button', { name: 'Calendrier', exact: true }));
+  await screen.findByText('1 course ce mois-ci');
+  fireEvent.click(screen.getByRole('button', { name: /jeudi 12 novembre 2026 · 0 courses/ }));
+  expect(screen.getByText('Aucune course ce jour.')).toBeTruthy();
+  expect(screen.getByText('12 nov. 2026')).toBeTruthy();
+  const requests = loadSelection.mock.calls.length;
+  fireEvent.click(screen.getByRole('button', { name: /localisation à préciser/ }));
+  expect(screen.queryByText('12 nov. 2026')).toBeNull();
+  expect(screen.getByText('Courses non localisées', { selector: '.results-heading span' })).toBeTruthy();
+  expect(within(screen.getByRole('complementary', { name: 'Courses et détails' })).getByRole('button', { name: new RegExp(race.name) })).toBeTruthy();
+  fireEvent.click(screen.getByRole('button', { name: 'Fermer les détails' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Carte', exact: true }));
+  fireEvent.click(screen.getByRole('button', { name: 'Explorer les communes' }));
+  expect(screen.getByText('Les courses de votre sélection')).toBeTruthy();
+  expect(screen.getByLabelText('Mois').value).toBe('11');
+  expect(loadSelection).toHaveBeenCalledTimes(requests);
 });

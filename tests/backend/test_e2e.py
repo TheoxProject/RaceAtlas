@@ -1,9 +1,18 @@
+import json
 import re
 import threading
 from pathlib import Path
 
 import pytest
-from map_support import camera, intercept_map, launch
+from map_support import (
+    camera,
+    camera_diagnostic,
+    install_camera_diagnostic,
+    intercept_map,
+    launch,
+    set_civil_date,
+)
+from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 from playwright.sync_api import expect, sync_playwright
 from sqlalchemy import text
 from werkzeug.serving import make_server
@@ -26,7 +35,7 @@ def server(app):
 
 def open_map(page, server, *, now="2026-11-11T12:00:00Z", **kwargs):
     SHOTS.mkdir(parents=True, exist_ok=True)
-    page.clock.set_fixed_time(now)
+    set_civil_date(page, now)
     intercept_map(page, **kwargs)
     page.goto(server)
     expect(page.locator(".map-canvas")).to_have_attribute("data-ready", "true", timeout=20000)
@@ -43,11 +52,96 @@ def assert_camera_unchanged(actual, expected):
 
 
 def wait_camera_pitch(page, pitch):
-    page.wait_for_function(
-        "pitch => JSON.parse(document.querySelector('.map-canvas').dataset.camera).pitch === pitch",
-        arg=pitch,
-        timeout=10000,
-    )
+    try:
+        page.wait_for_function(
+            "pitch => JSON.parse(document.querySelector('.map-canvas').dataset.camera)"
+            ".pitch === pitch",
+            arg=pitch,
+            timeout=10000,
+        )
+    except PlaywrightTimeoutError as error:
+        diagnostic = camera_diagnostic(page)
+        try:
+            SHOTS.mkdir(parents=True, exist_ok=True)
+            page.screenshot(path=str(SHOTS / "summit.png"), timeout=5000)
+        except Exception as screenshot_error:
+            diagnostic["screenshot_error"] = type(screenshot_error).__name__
+        raise AssertionError(
+            f"Pitch {pitch} not reached within 10000ms; bounded camera diagnostic: "
+            + json.dumps(diagnostic, ensure_ascii=True)
+        ) from error
+
+
+@pytest.mark.e2e
+def test_civil_date_preserves_native_animation_clock(monkeypatch):
+    with sync_playwright() as playwright:
+        browser = launch(playwright)
+        page = browser.new_page(timezone_id="Europe/Paris")
+        add_script = page.add_init_script
+
+        def capture_native_then_install(script):
+            # One init script fixes ordering: native references precede the actual helper.
+            add_script(
+                script="""globalThis.nativeClock = {
+                Date, performance, now: performance.now,
+                setTimeout, clearTimeout, setInterval, clearInterval,
+                requestAnimationFrame, cancelAnimationFrame
+            };"""
+                + script
+            )
+
+        monkeypatch.setattr(page, "add_init_script", capture_native_then_install)
+        set_civil_date(page, "2026-12-31T23:30:00Z")
+        page.goto("data:text/html,<title>synthetic clock regression</title>")
+        result = page.evaluate("""async () => {
+            const native = globalThis.nativeClock;
+            const fixed = native.Date.parse('2026-12-31T23:30:00Z');
+            const original = new native.Date(2024, 1, 29, 12, 34, 56, 78);
+            class DerivedDate extends Date {}
+            const dates = Date.now() === fixed && +new Date() === fixed
+                && Date() === new native.Date(fixed).toString()
+                && +new Date(0) === 0 && Number.isNaN(+new Date(undefined))
+                && +new Date('2024-02-29T12:00:00Z')
+                    === native.Date.parse('2024-02-29T12:00:00Z')
+                && +new Date(2024, 1, 29, 12, 34, 56, 78) === +original
+                && new Date() instanceof native.Date && new Date() instanceof Date
+                && new DerivedDate() instanceof DerivedDate
+                && +new DerivedDate() === fixed
+                && Date.parse === native.Date.parse && Date.UTC === native.Date.UTC
+                && Date.UTC(2024, 1, 29) === native.Date.UTC(2024, 1, 29);
+            const identities = performance === native.performance
+                && performance.now === native.now
+                && ['setTimeout','clearTimeout','setInterval','clearInterval',
+                    'requestAnimationFrame','cancelAnimationFrame']
+                    .every(key => globalThis[key] === native[key]);
+            const paris = new Intl.DateTimeFormat('en-CA', {
+                timeZone: 'Europe/Paris', year: 'numeric', month: '2-digit', day: '2-digit'
+            }).format(new Date());
+            const readings = [performance.now()];
+            for (let i = 0; i < 12; i++) {
+                await new Promise(resolve => setTimeout(resolve, 0));
+                readings.push(performance.now());
+                const end = performance.now() + 2;
+                while (performance.now() < end) {}
+                readings.push(performance.now());
+            }
+            const frame = await new Promise(resolve => requestAnimationFrame(resolve));
+            return {dates, identities, paris, clockInstalled: !!globalThis.__pwClock,
+                monotone: readings.every((value, i) => !i || value >= readings[i - 1]),
+                progressed: readings.at(-1) > readings[0], frame: Number.isFinite(frame),
+                stillFixed: Date.now() === fixed && +new Date() === fixed};
+        }""")
+        assert result == {
+            "dates": True,
+            "identities": True,
+            "paris": "2027-01-01",
+            "clockInstalled": False,
+            "monotone": True,
+            "progressed": True,
+            "frame": True,
+            "stillFixed": True,
+        }
+        browser.close()
 
 
 @pytest.mark.e2e
@@ -311,6 +405,7 @@ def test_base_map_warning_does_not_silently_disable_summit(seeded, server):
         browser = launch(playwright)
         page = browser.new_page()
         open_map(page, server, base_failure=True)
+        assert install_camera_diagnostic(page)
         expect(
             page.get_by_text("Le fond de carte est partiellement indisponible.", exact=False)
         ).to_be_visible()
@@ -325,6 +420,7 @@ def test_base_map_warning_does_not_silently_disable_summit(seeded, server):
         )
         wait_camera_pitch(page, 60)
         assert camera(page)["pitch"] == 60
+        assert "snapshot" in camera_diagnostic(page)
         browser.close()
 
 
@@ -334,7 +430,7 @@ def test_pending_basemap_does_not_block_real_race_markers(seeded, server):
         browser = launch(playwright)
         page = browser.new_page()
         pending = intercept_map(page, base_pending=True)
-        page.clock.set_fixed_time("2026-11-11T12:00:00Z")
+        set_civil_date(page, "2026-11-11T12:00:00Z")
         try:
             page.goto(server)
             expect(page.locator(".map-canvas")).to_have_attribute(
@@ -418,7 +514,7 @@ def test_webgl_unavailable_keeps_accessible_race_details(seeded, server):
         errors = []
         page.on("pageerror", lambda error: errors.append(str(error)))
         intercept_map(page)
-        page.clock.set_fixed_time("2026-11-11T12:00:00Z")
+        set_civil_date(page, "2026-11-11T12:00:00Z")
         page.goto(server)
         expect(
             page.get_by_text("La carte est indisponible sur cet appareil.", exact=False)
