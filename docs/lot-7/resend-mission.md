@@ -7,13 +7,13 @@ ACC-02A approuvé au SHA **9dfd8087820608f613e5915a1839800357e1ffb9** ; [CI43389
 ## Configuration et limites autorisées
 
 ```dotenv
-APP_BASE_URL=https://raceatlas.onrender.com
+APP_BASE_URL=
 EMAIL_PROVIDER=development
 RESEND_API_KEY=
 EMAIL_FROM=
 ```
 
-L'URL `onrender.com` souhaitée doit être confirmée au déploiement ; le site n'exige pas le même domaine pour envoyer des emails. Domaine souhaité ultérieurement **raceatlas.com**, expéditeur souhaité **RaceAtlas <no-reply@raceatlas.com>** : ni propriété ni DNS ni vérification ne sont acquis. Aucun domaine non vérifié ne doit servir à un envoi. Laisser clé/From vides dans les exemples effectifs tant que non configurés. `EMAIL_PROVIDER=resend` sera réservé à la configuration réellement vérifiée et autorisée.
+Dernière précision propriétaire : le club possède `ucthonon.fr`, géré via Webador. Sous-domaine cible **raceatlas.ucthonon.fr**, réservé aux emails, From cible **RaceAtlas <notifications@raceatlas.ucthonon.fr>**. Rien n'est encore vérifié dans Resend ; ces valeurs ne constituent pas une activation. APP_BASE_URL reste l'URL réelle du service Render à renseigner, indépendante du domaine email. Clé/From/garde vérifié restent vides dans la configuration locale effective ; la configuration production cible sera documentée uniquement pour activation ultérieure autorisée. Ne modifier ni supprimer les DNS existants du domaine principal ou des emails du club. Le guide Webador doit vérifier le nom complet résultant et éviter un suffixe `ucthonon.fr` dupliqué, avec les seules valeurs réellement fournies par Resend.
 
 Tous les tests automatisés restent simulés, y compris le transport du SDK. Aucune création de compte externe, achat de domaine, DNS, envoi réel, requête API avec clé, déploiement ou mutation distante autorisé. Les essais `resend.dev` ne sont pas un moyen d'envoyer aux utilisateurs ; les documenter seulement dans leurs limites officielles, sans les exécuter. Pas de clé dans Git/frontend/logs ; pas de fallback silencieux du réseau vers le simulateur en production.
 
@@ -27,7 +27,7 @@ Developer seul writer après attribution explicite ; autres agents read-only. Fi
 4. Le SDK possède des globals APIkey/URL/client. Prévenir mélange entre instances/apps et restauration incomplète sur exception ; sérialisation bornée et tests concurrents. Ne pas hériter d'un `RESEND_API_URL` permettant de transmettre une clé ailleurs. Via l'interface HTTPClient supportée, imposer HTTPS vers `api.resend.com/emails`, TLS vérifié, pas de redirection, temps connect/read et taille réponse bornés. Ne pas présenter les timeouts connect/read comme un SLA de durée totale.
 5. Absence/mauvaise configuration Resend doit être refusée, jamais remplacée par `resend.dev` ou un From supposé. Un garde explicite de domaine vérifié peut compléter les quatre variables (par exemple `EMAIL_VERIFIED_DOMAIN`, vide par défaut), sans faire passer cette attestation opérateur pour une vérification DNS/API réellement exécutée. Documenter la preuve à fournir avant activation et la restriction du domaine de la clé `sending_access`. Aucun accès réseau pour vérifier un domaine dans les tests ou le preflight.
 6. Masquer exceptions réseau/SDK, y compris messages natifs contenant des secrets ; succès API signifie acceptation, pas réception. Tester timeout, erreur réseau,429/quota,403/domain/key,5xx, réponse invalide et trop grande, absence de retry incontrôlé ; utiliser un identifiant d'idempotence opaque si retry d'une même opération. Aucun changement de plan, dépense ou appel de quota réel.
-7. Confirmation : objet **« Confirmez votre adresse e-mail — RaceAtlas »**, bienvenue brève, bouton **« Confirmer mon adresse e-mail »**, expiration **24 heures**, ignorer une demande non initiée. Reset : objet **« Réinitialisation de votre mot de passe — RaceAtlas »**, bouton **« Réinitialiser mon mot de passe »**, expiration **30 minutes**, ignorer si inconnue. Chaque message fournit HTML et texte brut, navy#111F37/orange#F97316, sans ressource distante/tracking. Ne jamais transmettre un mot de passe.
+7. Confirmation : objet **« Confirmez votre adresse e-mail — RaceAtlas »**, bienvenue brève, bouton **« Confirmer mon adresse e-mail »**, expiration **24 heures**, ignorer une demande non initiée. Reset : objet **« Réinitialisez votre mot de passe — RaceAtlas »**, bouton **« Réinitialiser mon mot de passe »**, expiration **30 minutes**, ignorer si inconnue. Chaque message fournit HTML et texte brut, navy#111F37/orange#F97316, sans ressource distante/tracking. Ne jamais transmettre un mot de passe.
 8. Construire liens depuis **APP_BASE_URL exclusivement**, pas Host/Forwarded ou domaine de l'expéditeur. Canonicaliser/valider schéma/origine sans userinfo/query/fragment, HTTPS en production, HTTP loopback local/test seulement. Utiliser un fragment de l'URL racine pour le token afin que Flask et Referer ne le reçoivent pas ; figer les deux formats pour la future UI, pas une page qui n'existe pas côté serveur. Escape HTML et borner entrées ; aucun GET qui consomme un token.
 9. Guide propriétaire concret : compte Resend Free, clé envoi uniquement et domaine restreint, propriété de domaine, valeurs SPF/DKIM fournies par Resend, DMARC recommandé, statut vérifié avant From, tracking désactivé pour tokens, secrets dans Render, URL du site indépendante, test futur d'envoi/réception/liens/quota/erreurs. Les valeurs DNS ne sont pas inventées ; aucune action de ce guide exécutée. Présenter Free100/jourUTC et3000/mois comme limites vérifiées dans les docs actuelles, pas quota d'un compte inspecté.
 
@@ -47,3 +47,7 @@ Reset distinct, hash seul, **30min**, consommation atomique, aucun password par 
 - [Free et quotas](https://resend.com/docs/knowledge-base/account-quotas-and-limits), [prix](https://resend.com/pricing), [limites resend.dev](https://resend.com/docs/knowledge-base/403-error-resend-dev-domain).
 
 L'activation/délivrance réelle et les droits/prérequis de domaine restent **BLOCKED** jusqu'aux actions et autorisations du propriétaire. Les tests simulés valident l'intégration de code demandée, pas cette exploitation. Premier déploiement privé après lot8/candidatV1 inchangé.
+
+## Interruption B1
+
+Le code WIP a été conservé après limite d'utilisation Developer ; résultats du premier run tronqués et non réconciliés. Aucune validation B1/guide/visuel/inscription HTTP revendiquée. Le sujet reset dans templates/tests doit encore être aligné sur la dernière demande. Reprise exacte et tâches au checkpoint, pas de source jetée ou de nouvelle implémentation parallèle.

@@ -1,54 +1,49 @@
 # Point de reprise RaceAtlas
 
-Checkpoint UTC **2026-11-13T08:09Z**. Lots0–6, PRE-01 et ACC-01 intégrés. **ACC-02A approuvé au jalon**, PR12 toujours Draft/non fusionnée ; lot7 non terminé. Nouvelle décision Resend versionnée pour la prochaine tâche. Aucun déploiement ou envoi réel.
+**Checkpoint d'interruption UTC2026-11-13T09:34Z — ACC-02B1 WIP, non revu.** Le Developer a atteint la limite d'utilisation de la plateforme, avec reprise indiquée le18novembre2026. Aucun autre agent n'a reçu son implémentation pour contourner cette limite ; aucune reprise automatique promise. Coordinator sauvegarde les fichiers existants et les décisions, sans terminer ou approuver B1.
 
-## Git, ownership et prochaine action
+## État réel et prochaine action sûre
 
-Worktree isolé `C:/Users/theop/.codex/worktrees/add4/RaceAtlas`, branche **feature/account-authentication**, base/main **5e2c84a99f7795da9cc2e14118549873bf4a42be**. Parent local/distant du cadrage B : **9dfd8087820608f613e5915a1839800357e1ffb9**, [Draft PR12](https://github.com/TheoxProject/RaceAtlas/pull/12). Nouveau SHA à relever après publication de ce cadrage. Aucune ancienne approbation transférée à un nouveau head.
+Branche **feature/account-authentication**, worktree isolé add4, [Draft PR12](https://github.com/TheoxProject/RaceAtlas/pull/12). Parent local/distant avant sauvegarde **32a4b5aa30a918b376ceec1d6c0f951666114fa5**, base/main **5e2c84a99f7795da9cc2e14118549873bf4a42be**. Relever le SHA de sauvegarde sur Git/PR après publication. PR non fusionnée ; aucun verdict transféré de A au WIP.
 
-Developer et Tester ont libéré la source A, aucun test retenu. Coordinator seul writer de la mission B1 ; puis Developer sera seul writer, Root sur PR/notes ignorées, Tester read-only. **Prochaine action sûre :** publier le cadrage Resend, vérifier la CI de son SHA, attribuer uniquement B1 défini dans docs/lot-7/resend-mission.md. B2/HTTP/UI non attribués par ce cadrage.
+Fichiers B1 présents : `raceatlas/email/{__init__,config,providers,templates}.py`, `tests/backend/test_email.py`, pins SDK dans requirements/constraints, `.env.example` et mission. Le Developer a signalé un premier run natif dont la sortie a été tronquée : **nombre de tests/code de sortie non réconciliés, aucun PASS B1 revendiqué**. Cache pytest sans échec ne prouve pas réussite. Contrôle natif13nov09:29UTC : aucun Python/Chrome/Chromium actif, donc aucune session de test à attendre ou interrompre. Pas de JUnit B1 identifié au niveau racine des artefacts ; ne pas supposer rapport existant. Aucun B2/HTTP/frontend/activation commencé.
+
+**Prochaine action sûre lorsque la capacité redevient disponible et qu'une session est effectivement reprise :** vérifier status/head/processus, reprendre le même Developer sur le WIP conservé, adapter la configuration/templates aux dernières décisions ci-dessous, puis lancer uniquement les tests email ciblés avec code de sortie et JUnit ignoré conservés. Le premier résultat tronqué ne doit pas être réétiqueté PASS. Ensuite contrôles pertinents/visuels, handoff/gel SHA exact, revue indépendante B1 et CI ; pas de merge avant toutes les gates finales.
 
 | Tâche | État |
 |---|---|
-| ACC-01 compte et sauvegardes par scope | DONE intégré PR11/mainCI |
-| ACC-02A Argon2/credentials/sessions internes | DONE jalon exact9dfd, pas PR entière intégrée |
-| ACC-02B1 EmailService/ResendSDK simulé/templates/config/docs | TODO, mission bornée prête |
-| ACC-02B2 compte non vérifié/confirmation24h/reset30min/renvoi | TODO |
-| ACC-02C HTTP/cookies/CSRF/abus/suppression | TODO |
-| PLAN-01 API privée/statuts/ICS | TODO |
-| ACC-UI comptes/planning intégrés | TODO |
-| Domaine/expéditeur/délivrance réels | BLOCKED, aucune propriété/vérification/autorisation acquise |
-| ACC-FINAL / lot8 / candidat V1 | TODO, simulations ne prouvent pas exploitation |
+| ACC-01 identité et favoris | DONE intégré PR11/mainCI |
+| ACC-02A primitives/sessions | DONE jalon APPROVE9dfd ; PR12 pas complète |
+| ACC-02B1 EmailService/SDK/templates/docs | BLOCKED capacité Developer, code WIP sauvegardé, tests inconnus |
+| Mise à jour sujet reset dans code/tests | TODO : « Réinitialisez votre mot de passe — RaceAtlas » |
+| Guide Resend/Webador et preuve visuelle HTML | TODO, aucune validation complète revendiquée |
+| ACC-02B2 confirmation24h/reset30min/renvois/limites PG | TODO |
+| ACC-02C Flask/cookies/CSRF/abus/suppression | TODO |
+| PLAN-01 / UI / acceptation lot7 | TODO |
+| Domaine vérifié, clé, envoi réel, déploiement | BLOCKED autorisation/préconditions, aucun effectué |
 
-## Preuves A et intégrations
+## Dernière décision propriétaire faisant autorité
 
-- A exact **9dfd8087820608f613e5915a1839800357e1ffb9** : Tester ciblé APPROVE, **132 PASS60,64s +16 PASS18,10s**, Ruff49/contrats26/pipcheck/diff. Six sondes indépendantes de concurrence inverse/ORM préchargé/rollback/slotKDF plus dix scénarios publics. [CI43389431747](https://github.com/TheoxProject/RaceAtlas/actions/runs/43389431747) SUCCESS **521 backend220,54s /67 frontend**, gardes source9dfd avant/après. Pas d'APPROVE HTTP/email/PR12 entière. Rapport complet dans PR12 et .local-tools/tester-report-authA.md.
-- Developer A :132PASS63,10s (25hash/39PGsessions/68planning),10publicsPASS12,44s, migrations/checks/pipcheck/Ruff49/contrats26. Premier54PASS/7FAIL+7teardown : instrumentation Argon2 read-only, corrigée par proxy déléguant au vrai KDF ;22PASS puis25finaux. Handoff auth-handoff.md/guide auth-local-development.md. Aucun paramètre faible substitué ou campagne complète locale répétée.
-- ACC-01 PR11 APPROVE **d264ae0ac7c5586e65966922caadbfe91abd811d**, merge **5e2c84a99f7795da9cc2e14118549873bf4a42be**, arbre égal **58f7a7e23ed3d0626735e2f762066de1ab55a8da**. CI PR43281879288 SUCCESS457backend209,86s/67frontend ; main43282947407 SUCCESS457backend212,75s/67frontend. F1/F2 clos cycle1. docs/lot-7/foundation-integration.md.
-- PRE-01 PR10 merge51856c9940a2b0e16c9f05d61a9f1726ae8701d9 et CI PR43272958804/main43273970329 vertes389/67 ; docs/readiness/predeployment-integration.md. Lot6 PR9 merge7b733d86d99a354fdcfe2bf1ecbde519ef78a68f et CI PR43226499588/main43227636726 vertes389/67 ; docs/lot-6/integration.md. Antérieurs : docs/readiness/integration.md, docs/lot-5/integration.md.
+Le club possède **ucthonon.fr** et indique **Webador** comme gestionnaire DNS. Sous-domaine retenu **raceatlas.ucthonon.fr**, réservé à l'expédition email ; From cible **RaceAtlas <notifications@raceatlas.ucthonon.fr>**. **Aucune vérification Resend ou modification DNS acquise.** Ne pas toucher/supprimer les enregistrements existants du domaine principal ou les emails du club. Reprendre uniquement les valeurs DNS réellement fournies par Resend ; futur guide doit prévenir le suffixe ucthonon.fr ajouté deux fois par l'interface. Région européenne souhaitée si disponible, à vérifier sur sources primaires et console autorisée.
 
-## Décisions propriétaire et limites
+Resend Free et SDK Python officiel restent choisis. APP_BASE_URL doit contenir l'URL RÉELLE du service Render, non encore connue/confirmée, indépendante du sous-domaine d'envoi. Valeurs locales/test : EMAIL_PROVIDER=development, clé vide, From/domaine vérifié non activés ; exemple production cible seulement après DNS vérifié et autorisation. Aucun achat, création de compte externe, DNS, requête API avec clé, email réel ou déploiement autorisé par ces consignes.
 
-**Resend Free définitivement choisi13nov**, SDK Python officiel via EmailService central/ResendEmailProvider, DevelopmentEmailProvider pour développement et tous tests automatisés. EMAIL_PROVIDER=development par défaut, RESEND_API_KEY et EMAIL_FROM vides. APP_BASE_URL souhaitée **https://raceatlas.onrender.com**, à confirmer au déploiement ; domaine ultérieur souhaité **raceatlas.com**, From souhaité **RaceAtlas <no-reply@raceatlas.com>** : ni acquis ni vérifiés. Site et domaine email indépendants. Aucun domaine non vérifié utilisé et aucun fallback resend.dev pour utilisateurs.
+Parcours confirmé : email+mot de passe, compte non vérifié, challenge24h hash seul/usageunique/renvoi avant connexion/personnel ; reset distinct30min/hash seul/usageunique/réponse générique/révocation. Objets HTML+texte : « Confirmez votre adresse e-mail — RaceAtlas » et **« Réinitialisez votre mot de passe — RaceAtlas »** (le WIP templates conserve encore l'ancien objet : à corriger). Liens depuis APP_BASE_URL exclusivement, formats B1 racine `/#confirm-email=<token>` / `/#reset-password=<token>` ; aucun Host/Forwarded ou token query serveur.
 
-Inscription **email+mot de passe avant confirmation**, compte non vérifié puis lien **24h usage unique/renvoi** avant login/personnel ; récupération distincte **30min usage unique**, sessions précédentes révoquées, réponse générique. Modèles français HTML+texte aux objets/boutons définis dans resend-mission.md, liens depuis APP_BASE_URL exclusivement. Documentation propriétaire compte Free/clé minimale/domain ownership/DNS/configRender/test futur à préparer ; aucune de ces actions autorisée par le choix fournisseur.
+## Preuves acquises, sans transfert au WIP
 
-Altitude2,5D initial/Summit à la demande ; calendrier sélectionne et conserve le mois civil affiché. ICS défaut **Prévues et Inscrit**. Premier déploiement privé **après lot8/candidatV1**. Aucun silence comme accord. Pas d'achat, compte/service externe, DNS, clé réelle, envoi réel, DB distante, collecte récurrente, publication/tag final ou déploiement sans autorisation explicite. Tests simulés complets de l'intégration Resend autorisés, pas délivrabilité revendiquée.
+A exact **9dfd8087820608f613e5915a1839800357e1ffb9** APPROVE ciblé : Tester132PASS60,64s +16PASS18,10s ; CI43389431747 SUCCESS521backend220,54s/67frontend, gardes exactes. Cadrage32a4 CI43391151742 SUCCESS521backend219,72s/67frontend, gardes exactes. Aucune de ces CI ne valide les nouveaux fichiers B1.
 
-FFC deux GET bornés11nov échouent layout_changed/debut et html_structure, droits/listIDs non qualifiés ; aucune collecte live. Mapterhorn attributionJSON403 noncontourné12nov, licences détaillées non auditées. Voir qualificationFFC/rapportreadiness. Pas GPU physique/liveSummit acquis.
+A : Argon2id19456KiB/t2/p1/sel16/tag32, password exact15–128codepoints/512UTF8, KDF2/process/attente1s ; sessions256bits/SHA256DB/7joursabs24hidle, Accountlock en premier et relecture fraîche jusqu'au commit caller. B doit conserver l'ordre, pas d'I/O email sous verrou ni cookie/lien publié avant commit. Planning/SavedEntry publics/source/frontend/hosting inchangés à ce checkpoint.
 
-## Contrats techniques à préserver
+## Environnement préservé et preuves de sauvegarde
 
-A : Argon2id19456KiB/t2/p1/sel16/tag32, password exact15–128codepoints/512UTF8 sans normalisation, deux KDF/process et attente1s. Credential absent/non vérifié/futur refuse. Session256bits CSPRNG/SHA256DB seulement,7jours absolus/24h idle serveurUTC, version et cascade Account→Credential→Session. **Accountlock d'abord**, relecture populate_existing, verify/issue/revoke jusqu'au commit caller ; B doit respecter cet ordre. Pas d'I/O email sous verrou ou publication token/cookie avant commit. Freshlogin après logoutall permis ; preuve ancienne ne survit pas à révocation. Aucun HTTP/email encore livré.
+Python3.12.14 `C:/Users/theop/.codex/worktrees/1a1e/RaceAtlas/.venv/Scripts/python.exe`, pip via runtime `--python`. Métadonnées vérifiées sans import SDK : resend2.53.2, requests2.34.2, urllib3 2.8.0, charset-normalizer3.5.2, idna3.20, certifi2026.10.23, Argon2 25.1.0 ; **pip check PASS**. Analyse AST sans exécution des4modules email+test_email :5fichiers syntaxiquement valides, `git diff --check` PASS. Ce ne sont pas tests fonctionnels ni revue B1. Ne pas réinstaller ces dépendances ou utiliser les dossiers de recherche comme runtime.
 
-Planning : acteur Account persistant même Session, auth doit charger sa preuve ; saved scopeRESTRICT/compteCASCADE, révision1/+1 vrai changement/no-op stable, privéUTC. Migration actuelle **d82b9147a120** aprèsc40a7162b901. Catalogue public/source/hosting/frontend inchangés.
+PostgreSQL17.11 existant127.0.0.1:55434, cluster `.local-tools/pgdata-lot2-native`, userraceatlas_local/PID38028. DeveloperDBraceatlas_lot2_test/TesterDBraceatlas_lot2_review avec RACEATLAS_DISPOSABLE_DB=1 ; previewmap_demo distincte. Vérifier statut avant reprise, pas initdb/reseed aveugle. Node24.22.1/pnpm10.20.0/cache, Chromium cacheworktree1a1e prêts ; pas killglobal, anciens Node non revendiqués préservés.
 
-## Environnement et reprise sûre
+ACC-01 PR11 merge5e2c84a et CI main43282947407 SUCCESS457/67 : docs/lot-7/foundation-integration.md. PRE-01 et lots0–6 : docs/readiness/predeployment-integration.md, docs/lot-6/integration.md et preuves antérieures liées. Main reste5e2c84a tant que PR12 n'a pas passé ses gates complètes.
 
-Python3.12.14 `C:/Users/theop/.codex/worktrees/1a1e/RaceAtlas/.venv/Scripts/python.exe`, pip via runtime `--python` (venv sans pipmodule). Argon2 déjà installé proprement avec pins25.1.0/bindings26.1.0/cffi2.1.1/pycparser3.12 ; ne pas utiliser research-deps comme runtime. Node24.22.1/pnpm10.20.0/cache prêts (wrapper11 incompatible), Chromium cache .local-tools/browsers du worktree1a1e.
+Derniers agents : Developer errored quota, Tester idle avec plan B1 .local-tools/tester-email-probe-plan.md. Rapports A et ACC01 ignorés complets publiés en PR ; notes .local-tools/resend-integration-notes.md et auth-b2-mission-draft.md préparatoires, pas code validé. Pas reprendre recherches Brevo/Mailjet supersédées. Aucun secret ou vraie donnée expédié ; ne jamais archiver globalement .local-tools (DB/caches/éventuels secrets).
 
-PostgreSQL17.11 existant127.0.0.1:55434, cluster `.local-tools/pgdata-lot2-native`, userraceatlas_local, PID38028 ; Developer raceatlas_lot2_test/Tester raceatlas_lot2_review avec RACEATLAS_DISPOSABLE_DB=1 ; map_demo distincte. Dernier Tester : aucun Python/Chrome/Chromium, processus de tests terminés ; anciens Node non revendiqués préservés. Vérifier avant tests, pas initdb/reseed/killglobal.
-
-SDK officiel Resend2.53.2 inspecté seulement en wheel isolé .local-tools/resend-research-wheels, **pas installé dans le venv pendant gel A** ; B1 doit pin/installer proprement ses dépendances nécessaires. Globals SDKkey/url/client, timeout30s/redirects par défaut : points à sécuriser/tester via HTTPClient supporté, notes ignorées resend-integration-notes.md.
-
-Git/PG/browser natifs autorisés ; création PR connecteur403 historique, fallback Git/GCM dans ses permissions sans secrets. HelpersPR7–12 ont numéros/bases statiques, ne pas les réutiliser aveuglément. Pas reset/forcepush/main direct. Pendant gel, PR/notes ignorées pour progrès ; tout changement suivi invalide verdict du head. Ne jamais archiver tout .local-tools (DB/caches/éventuels secrets). Recherches Brevo/Mailjet antérieures supersédées, aucun compte ou envoi effectué.
+FFC droits/compatibilité réels, licences terrain détaillées/GPU et expéditeur réel restent limitations déjà documentées ; aucune collecte/sync live ou service activé. Premier déploiement privé après lot8/candidatV1, autorisation distincte ; Altitude2,5D et mois partagé inchangés, ICS défautPrévues+Inscrit. Pas reset/forcepush/main direct. Helpers PR ont numéros/bases statiques, fallbackGit/GCM autorisé dans permissions existantes après403 historique du connecteur ; pas clé/token affiché.
