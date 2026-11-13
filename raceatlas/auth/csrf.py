@@ -7,6 +7,8 @@ import re
 import secrets
 import time
 
+from werkzeug.exceptions import RequestEntityTooLarge
+
 LIFETIME = 1800
 _NONCE = re.compile(r"[A-Za-z0-9_-]{43}\Z", re.ASCII)
 _COOKIE = re.compile(r"([A-Za-z0-9_-]{43})\.([0-9]{1,11})\.([a-f0-9]{64})\Z", re.ASCII)
@@ -100,6 +102,9 @@ def parse_json(request, fields):
         raise AuthRequestError("invalid_request", 400)
     request.max_content_length = 8192
     raw = request.get_data(cache=False)
+    # Werkzeug may return a body cached before max_content_length was installed.
+    if len(raw) > 8192:
+        raise RequestEntityTooLarge()
 
     def pairs(values):
         result = {}

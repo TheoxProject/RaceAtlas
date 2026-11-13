@@ -45,7 +45,7 @@ def isolated(database, monkeypatch):
 def configuration(database, **patch):
     return {
         "ENVIRONMENT": "test",
-        "DATABASE_URL": str(database.url),
+        "DATABASE_URL": database.url,
         "AUTH_ENABLED": True,
         "AUTH_CSRF_KEY": CSRF,
         "AUTH_RATE_KEY": RATE,
@@ -469,3 +469,65 @@ def test_csrf_reused_nonce_reports_remaining_lifetime_without_extending_cookie(a
     assert first.json["expires_in"] == 1800 and second.json["expires_in"] == 1790
     assert first.json["csrf_token"] == second.json["csrf_token"]
     assert "Set-Cookie" not in second.headers
+
+
+def test_fixture_preserves_url_object_and_password_without_rendering_or_connecting():
+    from sqlalchemy import create_engine
+
+    engine = create_engine(
+        "postgresql+psycopg://synthetic:synthetic_password@127.0.0.1:1/synthetic_test"
+    )
+    try:
+        configured = configuration(engine)
+        assert configured["DATABASE_URL"] is engine.url
+        assert configured["DATABASE_URL"].password == "synthetic_password"
+    finally:
+        engine.dispose()
+
+
+@pytest.mark.parametrize("cached", [False, True])
+@pytest.mark.parametrize("size", [8192, 8193, 8222])
+def test_json_explicit_byte_boundary_even_after_werkzeug_cache(app, cached, size, monkeypatch):
+    import json
+
+    from flask import request
+    from werkzeug.exceptions import RequestEntityTooLarge
+
+    import raceatlas.auth.csrf as csrf
+
+    password = " Préserve Exacte\x00 2027 "
+    payload = json.dumps({"password": password}, ensure_ascii=False).encode("utf-8")
+    payload += b" " * (size - len(payload))
+    with app.test_request_context(
+        "/", method="POST", data=payload, content_type="application/json"
+    ):
+        if cached:
+            assert len(request.get_data()) == size
+        if size > 8192:
+
+            def forbidden(*args, **kwargs):
+                pytest.fail("Oversized body reached JSON decoding")
+
+            monkeypatch.setattr(csrf.json, "loads", forbidden)
+            with pytest.raises(RequestEntityTooLarge):
+                parse_json(request, {"password"})
+        else:
+            assert parse_json(request, {"password"}) == {"password": password}
+
+
+def test_uncached_oversize_rejected_without_reading_new_stream(app):
+    from io import BytesIO
+
+    from flask import request
+    from werkzeug.exceptions import RequestEntityTooLarge
+
+    stream = BytesIO(b"x" * 8222)
+    with app.test_request_context(
+        "/",
+        method="POST",
+        content_type="application/json",
+        environ_overrides={"wsgi.input": stream, "CONTENT_LENGTH": "8222"},
+    ):
+        with pytest.raises(RequestEntityTooLarge):
+            parse_json(request, {})
+        assert stream.tell() == 0

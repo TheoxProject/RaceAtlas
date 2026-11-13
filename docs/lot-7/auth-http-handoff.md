@@ -1,6 +1,6 @@
 # ACC-02C0 — configuration, CSRF, admission et corpus
 
-Jalon intermédiaire de [la mission HTTP auth](auth-http-mission.md), branche `feature/account-authentication`, [Draft PR12](https://github.com/TheoxProject/RaceAtlas/pull/12). Parent **b12d2c37405ac754ee2331b95c696b3bf71c5c47**, base/main **5e2c84a99f7795da9cc2e14118549873bf4a42be**. C0 ne termine pas C, PR12 ou lot7. Le candidat est le commit contenant ce handoff, SHA exact communiqué après push, nouvelle revue/CI requises.
+Jalon intermédiaire de [la mission HTTP auth](auth-http-mission.md), branche `feature/account-authentication`, [Draft PR12](https://github.com/TheoxProject/RaceAtlas/pull/12). Parent de correction **35f123db2ec1741e1509630a2803d29d6b873251**, base/main **5e2c84a99f7795da9cc2e14118549873bf4a42be**. C0 ne termine pas C, PR12 ou lot7. Le candidat est le commit contenant ce handoff, SHA exact communiqué après push, nouvelle revue/CI requises.
 
 ## Livré et interfaces
 
@@ -30,3 +30,17 @@ Couverture réelle : disabled/incomplete et environnement OS contradictoire, pub
 Après push : gel exact et STOP pour revue C0/CI. C1 doit livrer vraies routes cookies login/me/logout/logout-all/password/delete et mini réauth A ; C2 demandes/confirm/reset/queue RAM16 worker1 cadence0,2s, annulation queued aprèsdelete, perte/inflight honnête. Les limites d'admission, vérifications CSRF et helper nouveaux secrets doivent y être réellement branchés avant acceptation C. Aucun compte encore connectable via HTTP à C0, ni confirmation/reset exposé, ni preuve non-énumération des futures routes acquise. Pas saved API/planning/ICS/UI, pas serve/ops/CI/pins.
 
 Domaine email cible `raceatlas.ucthonon.fr`, From futur `RaceAtlas <notifications@raceatlas.ucthonon.fr>` non vérifié ; URL réelle Render indépendante inconnue. Aucun compte externe, DNS, clé réelle, envoi email, service, coût, DB distante, déploiement ou collecte exécuté. La préparation locale n'est pas une autorisation d'activation.
+
+## Correction C0 cycle1 — F1/F2
+
+Tester REQUEST CHANGES exact **35f123db2ec1741e1509630a2803d29d6b873251**, [rapport initial](https://github.com/TheoxProject/RaceAtlas/pull/12#issuecomment-6859026922). [CI43462508000](https://github.com/TheoxProject/RaceAtlas/actions/runs/43462508000) **FAILED710PASS/7FAIL180,30s** : la fixture `str(database.url)` masquait le password, les appels HTTP obtenaient503 face au PG authentifié CI. Les **62PASS locaux29,61s** et62PASS indépendants31,48s utilisaient PG local trust et ne prouvaient pas password-auth. L'historique reste conservé, aucune modification de rôle/permissions/trust/CI ou nouveau serveur pour masquer le problème.
+
+F1 : `configuration(database)` transmet maintenant **l'objet database.url directement** à create_app/create_engine, sans rendre/logguer le secret. Régression avec URL et password strictement synthétiques, aucune connexion au faux hôte nécessaire ; l'objet et le password restent identiques en mémoire. La validation password-auth réelle demeure celle de la nouvelle CI, pas une prétention du run natif trust.
+
+F2 : après `get_data(cache=False)` toujours précédé de max_content_length=8192, contrôle explicite `len(raw)>8192` et RequestEntityTooLarge avant JSON. Un cache lu par un middleware auparavant ne contourne plus la borne. Aucun read neuf non borné ajouté ; tests8192accepté,8193/8222rejetés413 cached/noncached, JSON decode interdit sur oversize, flux frais connu oversize non lu. Password Unicode/espaces/NUL exact préservé. Aucune route mutation actuellement exposée ou exploit HTTP livré revendiqué.
+
+- Ciblé : `pytest tests/backend/test_auth_http_foundation.py -q -k 'fixture_preserves or explicit_byte_boundary or uncached_oversize' --tb=short --junitxml=.local-tools/c0-cycle1-targeted.xml` : **8PASS2,91s exit0**.
+- Final : `pytest tests/backend/test_auth_http_foundation.py tests/backend/test_foundation.py tests/backend/test_catalog_options.py -q --tb=short --junitxml=.local-tools/c0-cycle1-final.xml` : **70PASS26,14s exit0 (47C0+23public)**.
+- Ruff check PASS, format **65fichiers conformes**, contrats **26PASS**, diff PASS. Modèles/migration/pins/A/B1/B2 inchangés, preuves compatibles réutilisées après diff.
+
+PG38028/55434 retenu, Developer_test uniquement avec opt-in ; inventaire initial aucun Python/Chrome concurrent, Reviewer_review non touchée. C1/C2 restent non commencés jusqu'au gate renouvelé ; après commit/push nouveau SHA exact STOP éditions pour revue corrective et CI. Aucun email réel, DNS, service, dépense ou déploiement.
