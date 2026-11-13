@@ -1,55 +1,51 @@
 # Point de reprise RaceAtlas
 
-Dernier checkpoint UTC : **2026-11-12T18:36:13Z**. Lots 0–6 et PRE-01 intégrés, **ACC-01 correction cycle 1/3 testée, à publier/geler pour revue renouvelée et CI**. Lot 7 non terminé. Aucun déploiement.
+**Checkpoint UTC 2026-11-13T21:53Z — candidat backend auth complet C2 prêt pour gel, NON APPROUVÉ.** PR12 reste Draft. Une acceptation COMPLETE backend et une CI exacte restent requises ; lot7, UI et V1 ne sont pas terminés.
 
-## Correction ACC-01 courante
+## Git et prochaine action sûre
 
-Parent local/distant **5a664068fd6d5faa08c75478f09a2fc50202f504**, même branche `feature/accounts-and-planning` / PR11 / base51856c9. CI parent `43279377589` SUCCESS, mais Tester REQUEST CHANGES exact pour ACC01-F1/F2, rapport `.local-tools/tester-report-acc01.md`. Aucune approbation transférée au nouveau candidat. Sources libérées et tous processus Tester terminés avant correction ; Developer seul writer.
+Branche **feature/account-authentication**, worktree isolé add4, [Draft PR12](https://github.com/TheoxProject/RaceAtlas/pull/12). Parent local/origin **c06b2dc52cc832dee0e5a5548a6c40dbde5deea3**, base/main **5e2c84a99f7795da9cc2e14118549873bf4a42be**. Le commit contenant ce checkpoint sera le candidat C2 ; transmettre son SHA exact après push. Developer seul writer ; Root PR/notes ignorées, Tester indépendant read-only.
 
-F1 : garde Account pending-delete (`session.deleted`) avant attribut expiré/autoflush, sans relâcher type/persistent/même Session. F2 : identifiants contenant NUL ou non encodables UTF-8 refusés par not_found avant query, sans filtre UUID ni broad catch du driver. Tests : loaded/expired × six opérations, NUL/surrogates × quatre opérations, zéro SQL pendant refus et SELECT1/opération valide sans rollback correctif ; cible synthétique accent/emoji acceptée. Aucun défaut HTTP ou corruption transactionnelle revendiqué (ni démontré par le Tester), aucune route ajoutée.
-
-Validation : **68 planning PASS en 25,14 s**, code 0, cycle migration/check inclus ; Ruff lint/format **43 fichiers**, **26 contrats/diff PASS**. PG existant PID38028/port55434 et absence de tests concurrents vérifiés ; `_test` avec opt-in/caches, aucun test actif. Preuves 131 du parent (Tester) et 88 publiques (Developer) réutilisées explicitement pour chemins inchangés ; 43 planning initiaux rejoués dans 68. Modèle/migration/conftest/source/API/CI/UI/dépendances inchangés. Prochaine action : commit/push cohérent, gel exact pour nouvelle revue/CI puis arrêt édition. Commandes et limites au handoff.
-
-## Historique avant correction
-
-Worktree isolé C:/Users/theop/.codex/worktrees/add4/RaceAtlas ; checkout personnel main préservé. Branche **feature/accounts-and-planning**, depuis origin/main **51856c9940a2b0e16c9f05d61a9f1726ae8701d9** après CI main verte. Parent local/distant **c9696821e7f01afc72ed30837ee5388fd71e5c48**, Draft PR https://github.com/TheoxProject/RaceAtlas/pull/11. Developer seul writer, aucune commande Tester active ; changements WIP conservés avant tests, pas de verdict ou CI présumés.
-
-**Prochaine action sûre :** publier ce jalon cohérent, transmettre son SHA gelé pour Tester/CI et arrêter les éditions. Aucun ancien verdict transféré ; aucune clôture globale lot 7. Aucun login/compte connecté temporaire, email réel, service/domaine/DNS ou DB distante.
+**Prochaine action sûre :** commit/push cohérent, communiquer le SHA puis STOP éditions. Demander une revue d'acceptation **COMPLETE A+B1+B2+C0+C1+C2 du backend PR12**, pas une simple APPROVE C2. Exiger la CI du même SHA et une base à jour avant intégration. [Mission C2](../lot-7/auth-http-email-mission.md), [handoff C2](../lot-7/auth-http-email-handoff.md), [mission globale](../lot-7/auth-http-mission.md). Planning HTTP/ICS/UI attendent intégration auth + mainCI et nouvelle attribution.
 
 | Tâche | État |
 |---|---|
-| ACC-00 mission/Draft | DONE, PR11 |
-| ACC-01 identité et sauvegardes par scope | Testé, à publier/geler pour revue ciblée |
-| ACC-02 credentials/sessions/CSRF/récupération | TODO, périmètre ultérieur |
-| PLAN-01 API privée/statuts/ICS | TODO |
-| ACC-UI parcours intégré | TODO |
-| Expéditeur réel | BLOCKED, aucun domaine/expéditeur ; simulation locale non équivalente |
-| ACC-FINAL | TODO, aucune clôture lot7 par simulation seule |
+| ACC-01 identité/sauvegardes | DONE intégré PR11/mainCI |
+| Auth A/B1/B2/C0/C1 | Jalons APPROVE antérieurs ; verdict non transférable |
+| C2 routes email/dispatcher/probes | Implémenté,225 ciblés PASS ; acceptation complète/CI TODO |
+| Backend PR12 intégré | TODO, PR Draft non fusionnée |
+| Planning API / ICS / UI / lot7 complet | TODO, exclus C2 |
+| DNS/envoi réel/service/déploiement | BLOCKED autorisation/préconditions, aucun effectué |
 
-Mission : docs/lot-7/mission.md. Le service ACC-01 doit être privé/scoppé par acteur fiable, sans route auth factice ni header de bypass ; FKscope restrictif et preuve réelle de conservation favoris pendant sync. IDs source/listes non durables restent inconnus. Les phases suivantes sont détaillées après ce premier jalon.
+## Comportement et limites C2
 
-Interface : `Account` opaque/email privé trim+lower unique, sans suppression de points/plus-tags, validation minimale non RFC/délivrabilité. L'acteur du service est obligatoirement un **Account persistant attaché à la même Session ORM** ; ACC-02 devra charger ce compte depuis l'auth serveur, jamais prendre un ID acteur de requête ou passer une instance détachée. `SavedEntry` stocke scope seul, FK RESTRICT, compte CASCADE privé, quatre statuts déclaratifs. Révision privée positive initiale 1, +1 uniquement sur vrai statut ; no-op garde ID/created/updated/revision. Upsert PostgreSQL atomique et rafraîchissement ORM déjà chargé ; aucun compteur public modifié. Migration `c40a7162b901` après `b7f4208ac112`. Fixtures test réinitialisent aussi account, sans changer les données source. Interface et commandes détaillées dans docs/lot-7/developer-handoff.md et local-development.md.
+C1 est conservé : droits COOKIE uniquement, Basic preview permis mais pas identité compte, CSRF/Origin/admission C0 avant KDF.401 passive sans Set-Cookie pour éviter une réponse ancienne effaçant loginB ; réauth403 sans mint. Cookies site host-only/Secure HTTPS/HttpOnly/Lax/Path=/,7jours absolus/24h idle serveur. Corpus appliqué seulement aux nouveaux secrets, Unicode/espaces/NUL exacts.
 
-Avant tests : `pg_ctl status` a confirmé PostgreSQL existant PID 38028, port 55434 ; aucun pytest/Vitest/A-B concurrent. Caches réutilisés, `_test` uniquement, pas initdb ou campagne 389 complète. Premier run **36 PASS / 4 FAIL en 16,06 s** : timestamps PG retournés en fuseau Paris (deux cas), filtre API obligatoire manquant dans un test et diagnostic ambigu attendu incorrect. Conversion ORM UTC limitée aux nouveaux champs privés, gardant SQL timestamptz ; tests explicites UTC/Paris/Honolulu. Appel API/diagnostic de preuve corrigés. **43 ACC-01 PASS en 24,49 s**, **88 fondation/catalogue/snapshot PASS en 52,38 s**, code 0 ; cycles upgrade/check/downgrade base/upgrade/check réussis. Ruff lint/format **43 fichiers**, **26 contrats/diff PASS**. Aucun test actif. Isolation, contraintes, no-ops/révision, deux connexions concurrentes et vrais imports synthétiques (nom/report/réorganisation attestée/replay/refus/absence) exercés. Frontend et sources publiques inchangés, pas de build/rerun frontend local ; CI complète et revue exacte du nouveau SHA restent nécessaires.
+C2 register/resend/forgot :202 constant pour résultats métier connus/inconnus/limités, file pleine/fermée et panne provider. Aucune promesse envoyé/reçu. Périmètre HTTP400/403/413/429/503 avant lookup, indépendant de l'existence. Confirmation/reset POST avec X-Account-Proof +CSRF, jamais query/JSONtoken ou auto-login. ResetB garde cookieA. IntentNone normal commité ; registration1hash si intent, sinon1dummy après commit/close sous slot.0KDF formes invalides/admission refusée/resend/resetrequest. Pas de temps constant revendiqué.
 
-## Intégrations vérifiées
+EmailIntent.account_id privé OPTIONNEL KEYWORD-ONLY, copié depuis Account déjà verrouillé ; operation_id reste quatrième position. Pas de lookup Account après Budget. Legacy sans ID peut dispatcher B2 directement mais pas entrer dans la queue HTTP. Probe worker PG non consommateur : hash/purpose/account/recipient/version/expiry/date de vérification, puis transaction et Session FERMÉES avant provider. DB en panne/preuve obsolète : abandon sans retry.
 
-- PRE-01 : PR10, APPROVE exact **0eab28197d8ea6443fa1f16e702e0b1a94585b3b**, merge **51856c9940a2b0e16c9f05d61a9f1726ae8701d9**, arbre égal **1af4c9ffc3d753df22c160670fa9d1a3b1c87885**. CI PR43272958804 SUCCESS389pytest202,50s/67frontend ; CI push main43273970329 SUCCESS389pytest167,19s/67frontend et gardes exactes avant/après. Preuves docs/readiness/predeployment-integration.md et PR. Rapport et régionFrankfurt/hrefattribution prêts, aucune activation.
-- Lot6 : PR9, APPROVE **302462c006712ecd27f221f346d4f2e3d2c1d1ad**, merge **7b733d86d99a354fdcfe2bf1ecbde519ef78a68f**, CI PR43226499588 et main43227636726 vertes389/67. F6-01/02 clos cycle1, caméra10s/60°/DEM>100 inchangée. Docs/lot-6/integration.md. Budgets/tests ne sont pas SLA.
-- Antérieurs : préparation PR8 et lot5 PR7 intégrés ; preuves docs/readiness/integration.md et docs/lot-5/integration.md. Ne pas rejouer anciens A/B Clock ni campagnes complètes inchangées sans raison.
+Dispatcher partagé : **16 pending +1 actif /16 channels /1 worker par processus**. Services B1 isolés par channel, Condition libérée avant probe et provider. Cadence conservatrice0,2s après fin de tentative, donc ≥0,2s entre débuts ; pas garantie quota équipe. Lazy channel : aucun worker pour auth désactivée/incomplète, C0/C1 ou demande sans intent. Close annule pending du channel, conserve les autres, signale un actif bloqué sans hard-cancel ou deuxième worker. Fixtures C0/C1/conftest/C2 ferment runtime avant Engine. Dernier job libéré avant idle/drain ; aucune Session/Connection/Flask app/context dans un job. Development garde ses20messages locaux B1, sans promesse d'effacement physique des strings.
 
-## Décisions explicites et limites
+Delete hook après commit/close : cancel_pending(channel,AccountID), jamais email, nouveau compte même email préservé. Autre channel peut garder un job mais son probe le rejette après CASCADE. Delete après probe/provider peut laisser finir un envoi in-flight, dont la preuve est invalide. Pas de tombstone illimité, outbox durable, scheduler ou effacement distant promis. Crash après commit : intent perdu possible, renvoi comme récupération et réservation conservée.
 
-Propriétaire : Altitude2,5D initial, calendrier ouvre le mois civil affiché et le conserve au retour Carte. Réponses12novembre : **email et mot de passe, récupération par email** ; **aucun domaine ni expéditeur** ; **premier déploiement privé après le lot8/candidat V1**. Cette planification n'autorise pas création de service, migration, envoi ou dépense. Aucun silence comme approbation.
+## Preuves exécutées
 
-Le développement local avec mailer simulé peut avancer indépendamment, sans prétendre expéditeur/délivrabilité validés. Aucun service email choisi/créé ou achat/DNS/envoi réel. Politique ICS et activation réelle à préciser au jalon concerné. FFC : deux pages limitées11nov échouent layout_changed/debut et html_structure ; droits et IDs de listes non établis, aucune collecte live activée. Mapterhorn attributionJSON403 noncontourné12nov, licences terrain détaillées non auditées ; href corrigé seul. Références dans rapport de pré-déploiement et qualificationFFC.
+- C2 premiers11PASS5,79s, étendu31PASS9,18s, complet37PASS11,07s, tous exit0 ; JUnit ignorés `.local-tools/c2-first.xml`, `c2-expanded.xml`, `c2-complete.xml`.
+- Final `pytest tests/backend/test_auth_http_email.py tests/backend/test_account_flows.py tests/backend/test_auth_http_sessions.py tests/backend/test_auth_http_foundation.py tests/backend/test_foundation.py tests/backend/test_catalog_options.py -q --tb=short --junitxml=.local-tools/c2-final-seams.xml` : **225PASS44,09s exit0** =37C2+89B2+29C1+47C0+23public. Fixture migration upgrade/check/base/upgrade/check sur `_test` ; migration source inchangée.
+- Parcours Development complet, hash-only24h/30min/replay/renvoi/nonoverwrite, cookieA/proofB et révocation deux devices, commitfailure aucune queue ; pending/in-flight/delete/nouvel Account/autre channel ; full/slow/probe/stop/deux apps/cadence/GCrefs/PGidle avant provider/429 sans retry/DBdrop ;1 ou0KDF natif selon périmètre et compatibilité legacy UUID.
+- Profils `.local-tools/c2-registration-profiles.jsonl` sans PII :7branches1KDF, premier profil89,26–200,95ms Windows (bootstrap/DB/KDF inclus, hors drain). Un échantillon par branche/run : nonconstant, pas SLA ou capacité Render mesurée.
+- Ruff check PASS ; format **70 fichiers conformes** ; contrats **26PASS** ; pipcheck/diff PASS. A/B1/modèles/migrations/pins/source/frontend/serve/ops/CI inchangés vérifiés. Interfaces B2/C1 et nettoyages fixtures seulement. Pas de fullbackend/browser local répété ; vraie pile SDK B1 fake-wire réutilisable après diff.
+- Toutes commandes terminées ; dernier inventaire natif aucun Python/Chrome actif, workers de tests fermés. PostgreSQL38028 conservé.
 
-Déploiement, DB distante, paiement, email réel, collecte récurrente et tag/publication finale exigent toujours autorisation explicite. Lots7–8/RC non livrés par les préparations déjà fusionnées.
+## Gates précédents et historique
 
-## Environnement et processus
+C1 exactc06b2dc52cc832dee0e5a5548a6c40dbde5deea3 APPROVE68+9PASS ; CI43508577610 SUCCESS754backend233,70s/67frontend, gardes exactes. C0a2bf APPROVE15PASS11,12s et CI43465480107 SUCCESS725/67. Historique35f : CI43462508000 FAILED710PASS/7FAIL180,30s, str(URL) cachait password malgré62localtrustPASS + cache>8KiB ; corrigés sans assouplir PG/CI, C0CIa2bf a réellement validé password-auth.
 
-Python3.12.14 : C:/Users/theop/.codex/worktrees/1a1e/RaceAtlas/.venv/Scripts/python.exe (pas de pip module ; pipcheck via runtime --python). Node24.22.1/pnpm10.20.0/cache prêts ; wrapper11 incompatible à éviter. Chromium : C:/Users/theop/.codex/worktrees/1a1e/RaceAtlas/.local-tools/browsers. Migration actuelle **b7f4208ac112**.
+B2b12d APPROVE107PASS18,07s/CI678/67 ; B1c79c APPROVE68+10/CI589/67 ; A9dfd APPROVE/CI521/67 restent antérieurs. C1 ancien138PASS65,01s et incident de capacité automatic-review résolu sont conservés dans son handoff. Aucun verdict ne vaut approbation du nouveau SHA ; revue backend COMPLETE obligatoire.
 
-PostgreSQL17.11 existant127.0.0.1:55434, cluster .local-tools/pgdata-lot2-native, user raceatlas_local ; Developer raceatlas_lot2_test, Tester raceatlas_lot2_review avec RACEATLAS_DISPOSABLE_DB=1. Preview raceatlas_map_demo distincte. Vérifier statut/processus avant tests ; ne pas initdb/reseed aveuglément ou tuer tous les Node/PG. Dernier handoff PRE-01 : aucun test/server retenu, cluster conservé.
+## Environnement et opérations interdites
 
-Git natif/DB/browser passent en exécution native autorisée. Création PR connecteur403 historique : fallback Git/GCM sans secrets et dans ses permissions. Helpers PR7/8/9/10 ont numéros/bases statiques, ne pas les utiliser pour fusionner une nouvelle PR. Pas de reset/forcepush/main direct. Notes ignorées lot7-architecture-notes.md (audit borné sync et sources primaires) utiles mais à convertir en preuves versionnées ; la mission contient déjà les invariants nécessaires.
+Python3.12.14 `C:/Users/theop/.codex/worktrees/1a1e/RaceAtlas/.venv/Scripts/python.exe`, pip via runtime `-m pip --python <venv>`, dépendances déjà installées. PostgreSQL17.11 PID38028 loopback55434, cluster `.local-tools/pgdata-lot2-native`. DeveloperDB `raceatlas_lot2_test` avec opt-in, Tester_review distincte. Pas initdb/reseed/killglobal. Caches Node/Chromium préservés, aucun navigateur requis C2.
+
+AUTH_ENABLED=false par défaut, ENVIRONMENT app effectif, clés CSRF/Rate distinctes vides dans l'exemple, production mock refusée. Resend Free choisi ; `raceatlas.ucthonon.fr` email seul et From futur `RaceAtlas <notifications@raceatlas.ucthonon.fr>` non vérifiés ; URL Render réelle indépendante inconnue. Aucun compte externe/DNS/clé réelle/email/service/coût/remoteDB/deploy/collecte. Premier déploiement après lot8 sous autorisation distincte ; aucune délivrabilité/quotas réels/capacité production établis. Après publication : gel et arrêt, attendre revue complète/CI ; pas de main/merge/UI anticipé.

@@ -1,10 +1,14 @@
 # Lot 7 — comptes et planification par scope
 
+Décision fournisseur13nov : **Resend Free**, SDK Python officiel et `EmailService` avec providers Resend/Development ; confirmation24h et reset30min. Domaine/From souhaités non acquis/vérifiés, aucun envoi réel. [Mission Resend et attribution B1](resend-mission.md) ; ACC-02A approuvé au jalon9dfd, PR12 reste Draft.
+
 Base vérifiée : **51856c9940a2b0e16c9f05d61a9f1726ae8701d9**, après [PRE-01](../readiness/predeployment-integration.md), lots 0–6 intégrés et CI main verte. Branche isolée `feature/accounts-and-planning`. Les contrats publics existants restent stables ; tout nouveau contrat est additif et accompagné de son comportement réel.
 
 ## Décisions et limite d'activation
 
 Le propriétaire a choisi **email et mot de passe, récupération par email**, et indique **aucun domaine ni expéditeur disponible**. Premier déploiement privé prévu **après le lot 8 / candidat V1** ; aucune création/service/DNS/dépense/mutation distante/envoi réel autorisé. Développer et tester avec transport local simulé est indépendant. Ne pas présenter cette simulation comme délivrabilité réelle ou prérequis expéditeur validé ; la clôture complète du lot et l'activation des emails devront exposer cette dépendance.
+
+Décisions complémentaires explicites : **email+mot de passe puis confirmation par email avant connexion** ; export ICS par défaut **Prévues et Inscrit**. ACC-01 intégré : [preuves](foundation-integration.md). Suite depuis main5e2c84a : [mission auth](auth-mission.md). Aucun choix sur ces points ne reste en attente.
 
 ## Découpage progressif
 
@@ -39,3 +43,5 @@ ACC-01 doit réellement vérifier sur PostgreSQL : renommage/report et réorgani
 Coordinator possède mission, tâches, PR, interface entre auth/service/planning et gates. Developer sera seul writer sur les fichiers explicitement attribués ; Tester ne modifie pas le code qu'il vérifie. Caches Python/Node/PG du checkpoint, bases `_test` et `_review` distinctes. Pas d'initdb/reseed aveugle ou processus concurrent.
 
 ACC-02 précisera hash de mot de passe et limites RAM, tokens aléatoires/vérificateurs hashés, cookies sûrs/CSRF, origine canonique des liens, anti-énumération/abus et cycle de révocation/suppression. Les sources primaires seront datées ; aucun « conforme » général sans preuve. PLAN-01 conservera dates civiles et portée de liste ; le choix fonctionnel des statuts exportés devra être clarifié avant le code dépendant s'il reste ambigu. Les notifications internes et sauvegardes complètes restent au lot 8 ; aucune activation distante ou finale anticipée.
+
+Dernière précision propriétaire : domaine club `ucthonon.fr`/Webador, sous-domaine email cible `raceatlas.ucthonon.fr`, expéditeur `RaceAtlas <notifications@raceatlas.ucthonon.fr>`, sans vérification DNS/Resend acquise. APP_BASE_URL sera l'URL réelle Render indépendante. Sujet reset exact « Réinitialisez votre mot de passe — RaceAtlas ». Voir checkpoint d'interruption B1 et mission Resend ; WIP non revu, aucune autorisation d'envoi réel/DNS/déploiement.

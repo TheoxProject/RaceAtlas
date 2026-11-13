@@ -19,6 +19,7 @@ from sqlalchemy import (
     UniqueConstraint,
     func,
 )
+from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy.types import TypeDecorator
 
@@ -403,3 +404,115 @@ class SavedEntry(Base):
     created_at: Mapped[datetime] = mapped_column(PrivateUTCDateTime(), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(PrivateUTCDateTime(), server_default=func.now())
     scope: Mapped[EntryScope] = relationship()
+
+
+class PasswordCredential(Base):
+    __tablename__ = "password_credential"
+    __table_args__ = (
+        CheckConstraint("session_version >= 1", name="session_version"),
+        CheckConstraint("length(password_hash) BETWEEN 1 AND 512", name="password_hash"),
+    )
+    account_id: Mapped[str] = mapped_column(
+        ForeignKey("account.id", ondelete="CASCADE"), primary_key=True
+    )
+    password_hash: Mapped[str] = mapped_column(String(512))
+    email_verified_at: Mapped[datetime | None] = mapped_column(PrivateUTCDateTime())
+    session_version: Mapped[int] = mapped_column(default=1, server_default="1")
+
+
+class AuthSession(Base):
+    __tablename__ = "auth_session"
+    __table_args__ = (
+        CheckConstraint("token_digest ~ '^[a-f0-9]{64}$'", name="token_digest"),
+        CheckConstraint("session_version >= 1", name="session_version"),
+        CheckConstraint(
+            "expires_at > created_at AND last_seen_at >= created_at AND last_seen_at < expires_at",
+            name="time_order",
+        ),
+    )
+    token_digest: Mapped[str] = mapped_column(String(64), primary_key=True)
+    account_id: Mapped[str] = mapped_column(
+        ForeignKey("password_credential.account_id", ondelete="CASCADE"), index=True
+    )
+    session_version: Mapped[int]
+    created_at: Mapped[datetime] = mapped_column(PrivateUTCDateTime())
+    last_seen_at: Mapped[datetime] = mapped_column(PrivateUTCDateTime())
+    expires_at: Mapped[datetime] = mapped_column(PrivateUTCDateTime())
+
+
+class AuthChallenge(Base):
+    __tablename__ = "auth_challenge"
+    __table_args__ = (
+        UniqueConstraint("account_id", "purpose"),
+        CheckConstraint("purpose IN ('confirmation','reset')", name="purpose"),
+        CheckConstraint("token_digest ~ '^[a-f0-9]{64}$'", name="token_digest"),
+        CheckConstraint("credential_version >= 1", name="credential_version"),
+        CheckConstraint("expires_at > created_at", name="time_order"),
+    )
+    token_digest: Mapped[str] = mapped_column(String(64), primary_key=True)
+    account_id: Mapped[str] = mapped_column(ForeignKey("account.id", ondelete="CASCADE"))
+    purpose: Mapped[str] = mapped_column(String(12))
+    credential_version: Mapped[int]
+    created_at: Mapped[datetime] = mapped_column(PrivateUTCDateTime())
+    expires_at: Mapped[datetime] = mapped_column(PrivateUTCDateTime())
+
+
+class EmailBudget(Base):
+    __tablename__ = "email_budget"
+    __table_args__ = (
+        CheckConstraint("id = 1", name="singleton"),
+        CheckConstraint("day_count >= 0 AND month_count >= 0", name="counts"),
+    )
+    id: Mapped[int] = mapped_column(primary_key=True)
+    day: Mapped[date] = mapped_column(Date)
+    month: Mapped[date] = mapped_column(Date)
+    day_count: Mapped[int] = mapped_column(default=0)
+    month_count: Mapped[int] = mapped_column(default=0)
+
+
+class EmailAddressQuota(Base):
+    __tablename__ = "email_address_quota"
+    __table_args__ = (
+        CheckConstraint("purpose IN ('confirmation','reset')", name="purpose"),
+        CheckConstraint("address_digest ~ '^[a-f0-9]{64}$'", name="address_digest"),
+        CheckConstraint(
+            "admitted BETWEEN 1 AND 100 AND cardinality(admissions) = admitted", name="admitted"
+        ),
+        CheckConstraint(
+            "expires_at > last_admitted_at AND last_admitted_at >= window_started_at",
+            name="time_order",
+        ),
+        Index("ix_email_address_quota_expires_at", "expires_at"),
+    )
+    address_digest: Mapped[str] = mapped_column(String(64), primary_key=True)
+    purpose: Mapped[str] = mapped_column(String(12), primary_key=True)
+    window_started_at: Mapped[datetime] = mapped_column(PrivateUTCDateTime())
+    last_admitted_at: Mapped[datetime] = mapped_column(PrivateUTCDateTime())
+    expires_at: Mapped[datetime] = mapped_column(PrivateUTCDateTime())
+    admitted: Mapped[int]
+    admissions: Mapped[list[datetime]] = mapped_column(ARRAY(DateTime(timezone=True)))
+
+
+class AuthAdmissionState(Base):
+    __tablename__ = "auth_admission_state"
+    __table_args__ = (
+        CheckConstraint("id = 1", name="singleton"),
+        CheckConstraint("accepted >= 0 AND denied >= 0", name="counts"),
+    )
+    id: Mapped[int] = mapped_column(primary_key=True)
+    accepted: Mapped[int] = mapped_column(BigInteger, default=0)
+    denied: Mapped[int] = mapped_column(BigInteger, default=0)
+
+
+class AuthAdmissionBucket(Base):
+    __tablename__ = "auth_admission_bucket"
+    __table_args__ = (
+        CheckConstraint("namespace IN ('global','peer','address')", name="namespace"),
+        CheckConstraint("key_digest ~ '^[a-f0-9]{64}$'", name="key_digest"),
+        CheckConstraint("cardinality(admissions) BETWEEN 1 AND 100", name="admissions"),
+        Index("ix_auth_admission_bucket_expires_at", "expires_at"),
+    )
+    namespace: Mapped[str] = mapped_column(String(12), primary_key=True)
+    key_digest: Mapped[str] = mapped_column(String(64), primary_key=True)
+    admissions: Mapped[list[datetime]] = mapped_column(ARRAY(DateTime(timezone=True)))
+    expires_at: Mapped[datetime] = mapped_column(PrivateUTCDateTime())
