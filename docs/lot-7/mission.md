@@ -1,5 +1,7 @@
 # Lot 7 — comptes et planification par scope
 
+Décision fournisseur13nov : **Resend Free**, SDK Python officiel et `EmailService` avec providers Resend/Development ; confirmation24h et reset30min. Domaine/From souhaités non acquis/vérifiés, aucun envoi réel. [Mission Resend et attribution B1](resend-mission.md) ; ACC-02A approuvé au jalon9dfd, PR12 reste Draft.
+
 Base vérifiée : **51856c9940a2b0e16c9f05d61a9f1726ae8701d9**, après [PRE-01](../readiness/predeployment-integration.md), lots 0–6 intégrés et CI main verte. Branche isolée `feature/accounts-and-planning`. Les contrats publics existants restent stables ; tout nouveau contrat est additif et accompagné de son comportement réel.
 
 ## Décisions et limite d'activation

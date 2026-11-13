@@ -1,5 +1,7 @@
 # ACC-02 — authentification email/mot de passe
 
+Décision fournisseur13nov : **Resend Free**, SDK Python officiel et `EmailService` avec providers Resend/Development ; confirmation24h et reset30min. Domaine/From souhaités non acquis/vérifiés, aucun envoi réel. [Mission Resend et attribution B1](resend-mission.md) ; ACC-02A approuvé au jalon9dfd, PR12 reste Draft.
+
 Base vérifiée **5e2c84a99f7795da9cc2e14118549873bf4a42be**, après [ACC-01 intégré](foundation-integration.md) et CI main verte. Branche isolée `feature/account-authentication`, nouvelle Draft PR. Le coordinateur attribue un seul jalon borné à la fois ; le Developer est seul writer, puis gèle le SHA pour Tester indépendant.
 
 ## Décisions produit et activation
