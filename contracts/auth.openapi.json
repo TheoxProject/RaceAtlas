@@ -3,7 +3,7 @@
   "info": {
     "title": "RaceAtlas private account HTTP API",
     "version": "1.0.0",
-    "description": "C0/C1: CSRF bootstrap and cookie-only session/account security. Email confirmation/reset HTTP workflows remain future C2."
+    "description": "Cookie-only account sessions and proof-driven email workflows. No automatic login on confirmation/reset. Actual provider/domain/deployment activation remains separately gated."
   },
   "paths": {
     "/api/v1/auth/csrf": {
@@ -712,6 +712,507 @@
           }
         ]
       }
+    },
+    "/api/v1/auth/register": {
+      "post": {
+        "operationId": "registerAccount",
+        "description": "CSRF and exact canonical Origin required before work. Email addresses ASCII for registration/recovery requests. Proof targets its own account even under another account cookie. No email/session token in JSON.",
+        "parameters": [
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 512
+            }
+          }
+        ],
+        "security": [
+          {
+            "CsrfProof": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "email",
+                  "password"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Uniform for ordinary known/unknown/verified/limited/full/provider-error outcomes; no delivery promise.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestAccepted"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid shape/new-password policy or generic invalid proof (absent/expired/replayed/version/purpose).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origin/CSRF rejected.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Body over 8192 bytes including middleware cache.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Independent HTTP admission/concurrency before account lookup.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Global configuration/storage/KDF failure, not a business refusal.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/confirmation/resend": {
+      "post": {
+        "operationId": "resendConfirmation",
+        "description": "CSRF and exact canonical Origin required before work. Email addresses ASCII for registration/recovery requests. Proof targets its own account even under another account cookie. No email/session token in JSON.",
+        "parameters": [
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 512
+            }
+          }
+        ],
+        "security": [
+          {
+            "CsrfProof": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "email"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Uniform for ordinary known/unknown/verified/limited/full/provider-error outcomes; no delivery promise.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestAccepted"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid shape/new-password policy or generic invalid proof (absent/expired/replayed/version/purpose).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origin/CSRF rejected.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Body over 8192 bytes including middleware cache.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Independent HTTP admission/concurrency before account lookup.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Global configuration/storage/KDF failure, not a business refusal.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/password-reset/request": {
+      "post": {
+        "operationId": "requestPasswordReset",
+        "description": "CSRF and exact canonical Origin required before work. Email addresses ASCII for registration/recovery requests. Proof targets its own account even under another account cookie. No email/session token in JSON.",
+        "parameters": [
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 512
+            }
+          }
+        ],
+        "security": [
+          {
+            "CsrfProof": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "email"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Uniform for ordinary known/unknown/verified/limited/full/provider-error outcomes; no delivery promise.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestAccepted"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid shape/new-password policy or generic invalid proof (absent/expired/replayed/version/purpose).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origin/CSRF rejected.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Body over 8192 bytes including middleware cache.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Independent HTTP admission/concurrency before account lookup.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Global configuration/storage/KDF failure, not a business refusal.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/confirmation/complete": {
+      "post": {
+        "operationId": "confirmEmail",
+        "description": "CSRF and exact canonical Origin required before work. Email addresses ASCII for registration/recovery requests. Proof targets its own account even under another account cookie. No email/session token in JSON.",
+        "parameters": [
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 512
+            }
+          }
+        ],
+        "security": [
+          {
+            "CsrfProof": [],
+            "EmailProof": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [],
+                "properties": {}
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Proof consumed and state committed. No automatic login or cookie modification."
+          },
+          "400": {
+            "description": "Invalid shape/new-password policy or generic invalid proof (absent/expired/replayed/version/purpose).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origin/CSRF rejected.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Body over 8192 bytes including middleware cache.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Independent HTTP admission/concurrency before account lookup.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Global configuration/storage/KDF failure, not a business refusal.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/password-reset/complete": {
+      "post": {
+        "operationId": "completePasswordReset",
+        "description": "CSRF and exact canonical Origin required before work. Email addresses ASCII for registration/recovery requests. Proof targets its own account even under another account cookie. No email/session token in JSON.",
+        "parameters": [
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 512
+            }
+          }
+        ],
+        "security": [
+          {
+            "CsrfProof": [],
+            "EmailProof": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "new_password"
+                ],
+                "properties": {
+                  "new_password": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Proof consumed and state committed. No automatic login or cookie modification."
+          },
+          "400": {
+            "description": "Invalid shape/new-password policy or generic invalid proof (absent/expired/replayed/version/purpose).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origin/CSRF rejected.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Body over 8192 bytes including middleware cache.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Independent HTTP admission/concurrency before account lookup.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Global configuration/storage/KDF failure, not a business refusal.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -754,7 +1255,8 @@
               "invalid_request",
               "authentication_failed",
               "reauthentication_failed",
-              "invalid_password"
+              "invalid_password",
+              "invalid_proof"
             ]
           },
           "message": {
@@ -823,6 +1325,20 @@
             "maximum": 1800
           }
         }
+      },
+      "RequestAccepted": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "status"
+        ],
+        "properties": {
+          "status": {
+            "const": "accepted",
+            "type": "string"
+          }
+        },
+        "description": "Request accepted conditionally; no promise of message dispatch or delivery and no account-existence signal."
       }
     },
     "securitySchemes": {
@@ -843,6 +1359,12 @@
         "in": "header",
         "name": "X-CSRF-Token",
         "description": "Non-bearer proof returned by CSRF bootstrap, bound to signed HttpOnly nonce cookie and current session cookie. Required also before login."
+      },
+      "EmailProof": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-Account-Proof",
+        "description": "43 URL-safe characters read from email fragment by future UI; never query/JSON/log/storage. Does not grant a session."
       }
     }
   }

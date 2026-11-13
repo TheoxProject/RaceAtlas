@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from datetime import timedelta
 from uuid import uuid4
 
-from sqlalchemy import event, select
+from sqlalchemy import event, func, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
@@ -45,6 +45,7 @@ class EmailIntent:
     purpose: str
     recipient: str
     token: str
+    account_id: str | None = field(default=None, repr=False, kw_only=True)
     operation_id: object = field(default_factory=uuid4)
     _status: str = field(default="pending", init=False)
 
@@ -257,7 +258,7 @@ def _issue(session, account, credential, purpose, recipient):
         )
     )
     session.flush()
-    return _track(session, EmailIntent(purpose, recipient, token))
+    return _track(session, EmailIntent(purpose, recipient, token, account_id=account.id))
 
 
 def request_registration(session, email, password, *, policy=None):
@@ -368,3 +369,42 @@ def complete_password_reset(session, token, new_password):
     _revoke_all(session, credential)
     session.delete(challenge)
     session.flush()
+
+
+def email_intent_is_active(session, intent):
+    """Read-only worker check. No Account lock, consumption, or outbound I/O."""
+    _supported_session(session)
+    if (
+        not isinstance(intent, EmailIntent)
+        or intent._status != "committed"
+        or not isinstance(intent.purpose, str)
+        or intent.purpose not in {"confirmation", "reset"}
+        or not isinstance(intent.account_id, str)
+        or not 1 <= len(intent.account_id) <= 64
+        or any(not character.isprintable() for character in intent.account_id)
+    ):
+        return False
+    try:
+        digest = _digest(intent.purpose, intent.token)
+    except InvalidProof:
+        return False
+    verified = (
+        PasswordCredential.email_verified_at.is_(None)
+        if intent.purpose == "confirmation"
+        else PasswordCredential.email_verified_at <= func.clock_timestamp()
+    )
+    statement = (
+        select(AuthChallenge.token_digest)
+        .join(Account, Account.id == AuthChallenge.account_id)
+        .join(PasswordCredential, PasswordCredential.account_id == Account.id)
+        .where(
+            AuthChallenge.token_digest == digest,
+            AuthChallenge.account_id == intent.account_id,
+            AuthChallenge.purpose == intent.purpose,
+            AuthChallenge.expires_at > func.clock_timestamp(),
+            AuthChallenge.credential_version == PasswordCredential.session_version,
+            Account.email_normalized == intent.recipient,
+            verified,
+        )
+    )
+    return session.scalar(statement) is not None

@@ -64,4 +64,5 @@ def app(database):
 
     app = create_app({"TESTING": True})
     yield app
+    assert app.extensions["auth"].close(timeout=5)
     app.extensions["database"].dispose()

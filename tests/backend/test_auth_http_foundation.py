@@ -59,6 +59,7 @@ def configuration(database, **patch):
 def app(database):
     app = create_app(configuration(database))
     yield app
+    assert app.extensions["auth"].close(timeout=5)
     app.extensions["database"].dispose()
 
 
@@ -69,6 +70,7 @@ def test_disabled_incomplete_config_preserves_public_health_and_options(database
         assert client.get("/api/v1/catalog/options").status_code == 200
         assert client.get("/api/v1/auth/csrf").status_code == 503
     assert app.extensions["auth"].state == "disabled"
+    assert app.extensions["auth"].close(timeout=5)
     app.extensions["database"].dispose()
 
 
@@ -93,6 +95,7 @@ def test_bad_activation_is_closed_without_secret_or_public_failure(database, pat
         assert client.get("/api/health/live").status_code == 200
     assert app.extensions["auth"].state == "unavailable"
     assert CSRF not in caplog.text and RATE not in caplog.text
+    assert app.extensions["auth"].close(timeout=5)
     app.extensions["database"].dispose()
 
 
@@ -105,6 +108,7 @@ def test_effective_flask_environment_and_overrides_win_over_os(database, monkeyp
     assert settings.environment == "test" and settings.origin == ORIGIN and not settings.secure
     assert settings.csrf_key == CSRF.encode()
     assert app.test_client().get("/api/v1/auth/csrf", base_url=ORIGIN).status_code == 200
+    assert app.extensions["auth"].close(timeout=5)
     app.extensions["database"].dispose()
 
 
@@ -145,6 +149,7 @@ def test_production_secure_cookie_uses_site_host_not_sender(database):
     assert response.status_code == 200 and cookie.secure and cookie.http_only
     assert "Domain=" not in response.headers["Set-Cookie"]
     assert "mail.example.test" not in response.headers["Set-Cookie"]
+    assert app.extensions["auth"].close(timeout=5)
     app.extensions["database"].dispose()
 
 

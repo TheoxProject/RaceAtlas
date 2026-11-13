@@ -70,6 +70,7 @@ def app_factory(database):
 
     yield factory
     for app in apps:
+        assert app.extensions["auth"].close(timeout=5)
         app.extensions["database"].dispose()
 
 

@@ -191,9 +191,12 @@ def register_session_routes(app, blueprint, runtime, boundary, error_handler):
 
         def remove(session):
             account = auth.reauthenticate(session, token(), body["current_password"])
+            account_id = account.id
             _purge_account(session, account, runtime.settings.rate_policy.rate_key)
+            return account_id
 
-        run(remove, "sensitive")
+        account_id = run(remove, "sensitive")
+        runtime.cancel_pending(account_id)
         return _clear_cookies(app.response_class(status=204), runtime.settings)
 
     app.register_blueprint(members)
