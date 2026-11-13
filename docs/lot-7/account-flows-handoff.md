@@ -1,6 +1,6 @@
 # ACC-02B2 — confirmation et récupération internes
 
-Branche `feature/account-authentication`, [Draft PR12](https://github.com/TheoxProject/RaceAtlas/pull/12), parent B1 **c79c557e32fed3fd56c85ed1ce786f0bd46fde04**, base/main **5e2c84a99f7795da9cc2e14118549873bf4a42be**. Le candidat est le commit contenant ce handoff, dont le SHA exact sera transmis après push. B2 doit obtenir une nouvelle revue et CI ; ni auth/PR12 ni lot7 ne sont terminés.
+Branche `feature/account-authentication`, [Draft PR12](https://github.com/TheoxProject/RaceAtlas/pull/12), parent de correction B2 **aac7b40bc284a127295dfb574691297f3268226b** (B1 exactc79c approuvé), base/main **5e2c84a99f7795da9cc2e14118549873bf4a42be**. Le candidat est le commit contenant ce handoff, dont le SHA exact sera transmis après push. B2 doit obtenir une nouvelle revue et CI ; ni auth/PR12 ni lot7 ne sont terminés.
 
 ## Interfaces et transactions
 
@@ -16,7 +16,19 @@ complete_password_reset(session, token, new_password)
 
 Les trois requests retournent toujours `RequestResult(status="accepted", intent=...)` ; l'intent optionnel est **interne**, masqué dans repr et jamais un résultat HTTP. Confirmation/reset renvoient `None` ou `InvalidProof("Invalid account proof.")`. La forme du mot de passe reste le contrat exact d'A ; forme email B2 normalisée ACC01 puis sous-ensemble ASCII expédiable B1, avant mutation. Aucun changement du contrat Unicode interne ACC01/A.
 
-Le caller possède commit/rollback. Session **liée à un Engine unique** pour tous les modèles concernés : les Sessions liées à une Connection externe, ainsi que DBAPI AUTOCOMMIT, notamment `join_transaction_mode=create_savepoint`, sont refusées avant mutation. Un RELEASE SAVEPOINT n'est pas une preuve de commit PostgreSQL externe. Aucun commit implicite, aucun envoi dans le service ou callback.
+Le caller possède commit/rollback. **`AccountFlowSession(engine)` dédiée est obligatoire**, importée depuis `raceatlas.auth.flows`. Une Session SQLAlchemy brute est refusée avant toute mutation, même si son bind déclaré est un Engine. La Session dédiée hérite de Session et reste compatible avec A/planning ; aucun changement de ces services n'est nécessaire. Un seul Engine transactionnel, aucun bind Connection/multi-bind/déroutage ou DBAPI AUTOCOMMIT.
+
+```python
+from raceatlas.auth.flows import AccountFlowSession, request_registration
+
+with AccountFlowSession(engine) as session:
+    result = request_registration(session, email, password, policy=policy)
+    session.commit()  # normal refusals also commit their counters
+if result.intent is not None:
+    result.intent.dispatch_after_commit(email_service)
+```
+
+La Session dédiée refuse Connection/Engine différent via constructeur, `connection(bind_arguments=...)`, `execute/scalar/scalars(...bind_arguments...)` par `get_bind`, `SessionTransaction.connection`, `bind_mapper` et `bind_table`. Une affectation de bind dérouté est rejetée par le garde avant mutation. Ces fences utilisent les APIs publiques, sans examiner `_connections`/should_commit internes. Le contrat couvre l'emploi normal de cette classe ; il ne protège pas contre du code serveur arbitraire contournant ses méthodes ou sabotant les internals/le driver. Les SAVEPOINT ORM de cette Session restent pris en charge. Aucun commit implicite, aucun envoi dans le service ou callback.
 
 Après un commit racine réussi uniquement : `result.intent.dispatch_after_commit(email_service)` s'il existe. UUID d'opération opaque stable, dispatch une seule fois, pas de retry automatique. Intents uniquement en mémoire, raw token/représentation masqués ; callbacks suivent leur transaction d'origine. Commit imbriqué seul ne les arme pas ; rollback/close du niveau d'origine les invalide, rollback d'un niveau enfant n'invalide pas un intent parent. Session.close puis réutilisation ne ressuscite rien. Commit échoué/rollback ne publie rien.
 
@@ -56,3 +68,18 @@ Python : `C:/Users/theop/.codex/worktrees/1a1e/RaceAtlas/.venv/Scripts/python.ex
 Les tests B2 couvrent : hash-only/pending/confirmation, réinscription et renvoi, 24h/30min juste avant/à/après, mauvais purpose/version/rejeu, reset multi-appareils/isolement, mots de passe invalides non consommateurs, rollback/commit échoué/savepoints/Connection externe, erreur email simulée, ASCII/configuration, quotas persistants/jour/mois/glissant/TTL/capacité/purge/refus, contraintes et transaction utilisable, SavedEntry/autre compte/epoch préservés. Concurrence réelle à deux connexions : état de blocage PostgreSQL observé avant libération du premier commit ; même email, double consommation, nouveau compte refusé au budget, reset contre login/change/revoke/delete dans les deux ordres légaux, ORM déjà chargé revalidé.
 
 B1 code/templates/providers/tests inchangés, preuve ciblée exactc79c APPROVE68+10 et CI43404533408 SUCCESS589/67 réutilisée explicitement ; aucune campagne locale complète ou browser inchangée refaite. Le domaine cible et l'URL réelle future sont inchangés : [guide Resend/Webador](resend-guide.md). Aucun réseau Resend, DNS, compte externe, mail réel, service, coût ou déploiement. Corpus de passwords communs, HTTP/C, UI/planning/ICS et acceptation intégrée restent ultérieurs. Après push : SHA exact au Coordinator, gel et STOP éditions pour revue indépendante B2/CI.
+
+## Correction B2-F1 cycle1 — nouveau gel
+
+Tester a rendu **REQUEST CHANGES** pour exact **aac7b40bc284a127295dfb574691297f3268226b** : une Session déclarée Engine pouvait enrôler une Connection externe par `connection(bind_arguments={"bind": connection})`. Son commit logique armait l'intent sans commit PostgreSQL externe. P2 interne, aucune route/envoi réel exposé revendiqué. L'ancienne [CI43408753657](https://github.com/TheoxProject/RaceAtlas/actions/runs/43408753657) SUCCESS **650backend225,08s /67frontend** reste historique et ne vaut pas approbation.
+
+Restriction AccountFlowSession autorisée par le Coordinator, pas contournement d'un défaut par inspection fragile des internals. Les callers B2 et fixtures de tests emploient cette classe ; les tests négatifs continuent à utiliser une Session brute pour reproduire l'ancien enrôlement et prouver refus sans mutation/intent. Aucun changement de modèle, migration e95c, A, B1, dépendances, contrat HTTP ou source publique.
+
+Reprise du même Developer après demande explicite propriétaire, le13novembre vers15:54UTC : Git exactaac7 propre, PG38028/55434 confirmé, aucun Python/Chrome concurrent ; aucune limite de capacité bloquante observée dans les commandes exécutées. Pas de réinitialisation/reseed ou processus d'autrui arrêté.
+
+- `pytest tests/backend/test_account_flows.py -q -k 'enlisted or raw_engine or public_bind or bind_assignment or savepoints or external or autocommit' --tb=short --maxfail=3 --junitxml=.local-tools/b2-f1-targeted.xml` : **33PASS5,38s exit0**.
+- `pytest tests/backend/test_account_flows.py -q --tb=short --junitxml=.local-tools/b2-f1-final.xml` : **89PASS9,93s exit0**, dont61régressions +28nouveaux. Fixture migration upgrade/check/base/upgrade/check exécutée sur `_test` uniquement, migration source inchangée.
+- Nouveaux cas : Session Engine brute pré-enrôlée externe, create_savepoint/rollback_only ×5services ; Session brute normale ; Connection/autre Engine via8APIs publiques ; affectation bind. Refus avant données privées/intent, transaction externe laissée active par le garde ; Session dédiée reste utilisable après refus, vrai commit/close puis dispatch simulé visible depuis autre connexion.
+- Ruff check PASS, Ruff format --check **58fichiers conformes**, diff PASS. Contrats : **26PASS**. A64 tests et B1 preuves ci-dessus réutilisés après diff inchangé, pas de campagne complète backend/browser locale refaite.
+
+Nouveau SHA requis pour CI et revue indépendante ciblée ; après publication STOP éditions. Le changement de contrat Session est à conserver dans le futur wrapper C, qui reste non attribué ; aucun HTTP/UI/planning endpoints nouveau, email réel, DNS ou déploiement anticipé.

@@ -9,6 +9,7 @@ from uuid import uuid4
 from sqlalchemy import event, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.engine import Engine
+from sqlalchemy.orm import Session
 
 from raceatlas.auth import _TOKEN, _lock_account, _now, _revoke_all
 from raceatlas.auth.errors import AuthenticationFailed
@@ -105,9 +106,52 @@ def _after_transaction_end(session, transaction):
         _after_rollback(session, transaction)
 
 
+class AccountFlowSession(Session):
+    """Own one Engine's transactions; never join caller-owned Connections.
+
+    Public bind-routing entry points are fenced, including Core statements and
+    SessionTransaction.connection(). Server code that mutates SQLAlchemy/driver
+    internals is outside this contract.
+    """
+
+    def __init__(self, bind, **kwargs):
+        if (
+            not isinstance(bind, Engine)
+            or kwargs.get("binds") is not None
+            or kwargs.get("twophase", False)
+        ):
+            raise FlowConfigurationError()
+        self._flow_engine = bind
+        super().__init__(bind=bind, **kwargs)
+
+    def get_bind(self, mapper=None, *, clause=None, bind=None, **kwargs):
+        resolved = super().get_bind(mapper, clause=clause, bind=bind, **kwargs)
+        if resolved is not self._flow_engine:
+            raise FlowConfigurationError()
+        return resolved
+
+    def connection(self, bind_arguments=None, execution_options=None):
+        arguments = dict(bind_arguments) if bind_arguments is not None else None
+        if arguments and arguments.get("bind", self._flow_engine) is not self._flow_engine:
+            raise FlowConfigurationError()
+        return super().connection(bind_arguments=arguments, execution_options=execution_options)
+
+    def bind_mapper(self, mapper, bind):
+        if bind is not self._flow_engine:
+            raise FlowConfigurationError()
+        return super().bind_mapper(mapper, bind)
+
+    def bind_table(self, table, bind):
+        if bind is not self._flow_engine:
+            raise FlowConfigurationError()
+        return super().bind_table(table, bind)
+
+
 def _supported_session(session):
     # A Session bound to an external Connection can release a savepoint without
     # committing PostgreSQL. Refuse it before mutation rather than arm falsely.
+    if not isinstance(session, AccountFlowSession):
+        raise FlowConfigurationError()
     engine = session.get_bind(mapper=Account)
     if not isinstance(engine, Engine) or any(
         session.get_bind(mapper=model) is not engine

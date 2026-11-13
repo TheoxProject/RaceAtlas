@@ -8,7 +8,7 @@ from queue import Queue
 import pytest
 from sqlalchemy import delete, func, select, text
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session as RawSession
 
 import raceatlas.auth as auth
 import raceatlas.auth.flow_limits as limits
@@ -16,6 +16,7 @@ import raceatlas.auth.flows as flows
 from raceatlas.auth.errors import AuthenticationFailed, InvalidPassword
 from raceatlas.auth.flow_limits import FlowConfigurationError, FlowPolicy
 from raceatlas.auth.flows import (
+    AccountFlowSession,
     EmailIntentUnavailable,
     InvalidProof,
     complete_password_reset,
@@ -23,6 +24,9 @@ from raceatlas.auth.flows import (
     request_password_reset,
     request_registration,
     resend_confirmation,
+)
+from raceatlas.auth.flows import (
+    AccountFlowSession as Session,
 )
 from raceatlas.auth.passwords import verify_password
 from raceatlas.email import EmailService
@@ -45,6 +49,15 @@ NEW = " Replacement Exact Passphrase 2027 "
 EMAIL = "person@example.test"
 T0 = datetime(2026, 1, 1, tzinfo=timezone.utc)
 KEY = b"synthetic-dedicated-rate-key-00000000"
+
+
+@pytest.fixture
+def session(database):
+    with database.begin() as connection:
+        connection.execute(delete(Account))
+    with AccountFlowSession(database) as session:
+        yield session
+        session.rollback()
 
 
 @pytest.fixture(autouse=True)
@@ -614,7 +627,7 @@ def test_external_connection_session_is_rejected_before_mutation(database, polic
     with database.connect() as connection:
         transaction = connection.begin()
         try:
-            with Session(bind=connection, join_transaction_mode=join_mode) as external:
+            with RawSession(bind=connection, join_transaction_mode=join_mode) as external:
                 with pytest.raises(FlowConfigurationError):
                     request_registration(external, EMAIL, PASSWORD, policy=policy)
                 assert external.scalar(select(func.count()).select_from(Account)) == 0
@@ -674,3 +687,104 @@ def test_autocommit_engine_is_rejected_before_mutation(database, policy):
             request_registration(unsafe, EMAIL, PASSWORD, policy=policy)
     with Session(database) as check:
         assert count(check, Account) == count(check, EmailBudget) == 0
+
+
+@pytest.mark.parametrize("join_mode", ["create_savepoint", "rollback_only"])
+@pytest.mark.parametrize(
+    "operation", ["register", "resend", "request_reset", "confirm", "complete_reset"]
+)
+def test_engine_bound_raw_session_with_enlisted_external_connection_is_rejected(
+    database, policy, join_mode, operation
+):
+    with database.connect() as connection:
+        outer = connection.begin()
+        try:
+            with RawSession(database, join_transaction_mode=join_mode) as raw:
+                raw.connection(bind_arguments={"bind": connection})
+                assert raw.get_bind(mapper=Account) is database
+                calls = {
+                    "register": lambda: request_registration(raw, EMAIL, PASSWORD, policy=policy),
+                    "resend": lambda: resend_confirmation(raw, EMAIL, policy=policy),
+                    "request_reset": lambda: request_password_reset(raw, EMAIL, policy=policy),
+                    "confirm": lambda: confirm_email(raw, "A" * 43),
+                    "complete_reset": lambda: complete_password_reset(raw, "A" * 43, NEW),
+                }
+                with pytest.raises(FlowConfigurationError):
+                    calls[operation]()
+                assert outer.is_active
+                assert raw.info.get("account_flow_intents", []) == []
+                assert (
+                    count(raw, Account) == count(raw, AuthChallenge) == count(raw, EmailBudget) == 0
+                )
+                raw.commit()
+                assert outer.is_active
+                with RawSession(database) as observer:
+                    assert count(observer, Account) == count(observer, EmailBudget) == 0
+        finally:
+            if outer.is_active:
+                outer.rollback()
+
+
+def test_raw_engine_session_also_refused_before_mutation(database, policy):
+    with RawSession(database) as raw:
+        with pytest.raises(FlowConfigurationError):
+            request_registration(raw, EMAIL, PASSWORD, policy=policy)
+        assert not raw.in_transaction()
+
+
+@pytest.mark.parametrize("target_kind", ["connection", "other_engine"])
+@pytest.mark.parametrize(
+    "api",
+    ["connection", "execute", "scalars", "scalar", "transaction", "mapper", "table", "constructor"],
+)
+def test_flow_session_refuses_all_public_bind_routing_before_mutation(
+    database, policy, target_kind, api
+):
+    with database.connect() as connection:
+        outer = connection.begin()
+        target = connection if target_kind == "connection" else database.execution_options()
+        try:
+            with AccountFlowSession(database) as session:
+                if api == "transaction":
+                    session.begin()
+                calls = {
+                    "connection": lambda: session.connection(bind_arguments={"bind": target}),
+                    "execute": lambda: session.execute(
+                        text("SELECT 1"), bind_arguments={"bind": target}
+                    ),
+                    "scalars": lambda: session.scalars(
+                        select(Account), bind_arguments={"bind": target}
+                    ),
+                    "scalar": lambda: session.scalar(
+                        select(func.count()).select_from(Account), bind_arguments={"bind": target}
+                    ),
+                    "transaction": lambda: session.get_transaction().connection(None, bind=target),
+                    "mapper": lambda: session.bind_mapper(Account, target),
+                    "table": lambda: session.bind_table(Account.__table__, target),
+                    "constructor": lambda: AccountFlowSession(database, binds={Account: target}),
+                }
+                with pytest.raises(FlowConfigurationError):
+                    calls[api]()
+                assert outer.is_active
+                assert count(session, Account) == count(session, EmailBudget) == 0
+                # Rejected routing does not poison the supported session/transaction.
+                intent = register(session, policy)
+                session.commit()
+                session.close()
+                service = EmailService.from_environment(
+                    {"APP_BASE_URL": "https://site.example.test", "RACEATLAS_ENV": "test"}
+                )
+                assert intent.dispatch_after_commit(service).status == "simulated"
+                with RawSession(database) as observer:
+                    assert count(observer, Account) == 1
+        finally:
+            if outer.is_active:
+                outer.rollback()
+
+
+def test_flow_session_bind_assignment_is_rejected_without_enlisting_connection(database, policy):
+    with database.connect() as connection, AccountFlowSession(database) as session:
+        session.bind = connection
+        with pytest.raises(FlowConfigurationError):
+            register(session, policy)
+        assert not connection.in_transaction() and not session.in_transaction()
