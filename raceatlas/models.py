@@ -491,3 +491,28 @@ class EmailAddressQuota(Base):
     expires_at: Mapped[datetime] = mapped_column(PrivateUTCDateTime())
     admitted: Mapped[int]
     admissions: Mapped[list[datetime]] = mapped_column(ARRAY(DateTime(timezone=True)))
+
+
+class AuthAdmissionState(Base):
+    __tablename__ = "auth_admission_state"
+    __table_args__ = (
+        CheckConstraint("id = 1", name="singleton"),
+        CheckConstraint("accepted >= 0 AND denied >= 0", name="counts"),
+    )
+    id: Mapped[int] = mapped_column(primary_key=True)
+    accepted: Mapped[int] = mapped_column(BigInteger, default=0)
+    denied: Mapped[int] = mapped_column(BigInteger, default=0)
+
+
+class AuthAdmissionBucket(Base):
+    __tablename__ = "auth_admission_bucket"
+    __table_args__ = (
+        CheckConstraint("namespace IN ('global','peer','address')", name="namespace"),
+        CheckConstraint("key_digest ~ '^[a-f0-9]{64}$'", name="key_digest"),
+        CheckConstraint("cardinality(admissions) BETWEEN 1 AND 100", name="admissions"),
+        Index("ix_auth_admission_bucket_expires_at", "expires_at"),
+    )
+    namespace: Mapped[str] = mapped_column(String(12), primary_key=True)
+    key_digest: Mapped[str] = mapped_column(String(64), primary_key=True)
+    admissions: Mapped[list[datetime]] = mapped_column(ARRAY(DateTime(timezone=True)))
+    expires_at: Mapped[datetime] = mapped_column(PrivateUTCDateTime())

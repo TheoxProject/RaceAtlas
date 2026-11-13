@@ -1,12 +1,12 @@
 # Point de reprise RaceAtlas
 
-**Checkpoint UTC2026-11-13T15:58Z — B1 approuvé au jalon, B2 préparé pour revue, non approuvé.** Même Developer repris après reset explicite, aucune limite active constatée à cette reprise. PR12 reste Draft, non fusionnée ; aucun HTTP/email réel livré par le jalon B1.
+**Checkpoint UTC2026-11-13T16:24Z — B2 APPROVE exactb12d/CI678, C0 prêt pour revue intermédiaire, non approuvé.** PR12 reste Draft et non fusionnée, main/base5e2c84 inchangé. C1/C2 et authHTTP complète restent à livrer.
 
 ## Git, responsabilités et prochaine action
 
-Branche **feature/account-authentication**, worktree isolé add4, [Draft PR12](https://github.com/TheoxProject/RaceAtlas/pull/12). Parent local/distant de correction **aac7b40bc284a127295dfb574691297f3268226b**, base/main **5e2c84a99f7795da9cc2e14118549873bf4a42be**. Developer a intégré les trois fichiers de cadrage préparés par Root avec le code B2. Le commit contenant ce checkpoint est le prochain candidat ; relever son SHA exact après push pour gel et contrôle CI. Root PR/notes ignorées uniquement, Tester indépendant read-only ; aucun autre writer.
+Branche **feature/account-authentication**, worktree isolé add4, [Draft PR12](https://github.com/TheoxProject/RaceAtlas/pull/12). Parent local/distant C0 **b12d2c37405ac754ee2331b95c696b3bf71c5c47**, base/main **5e2c84a99f7795da9cc2e14118549873bf4a42be**. Developer a intégré les trois fichiers de cadrage préparés par Root avec le code B2. Le commit contenant ce checkpoint est le prochain candidat ; relever son SHA exact après push pour gel et contrôle CI. Root PR/notes ignorées uniquement, Tester indépendant read-only ; aucun autre writer.
 
-**Prochaine action sûre :** publier le jalon B2 cohérent, communiquer le SHA exact au Coordinator, puis STOP éditions pendant revue B2 et CI de ce SHA. Voir [mission](../lot-7/account-flows-mission.md) et [handoff B2](../lot-7/account-flows-handoff.md). Aucun verdict B1/A transféré au nouveau head. Pas de C/HTTP/UI anticipé ni fullbackend/browser local inchangé répété.
+**Prochaine action sûre :** publier C0 cohérent (configuration/CSRF/admission/corpus et raccord factory), donner SHA exact au Coordinator puis STOP éditions pour revue ciblée/CI de ce SHA. [Mission C](../lot-7/auth-http-mission.md), [handoff C0](../lot-7/auth-http-handoff.md). C1sessions/reauth et C2parcours email/queue pas commencés ; ne pas commencer tant que ce jalon est gelé. A/B1/B2 preuves inchangées réutilisées explicitement, pas transfert de verdict au nouveau head.
 
 B1 **APPROVE ciblé exactc79c**, Tester68emailPASS1,96s+10sondesindépendantesPASS1,52s, Ruff54/contrats26/pipcheck/diff et quatre PNG vus. [CI43404533408](https://github.com/TheoxProject/RaceAtlas/actions/runs/43404533408) SUCCESS **589backend176,18s/67frontend**, source exacte avant/après. Root a vu reset390 et confirmation680 ; rapport complet publié dans PR12. Rien de ceci n'approuve B2 ou un nouveau head. Developer B1 :68emailPASS2,02s+64authPASS20,66s ; handoff email-handoff.md, guide resend-guide.md. Premier run tronqué demeure historique inconnu, preuves acquises distinctes ensuite.
 
@@ -16,8 +16,9 @@ B1 **APPROVE ciblé exactc79c**, Tester68emailPASS1,96s+10sondesindépendantesPA
 | ACC-02A primitives/sessions | DONE jalon APPROVE9dfd ; PR12 incomplète |
 | ACC-02B1 service/SDK/templates | DONE jalon APPROVEc79c et CI589/67 |
 | Sujet reset/guide Webador/rendus synthétiques | DONE préparation, aucun essai externe |
-| ACC-02B2 confirmation/reset/renvois/limites PG | Correction F1 : final89B2 PASS ; régression64A inchangée réutilisée ; revue/CI nouveau head TODO |
-| ACC-02C HTTP/cookies/CSRF/abus/suppression | TODO |
+| ACC-02B2 confirmation/reset/renvois/limites PG | DONE jalon APPROVE exactb12d Tester107PASS et CI678/67 |
+| ACC-02C0 configuration/CSRF/admission/corpus | Implémenté : final62ciblésC0/publicPASS, revue/CI nouveau head TODO |
+| ACC-02C1 sessions/réauth et C2parcours email/queue | TODO, auth backend complète pas livrée |
 | PLAN-01 / UI / acceptation lot7 | TODO |
 | Domaine vérifié, clé, envoi réel, déploiement | BLOCKED autorisation/préconditions ; aucun effectué |
 
@@ -67,4 +68,14 @@ Restriction technique attribuée : **AccountFlowSession(Engine) dédiée obligat
 
 Premier ciblé F1/routages **33PASS5,38s exit0**, JUnit `.local-tools/b2-f1-targeted.xml`. Final fichier B2 **89PASS9,93s exit0** (61régressions+28nouveaux), `.local-tools/b2-f1-final.xml`. F1 raw pré-enrôlé create_savepoint/rollback_only ×5fonctions, APIconnection/execute/scalar/scalars/transaction/mapper/table/constructor ×Connection/autreEngine, Session brute et bindassignment ; refus sans mutation ni intent et normalcommit/close/dispatch préservé. Migration locale fixture upgrade/check/base/upgrade/check PASS, source e95c inchangée. Ruff check/format58/diff PASS ; contrats26PASS. A64/B1 preuves réutilisées après diff ; aucun full650/browser répété.
 
-Handoff corrigé [account-flows-handoff.md](../lot-7/account-flows-handoff.md), mission alignée. **Prochaine action :** commit/push cohérent correction+tests+docs, communiquer SHA exact, puis STOP éditions pour nouvelle revue/CI. Aucun C commencé (son futur scope n'inclut pas les saved endpoints), aucune modification migration/modèle/EmailService/dépendance/route/hosting/source. Aucun email réel/DNS/service/coût/déploiement.
+Handoff corrigé [account-flows-handoff.md](../lot-7/account-flows-handoff.md), mission alignée. Gate F1 désormais passée exactb12d : Tester APPROVE107PASS18,07s et CI43458142079 SUCCESS678/67 ; preuve non transférable à C0. Aucun C commencé (son futur scope n'inclut pas les saved endpoints), aucune modification migration/modèle/EmailService/dépendance/route/hosting/source. Aucun email réel/DNS/service/coût/déploiement.
+
+## Attribution C après gate B2
+
+B2 exactb12d APPROVE Tester107PASS18,07s et CI43458142079 SUCCESS678backend197,29s/67frontend, source libérée. Nouvelle mission versionnée docs/lot-7/auth-http-mission.md ; Developer seul writer, pas C implicite avant cette attribution. C0 configuration/CSRF/admission/corpus puis jalons C1sessions et C2parcours email/queue, sans savedAPI/UI/ICS/serve/ops/CI/pins. Prochaine action : premier C0 cohérent testé puis publication/gel pour revue indépendante ; aucun réseau email/service/DNS/déploiement.
+
+## C0 — premier jalon HTTP prêt pour publication/gel
+
+Config finale app/activationfermée, CSRF réel GET, helpers stricts de mutations, admissionPG indépendante/slots2 et corpusDjango6.0 local+notice écrits. Handoff docs/lot-7/auth-http-handoff.md, contrat auth additif C0 seul, migration f61d338ab204 après e95c. Aucun endpoint session/email C1/C2 prétendu livré. Ciblé34PASS5,49s puis finalC0+public61PASS29,88s, JUnit .local-tools/c0-final-public.xml. Migrationupgrade/check/base/upgrade/check incluse sur _test seulement ; aucun réseau email autorisé, aucun worker créé. Ruff check/format65, contrats26, pipcheck/diff PASS. A/B1/B2/pins inchangés vérifiés par diff. Aucun Python/Chrome actif après contrôles, PG38028 conservé. Prochaine action : commit/push C0 puis STOP pour revue ciblée, sans débuter C1/C2 pendant review.
+
+Précision finale C0 : nonce conservé interonglets sans renouvellement, expires_in annonce le TTL réellement restant. Final **62PASS29,61s exit0 (39C0+23public)**, `.local-tools/c0-final-public-ttl.xml`. Retrait d’un import devenu inutilisé, contrôles Ruffcheck/format65 et diff finaux PASS avant publication ; aucun test fonctionnel échoué. Corpus/helper uniquement, setter endpointsC1/C2 encore TODO.

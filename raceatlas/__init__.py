@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from uuid import uuid4
 
@@ -8,6 +9,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 from werkzeug.exceptions import HTTPException
 
+from raceatlas.auth.http import init_auth
 from raceatlas.catalog import CatalogError, parse_query, select_page
 from raceatlas.config import database_url, environment
 from raceatlas.models import Category, Race
@@ -20,6 +22,20 @@ DIST = Path(__file__).resolve().parents[1] / "frontend" / "dist"
 def create_app(config=None):
     app = Flask(__name__, static_folder=None)
     app.config.update(ENVIRONMENT=environment(), DATABASE_URL=database_url(), FRONTEND_DIST=DIST)
+    for key in (
+        "AUTH_ENABLED",
+        "AUTH_CSRF_KEY",
+        "AUTH_RATE_KEY",
+        "APP_BASE_URL",
+        "EMAIL_PROVIDER",
+        "RESEND_API_KEY",
+        "EMAIL_FROM",
+        "EMAIL_VERIFIED_DOMAIN",
+        "EMAIL_SEND_AUTHORIZED",
+        "EMAIL_TRACKING_DISABLED",
+    ):
+        if key in os.environ:
+            app.config[key] = os.environ[key]
     if config:
         app.config.update(config)
     engine = create_engine(
@@ -126,4 +142,5 @@ def create_app(config=None):
             count = seed_synthetic(session)
         click.echo(f"Synthetic races added: {count}")
 
+    init_auth(app)
     return app
