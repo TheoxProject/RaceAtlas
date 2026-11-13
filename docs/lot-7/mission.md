@@ -6,6 +6,8 @@ Base vérifiée : **51856c9940a2b0e16c9f05d61a9f1726ae8701d9**, après [PRE-01](
 
 Le propriétaire a choisi **email et mot de passe, récupération par email**, et indique **aucun domaine ni expéditeur disponible**. Premier déploiement privé prévu **après le lot 8 / candidat V1** ; aucune création/service/DNS/dépense/mutation distante/envoi réel autorisé. Développer et tester avec transport local simulé est indépendant. Ne pas présenter cette simulation comme délivrabilité réelle ou prérequis expéditeur validé ; la clôture complète du lot et l'activation des emails devront exposer cette dépendance.
 
+Décisions complémentaires explicites : **email+mot de passe puis confirmation par email avant connexion** ; export ICS par défaut **Prévues et Inscrit**. ACC-01 intégré : [preuves](foundation-integration.md). Suite depuis main5e2c84a : [mission auth](auth-mission.md). Aucun choix sur ces points ne reste en attente.
+
 ## Découpage progressif
 
 | ID | Fonction et périmètre | Gate |

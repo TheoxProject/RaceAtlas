@@ -1,55 +1,46 @@
 # Point de reprise RaceAtlas
 
-Dernier checkpoint UTC : **2026-11-12T18:36:13Z**. Lots 0–6 et PRE-01 intégrés, **ACC-01 correction cycle 1/3 testée, à publier/geler pour revue renouvelée et CI**. Lot 7 non terminé. Aucun déploiement.
+Dernier checkpoint UTC **2026-11-13T07:24Z**. Lots0–6, PRE-01 et **fondation ACC-01 intégrés** ; lot7 en cours, aucun déploiement. La reprise réconcilie Git/CI après interruption, sans supposer du travail de fond.
 
-## Correction ACC-01 courante
+## Travail actuel et prochaine action
 
-Parent local/distant **5a664068fd6d5faa08c75478f09a2fc50202f504**, même branche `feature/accounts-and-planning` / PR11 / base51856c9. CI parent `43279377589` SUCCESS, mais Tester REQUEST CHANGES exact pour ACC01-F1/F2, rapport `.local-tools/tester-report-acc01.md`. Aucune approbation transférée au nouveau candidat. Sources libérées et tous processus Tester terminés avant correction ; Developer seul writer.
+Worktree isolé `C:/Users/theop/.codex/worktrees/add4/RaceAtlas`, branche **feature/account-authentication** depuis `origin/main` **5e2c84a99f7795da9cc2e14118549873bf4a42be**. Au cadrage local/main égal, Draft à publier ; aucun code ACC-02 écrit ni verdict présumé. Checkout personnel main et autres worktrees préservés. Coordinator seul writer du cadrage, Developer/Tester précédents terminés et source libérée.
 
-F1 : garde Account pending-delete (`session.deleted`) avant attribut expiré/autoflush, sans relâcher type/persistent/même Session. F2 : identifiants contenant NUL ou non encodables UTF-8 refusés par not_found avant query, sans filtre UUID ni broad catch du driver. Tests : loaded/expired × six opérations, NUL/surrogates × quatre opérations, zéro SQL pendant refus et SELECT1/opération valide sans rollback correctif ; cible synthétique accent/emoji acceptée. Aucun défaut HTTP ou corruption transactionnelle revendiqué (ni démontré par le Tester), aucune route ajoutée.
-
-Validation : **68 planning PASS en 25,14 s**, code 0, cycle migration/check inclus ; Ruff lint/format **43 fichiers**, **26 contrats/diff PASS**. PG existant PID38028/port55434 et absence de tests concurrents vérifiés ; `_test` avec opt-in/caches, aucun test actif. Preuves 131 du parent (Tester) et 88 publiques (Developer) réutilisées explicitement pour chemins inchangés ; 43 planning initiaux rejoués dans 68. Modèle/migration/conftest/source/API/CI/UI/dépendances inchangés. Prochaine action : commit/push cohérent, gel exact pour nouvelle revue/CI puis arrêt édition. Commandes et limites au handoff.
-
-## Historique avant correction
-
-Worktree isolé C:/Users/theop/.codex/worktrees/add4/RaceAtlas ; checkout personnel main préservé. Branche **feature/accounts-and-planning**, depuis origin/main **51856c9940a2b0e16c9f05d61a9f1726ae8701d9** après CI main verte. Parent local/distant **c9696821e7f01afc72ed30837ee5388fd71e5c48**, Draft PR https://github.com/TheoxProject/RaceAtlas/pull/11. Developer seul writer, aucune commande Tester active ; changements WIP conservés avant tests, pas de verdict ou CI présumés.
-
-**Prochaine action sûre :** publier ce jalon cohérent, transmettre son SHA gelé pour Tester/CI et arrêter les éditions. Aucun ancien verdict transféré ; aucune clôture globale lot 7. Aucun login/compte connecté temporaire, email réel, service/domaine/DNS ou DB distante.
+**Prochaine action sûre :** publier ce cadrage et la Draft auth, contrôler sa CI, attribuer ACC-02A borné au Developer dans docs/lot-7/auth-mission.md. Pas de tâches B/C ni source parallèle avant son gel/revue. Nouveau SHA exige nouvelle preuve/CI ; pas de copie d'ancien APPROVE.
 
 | Tâche | État |
 |---|---|
-| ACC-00 mission/Draft | DONE, PR11 |
-| ACC-01 identité et sauvegardes par scope | Testé, à publier/geler pour revue ciblée |
-| ACC-02 credentials/sessions/CSRF/récupération | TODO, périmètre ultérieur |
+| ACC-01 identité/sauvegardes privées par scope | DONE, PR11 et mainCI vérifiées |
+| ACC-02A hash/credentials/sessions internes | TODO, première attribution bornée |
+| ACC-02B inscription/confirmation/reset simulés | TODO |
+| ACC-02C HTTP/cookies/CSRF/abus/suppression | TODO |
 | PLAN-01 API privée/statuts/ICS | TODO |
-| ACC-UI parcours intégré | TODO |
-| Expéditeur réel | BLOCKED, aucun domaine/expéditeur ; simulation locale non équivalente |
-| ACC-FINAL | TODO, aucune clôture lot7 par simulation seule |
+| ACC-UI comptes/planning intégrés | TODO |
+| Expéditeur réel | BLOCKED, aucun domaine/expéditeur validé |
+| ACC-FINAL / lot8 / candidat V1 | TODO, pas de clôture lot7 par simulation |
 
-Mission : docs/lot-7/mission.md. Le service ACC-01 doit être privé/scoppé par acteur fiable, sans route auth factice ni header de bypass ; FKscope restrictif et preuve réelle de conservation favoris pendant sync. IDs source/listes non durables restent inconnus. Les phases suivantes sont détaillées après ce premier jalon.
+## Preuves intégrées
 
-Interface : `Account` opaque/email privé trim+lower unique, sans suppression de points/plus-tags, validation minimale non RFC/délivrabilité. L'acteur du service est obligatoirement un **Account persistant attaché à la même Session ORM** ; ACC-02 devra charger ce compte depuis l'auth serveur, jamais prendre un ID acteur de requête ou passer une instance détachée. `SavedEntry` stocke scope seul, FK RESTRICT, compte CASCADE privé, quatre statuts déclaratifs. Révision privée positive initiale 1, +1 uniquement sur vrai statut ; no-op garde ID/created/updated/revision. Upsert PostgreSQL atomique et rafraîchissement ORM déjà chargé ; aucun compteur public modifié. Migration `c40a7162b901` après `b7f4208ac112`. Fixtures test réinitialisent aussi account, sans changer les données source. Interface et commandes détaillées dans docs/lot-7/developer-handoff.md et local-development.md.
+- ACC-01 [PR11](https://github.com/TheoxProject/RaceAtlas/pull/11), APPROVE exact **d264ae0ac7c5586e65966922caadbfe91abd811d**, merge **5e2c84a99f7795da9cc2e14118549873bf4a42be**, arbres identiques **58f7a7e23ed3d0626735e2f762066de1ab55a8da**. CI PR43281879288 SUCCESS457backend209,86s/67frontend ; CI main43282947407 SUCCESS457backend212,75s/67frontend, gardes exactes avant/après. F1/F2 clos cycle1, Tester80PASS28,54s et réutilisation compatible explicite. Rapport PR et docs/lot-7/foundation-integration.md. Aucun login/UI/ICS livré.
+- PRE-01 PR10 APPROVE0eab2819, merge51856c9940a2b0e16c9f05d61a9f1726ae8701d9, CI PR43272958804/main43273970329 vertes389/67. Rapport concret de pré-déploiement et régionFrankfurt/attributionhref prêts sans activation ; docs/readiness/predeployment-integration.md.
+- Lot6 PR9 APPROVE302462c, merge7b733d86d99a354fdcfe2bf1ecbde519ef78a68f ; CI PR43226499588/main43227636726 vertes389/67. Caméra10s/60°/DEM>100 inchangée, horloge navigateur Date-only. docs/lot-6/integration.md. Antérieurs : docs/readiness/integration.md, docs/lot-5/integration.md.
 
-Avant tests : `pg_ctl status` a confirmé PostgreSQL existant PID 38028, port 55434 ; aucun pytest/Vitest/A-B concurrent. Caches réutilisés, `_test` uniquement, pas initdb ou campagne 389 complète. Premier run **36 PASS / 4 FAIL en 16,06 s** : timestamps PG retournés en fuseau Paris (deux cas), filtre API obligatoire manquant dans un test et diagnostic ambigu attendu incorrect. Conversion ORM UTC limitée aux nouveaux champs privés, gardant SQL timestamptz ; tests explicites UTC/Paris/Honolulu. Appel API/diagnostic de preuve corrigés. **43 ACC-01 PASS en 24,49 s**, **88 fondation/catalogue/snapshot PASS en 52,38 s**, code 0 ; cycles upgrade/check/downgrade base/upgrade/check réussis. Ruff lint/format **43 fichiers**, **26 contrats/diff PASS**. Aucun test actif. Isolation, contraintes, no-ops/révision, deux connexions concurrentes et vrais imports synthétiques (nom/report/réorganisation attestée/replay/refus/absence) exercés. Frontend et sources publiques inchangés, pas de build/rerun frontend local ; CI complète et revue exacte du nouveau SHA restent nécessaires.
+## Décisions acquises et contraintes
 
-## Intégrations vérifiées
+Altitude2,5D initial, Summit3D à la demande ; ouverture calendrier depuis Année/Semaine sélectionne le mois civil affiché, conservé au retour Carte. Comptes **email+mot de passe saisis, confirmation email obligatoire avant connexion**, récupération par email. ICS par défaut **Prévues et Inscrit**. Premier déploiement privé **après lot8/candidatV1**. Aucun domaine/expéditeur disponible ; aucune question produit pendante sur ces points.
 
-- PRE-01 : PR10, APPROVE exact **0eab28197d8ea6443fa1f16e702e0b1a94585b3b**, merge **51856c9940a2b0e16c9f05d61a9f1726ae8701d9**, arbre égal **1af4c9ffc3d753df22c160670fa9d1a3b1c87885**. CI PR43272958804 SUCCESS389pytest202,50s/67frontend ; CI push main43273970329 SUCCESS389pytest167,19s/67frontend et gardes exactes avant/après. Preuves docs/readiness/predeployment-integration.md et PR. Rapport et régionFrankfurt/hrefattribution prêts, aucune activation.
-- Lot6 : PR9, APPROVE **302462c006712ecd27f221f346d4f2e3d2c1d1ad**, merge **7b733d86d99a354fdcfe2bf1ecbde519ef78a68f**, CI PR43226499588 et main43227636726 vertes389/67. F6-01/02 clos cycle1, caméra10s/60°/DEM>100 inchangée. Docs/lot-6/integration.md. Budgets/tests ne sont pas SLA.
-- Antérieurs : préparation PR8 et lot5 PR7 intégrés ; preuves docs/readiness/integration.md et docs/lot-5/integration.md. Ne pas rejouer anciens A/B Clock ni campagnes complètes inchangées sans raison.
+Transport local simulé seulement : ne prouve pas délivrabilité et ne remplace pas le prérequis expéditeur. Aucun service/compte externe choisi/créé, DNS/achat/email réel. Déploiement, DB distante, paiement, email réel, collecte récurrente et tag/publication finale demandent autorisation explicite ; aucun silence comme accord.
 
-## Décisions explicites et limites
+FFC : deux GET limités11nov échouent layout_changed/debut et html_structure ; droits et IDs de listes non établis, aucune collecte live activée. Mapterhorn attributionJSON403 noncontourné12nov, licences terrain détaillées non auditées ; voir qualificationFFC/rapportreadiness. Aucun test GPU physique/liveSummit acquis.
 
-Propriétaire : Altitude2,5D initial, calendrier ouvre le mois civil affiché et le conserve au retour Carte. Réponses12novembre : **email et mot de passe, récupération par email** ; **aucun domaine ni expéditeur** ; **premier déploiement privé après le lot8/candidat V1**. Cette planification n'autorise pas création de service, migration, envoi ou dépense. Aucun silence comme approbation.
-
-Le développement local avec mailer simulé peut avancer indépendamment, sans prétendre expéditeur/délivrabilité validés. Aucun service email choisi/créé ou achat/DNS/envoi réel. Politique ICS et activation réelle à préciser au jalon concerné. FFC : deux pages limitées11nov échouent layout_changed/debut et html_structure ; droits et IDs de listes non établis, aucune collecte live activée. Mapterhorn attributionJSON403 noncontourné12nov, licences terrain détaillées non auditées ; href corrigé seul. Références dans rapport de pré-déploiement et qualificationFFC.
-
-Déploiement, DB distante, paiement, email réel, collecte récurrente et tag/publication finale exigent toujours autorisation explicite. Lots7–8/RC non livrés par les préparations déjà fusionnées.
+ACC-01 acteur interne Account persistant de même Session ORM, pas preuve auth. SavedEntry scopeFKRESTRICT/compteCASCADE, révision1/+1sur vrai changement, no-opstable, privé UTC ; migration actuelle **c40a7162b901**. Futur auth charge acteur validé serveur. Argon2id choisi et comparaison locale documentée dans docs/lot-7/auth-security-decisions.md ; pas implémentation/RSSRender déjà validée.
 
 ## Environnement et processus
 
-Python3.12.14 : C:/Users/theop/.codex/worktrees/1a1e/RaceAtlas/.venv/Scripts/python.exe (pas de pip module ; pipcheck via runtime --python). Node24.22.1/pnpm10.20.0/cache prêts ; wrapper11 incompatible à éviter. Chromium : C:/Users/theop/.codex/worktrees/1a1e/RaceAtlas/.local-tools/browsers. Migration actuelle **b7f4208ac112**.
+Python3.12.14 cache `C:/Users/theop/.codex/worktrees/1a1e/RaceAtlas/.venv/Scripts/python.exe` (pas pipmodule ; pip via runtime --python). Node24.22.1/pnpm10.20.0/cache prêts, wrapper11 incompatible à éviter. Chromium PLAYWRIGHT_BROWSERS_PATH=`C:/Users/theop/.codex/worktrees/1a1e/RaceAtlas/.local-tools/browsers`.
 
-PostgreSQL17.11 existant127.0.0.1:55434, cluster .local-tools/pgdata-lot2-native, user raceatlas_local ; Developer raceatlas_lot2_test, Tester raceatlas_lot2_review avec RACEATLAS_DISPOSABLE_DB=1. Preview raceatlas_map_demo distincte. Vérifier statut/processus avant tests ; ne pas initdb/reseed aveuglément ou tuer tous les Node/PG. Dernier handoff PRE-01 : aucun test/server retenu, cluster conservé.
+PostgreSQL17.11 existant127.0.0.1:55434, cluster `.local-tools/pgdata-lot2-native`, userraceatlas_local, PID38028 confirmé13nov07:21UTC. DeveloperDBraceatlas_lot2_test / TesterDBraceatlas_lot2_review, RACEATLAS_DISPOSABLE_DB=1 ; previewraceatlas_map_demo distincte. Inventaire natif sans Python/Chrome/Chromium ; anciens Node non revendiqués laissés intacts, pas de writer/test assigné actif. Vérifier ownership avant toute interruption de processus ; ne pas initdb/reseed/tuer tousNode/PG.
 
-Git natif/DB/browser passent en exécution native autorisée. Création PR connecteur403 historique : fallback Git/GCM sans secrets et dans ses permissions. Helpers PR7/8/9/10 ont numéros/bases statiques, ne pas les utiliser pour fusionner une nouvelle PR. Pas de reset/forcepush/main direct. Notes ignorées lot7-architecture-notes.md (audit borné sync et sources primaires) utiles mais à convertir en preuves versionnées ; la mission contient déjà les invariants nécessaires.
+Dossier ignoré `.local-tools/auth-research-deps` contient Argon2 isolé pour comparaison, n'est pas le venv projet : Developer doit pin/installer proprement sa dépendance bornée pour ACC-02A. Pas réinstallation/retests complets inchangés à chaque commit.
+
+Git natif/DB/browser nécessitent exécution native autorisée. Connecteur créationPR403 historique : fallback Git/GCM dans permissions existantes sans secrets ; helpersPR7–11 ont numéros/bases statiques, ne pas fusionner une nouvelle PR avec eux. Pas reset/forcepush/main direct. Pendant gel, Root tient état dans PR/surfaces ignorées, pas commitcheckpoint qui invalide le SHA. Ne jamais archiver globalement `.local-tools` (caches/DB/éventuels secrets).

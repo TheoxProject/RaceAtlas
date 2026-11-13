@@ -10,7 +10,7 @@ Entrer dans le calendrier depuis Année/Semaine sélectionne le mois civil affic
 
 [Rapport concret de pré-déploiement](docs/readiness/predeployment-report.md), [checkpoint opérationnel](docs/coordination/CURRENT_STATE.md), [préparation hébergement intégrée](docs/readiness/integration.md). Le rapport est préparatoire : comptes/plafonds réels, licences complètes, expéditeur et validations distantes restent ouverts ; aucune activation par fusion ou silence.
 
-Le premier jalon du lot 7 prépare uniquement une identité privée et les sauvegardes par liste d'engagement : statuts déclaratifs, révision privée, isolation entre comptes et conservation pendant les imports. Il ne connecte aucun utilisateur et n'ajoute pas encore auth, interface ou ICS. [Périmètre et validation ACC-01](docs/lot-7/developer-handoff.md), [guide local](docs/lot-7/local-development.md). Le premier déploiement reste prévu après le lot 8, sous autorisation séparée ; aucun expéditeur email réel n'est validé.
+Le premier jalon du lot 7 est intégré et fournit uniquement une identité privée et les sauvegardes par liste d'engagement : statuts déclaratifs, révision privée, isolation entre comptes et conservation pendant les imports. Il ne connecte aucun utilisateur et n'ajoute pas encore auth, interface ou ICS. [Intégration ACC-01](docs/lot-7/foundation-integration.md), [prochain jalon auth](docs/lot-7/auth-mission.md), [périmètre et validation ACC-01](docs/lot-7/developer-handoff.md), [guide local](docs/lot-7/local-development.md). Le premier déploiement reste prévu après le lot 8, sous autorisation séparée ; aucun expéditeur email réel n'est validé.
 
 ## Développement local
 
