@@ -403,3 +403,37 @@ class SavedEntry(Base):
     created_at: Mapped[datetime] = mapped_column(PrivateUTCDateTime(), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(PrivateUTCDateTime(), server_default=func.now())
     scope: Mapped[EntryScope] = relationship()
+
+
+class PasswordCredential(Base):
+    __tablename__ = "password_credential"
+    __table_args__ = (
+        CheckConstraint("session_version >= 1", name="session_version"),
+        CheckConstraint("length(password_hash) BETWEEN 1 AND 512", name="password_hash"),
+    )
+    account_id: Mapped[str] = mapped_column(
+        ForeignKey("account.id", ondelete="CASCADE"), primary_key=True
+    )
+    password_hash: Mapped[str] = mapped_column(String(512))
+    email_verified_at: Mapped[datetime | None] = mapped_column(PrivateUTCDateTime())
+    session_version: Mapped[int] = mapped_column(default=1, server_default="1")
+
+
+class AuthSession(Base):
+    __tablename__ = "auth_session"
+    __table_args__ = (
+        CheckConstraint("token_digest ~ '^[a-f0-9]{64}$'", name="token_digest"),
+        CheckConstraint("session_version >= 1", name="session_version"),
+        CheckConstraint(
+            "expires_at > created_at AND last_seen_at >= created_at AND last_seen_at < expires_at",
+            name="time_order",
+        ),
+    )
+    token_digest: Mapped[str] = mapped_column(String(64), primary_key=True)
+    account_id: Mapped[str] = mapped_column(
+        ForeignKey("password_credential.account_id", ondelete="CASCADE"), index=True
+    )
+    session_version: Mapped[int]
+    created_at: Mapped[datetime] = mapped_column(PrivateUTCDateTime())
+    last_seen_at: Mapped[datetime] = mapped_column(PrivateUTCDateTime())
+    expires_at: Mapped[datetime] = mapped_column(PrivateUTCDateTime())

@@ -1,6 +1,6 @@
 # Décisions techniques préparatoires — auth
 
-Sources primaires consultées le12novembre2026 ; mise en œuvre et validation du jalon non présumées. Les choix produit sont dans [la mission](auth-mission.md). Aucun service/auth/email réel activé.
+Sources primaires consultées le12novembre2026, Argon2/hash/sessions relus le13novembre. ACC-02A possède maintenant un candidat interne testé, décrit dans le [handoff](auth-handoff.md) ; CI/revue exacte restent requises et l'auth complète n'est pas livrée. Les choix produit sont dans [la mission](auth-mission.md). Aucun service/route auth/email réel activé.
 
 ## Hash de mot de passe
 
@@ -17,7 +17,9 @@ Comparaison locale Windows/Python3.12.14 le12nov18:36UTC, trois secrets synthét
 
 Les six vérifications correspondent, Argon2 ne demande pas rehash. Le scrypt par défaut Werkzeug32768/r8/p1 n'est pas la combinaison OWASP comparée ; ne pas utiliser un défaut de bibliothèque comme preuve de coût adéquat. La comparaison motive la dépendance dédiée plutôt que ce scrypt lent sur ce poste, sans classement universel des primitives.
 
-Argon installé seulement dans un dossier de recherche ignoré isolé, sans changer venv/requirements du projet : bindings26.1.0/cffi2.1.1/pycparser3.12. 19MiB est le paramètre mémoire, **pas une mesure RSS** ; CPU/RSS/concurrence Render non mesurés. Aucune capacité Free déduite de ces temps locaux. Le jalon devra borner la concurrence KDF, et l'exploitation mesurer les ressources avant autorisation.
+Lors de cette recherche du12novembre, Argon était installé seulement dans un dossier ignoré isolé, sans changer venv/requirements : bindings26.1.0/cffi2.1.1/pycparser3.12. Le jalon A du13novembre épingle ces versions avec argon2-cffi25.1.0, les installe proprement dans la venv projet et passe pip check ; le dossier recherche n'est pas utilisé comme runtime. Deux KDF actifs/processus maximum, attente bornée à1s puis erreur générique. Dernières mesures locales du ciblé : hash41,36/35,78/47,58ms et verify48,98/40,59/42,56ms. 19MiB est le paramètre mémoire, **pas une mesure RSS** ; CPU/RSS/concurrence Render non mesurés, aucune capacité Free déduite de ces temps. L'exploitation devra mesurer avant activation ; pas de rate limiter HTTP ou conformité générale revendiqués par cette borne de travail interne.
+
+Ordre transactionnel A : Account FOR UPDATE, relecture fraîche credential/session puis vérification et émission/révocation/changement, jusqu'au commit caller. Le commit décide le résultat durable ; publier le token avant commit est interdit au futur HTTP. Une preuve antérieure ne peut survivre à révocation concurrente ; un login véritablement nouveau après logout-all peut réussir si le mot de passe reste valide. Confirmation/reset B devront garder cet ordre ; aucune I/O email sous verrou. Dates/idle/absolue et version privée sont relues depuis la DB, jamais prouvées par un objet ORM déjà chargé.
 
 ## Contrôles à implémenter et vérifier
 

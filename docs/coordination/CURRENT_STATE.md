@@ -1,21 +1,27 @@
 # Point de reprise RaceAtlas
 
-Dernier checkpoint UTC **2026-11-13T07:24Z**. Lots0–6, PRE-01 et **fondation ACC-01 intégrés** ; lot7 en cours, aucun déploiement. La reprise réconcilie Git/CI après interruption, sans supposer du travail de fond.
+Dernier checkpoint UTC **2026-11-13T07:54:45Z**. Lots 0–6, PRE-01 et fondation ACC-01 intégrés ; **ACC-02A testé, à publier/geler pour revue ciblée et CI**, lot 7 non terminé. Aucun déploiement.
 
 ## Travail actuel et prochaine action
 
-Worktree isolé `C:/Users/theop/.codex/worktrees/add4/RaceAtlas`, branche **feature/account-authentication** depuis `origin/main` **5e2c84a99f7795da9cc2e14118549873bf4a42be**. Au cadrage local/main égal, Draft à publier ; aucun code ACC-02 écrit ni verdict présumé. Checkout personnel main et autres worktrees préservés. Coordinator seul writer du cadrage, Developer/Tester précédents terminés et source libérée.
+Worktree isolé `C:/Users/theop/.codex/worktrees/add4/RaceAtlas`, branche **feature/account-authentication** depuis `origin/main` **5e2c84a99f7795da9cc2e14118549873bf4a42be**. Parent local/distant **37ca92a842cc5ba0413245120e029ebd3f28eab8**, Draft PR https://github.com/TheoxProject/RaceAtlas/pull/12. CI cadrage `43385747578` SUCCESS (457 backend / 67 frontend), pas une preuve du WIP auth. Developer seul writer ; Root PR/notes ignorées, Tester sans processus actif.
 
-**Prochaine action sûre :** publier ce cadrage et la Draft auth, contrôler sa CI, attribuer ACC-02A borné au Developer dans docs/lot-7/auth-mission.md. Pas de tâches B/C ni source parallèle avant son gel/revue. Nouveau SHA exige nouvelle preuve/CI ; pas de copie d'ancien APPROVE.
+**Prochaine action sûre :** publier le jalon cohérent et transmettre son SHA gelé au Tester/Coordinator pour CI, puis arrêter les éditions. Handoff `docs/lot-7/auth-handoff.md`, guide `auth-local-development.md`, deux tests `test_auth_passwords.py` et `test_auth_sessions.py`. B/C non attribués, aucun HTTP/frontend/email/activation. Nouveau SHA exige preuve et CI propres.
 
 | Tâche | État |
 |---|---|
 | ACC-01 identité/sauvegardes privées par scope | DONE, PR11 et mainCI vérifiées |
-| ACC-02A hash/credentials/sessions internes | TODO, première attribution bornée |
+| ACC-02A hash/credentials/sessions internes | Testé, à publier/geler pour revue ciblée |
 | ACC-02B inscription/confirmation/reset simulés | TODO |
 | ACC-02C HTTP/cookies/CSRF/abus/suppression | TODO |
 | PLAN-01 API privée/statuts/ICS | TODO |
 | ACC-UI comptes/planning intégrés | TODO |
+
+ACC-02A : Argon2id 19456 KiB/t2/p1/sel16/tag32, argon2-cffi25.1.0 et transitives épinglées/installées dans la venv projet via runtime pip ; pip check PASS, dossier de recherche ignoré non utilisé comme runtime. Mots de passe exacts 15–128 codepoints / 512 octets UTF-8, espaces conservés ; KDF deux travaux simultanés/processus, attente maximale une seconde, coût local non assimilé à Render/RSS. Credentials vérifiés requis ; Account seul ne connecte pas. Tokens 32 octets CSPRNG, SHA-256 uniquement en DB, 7 jours absolus / 24 h idle ; version privée et suppression des sessions à révocation.
+
+Sérialisation : Account FOR UPDATE d'abord, relecture credentials/session populate_existing, vérification/émission ou révocation sous verrou jusqu'au commit caller. Un résultat de vérification ancien ne survit pas à une révocation ultérieure ; une connexion fraîche après logout-all reste permise si le mot de passe est inchangé. Future B doit conserver cet ordre ; token retourné avant commit n'est pas une émission persistée, futur HTTP publiera le cookie seulement après commit. Chaîne FK Account→PasswordCredential→AuthSession CASCADE, évitant résurrection après suppression/recréation de credentials.
+
+Migration `d82b9147a120` après `c40a7162b901`, sources/app/routes/serve/CI/contrats/frontend inchangés. PG existant PID38028/55434 vérifié, aucun Python/Chrome de test concurrent, `_test` et caches seulement. Premier ciblé : **54 PASS / 7 FAIL + 7 erreurs teardown en33,43 s** ; les 39 cas sessions PG étaient verts, 7 sondes KDF tentaient de remplacer des méthodes read-only. Proxy de sonde déléguant au vrai Argon2 : **22 primitives PASS5,02 s** après une unique relance autorisée (premier appel natif rejeté pour timeout de revue automatique, pas un refus de sûreté). Ajout ciblé ASCII PHC/NUL ; **132 auth + planning PASS63,10 s**, code0 (25 primitives/39 sessions/68planning), puis **10 publics PASS12,44 s**, 72 désélectionnés. Cycles migration/check effectivement réussis. Ruff lint/format **49 fichiers**, pip check final, **26 contrats/diff PASS**. Aucun processus Developer retenu ; aucune primitive faible substituée, aucun full457/browser répété. Mesure locale hash41,36/35,78/47,58ms et verify48,98/40,59/42,56ms, sans PHC/secret/RSS/Render archivé. Autres preuves ACC-01/publiques/UI/hosting réutilisées après diff, pas un verdict nouveau. Linux/dépendances et CI complète du candidat restent à confirmer.
 | Expéditeur réel | BLOCKED, aucun domaine/expéditeur validé |
 | ACC-FINAL / lot8 / candidat V1 | TODO, pas de clôture lot7 par simulation |
 
