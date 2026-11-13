@@ -1,51 +1,41 @@
 # Point de reprise RaceAtlas
 
-**Checkpoint UTC 2026-11-13T21:53Z — candidat backend auth complet C2 prêt pour gel, NON APPROUVÉ.** PR12 reste Draft. Une acceptation COMPLETE backend et une CI exacte restent requises ; lot7, UI et V1 ne sont pas terminés.
+**UTC2026-11-13T22:12Z — lot7, PLAN-01 cadrage, auth backend intégré/mainCI verte.** Aucun service/DNS/email réel/déploiement. Les reprises explicites ont conservé WIP/caches et les mêmes agents, sans changement de modèle pour contourner quota.
 
-## Git et prochaine action sûre
+## Branche, responsabilités et prochaine action
 
-Branche **feature/account-authentication**, worktree isolé add4, [Draft PR12](https://github.com/TheoxProject/RaceAtlas/pull/12). Parent local/origin **c06b2dc52cc832dee0e5a5548a6c40dbde5deea3**, base/main **5e2c84a99f7795da9cc2e14118549873bf4a42be**. Le commit contenant ce checkpoint sera le candidat C2 ; transmettre son SHA exact après push. Developer seul writer ; Root PR/notes ignorées, Tester indépendant read-only.
+Branche **feature/private-planning**, checkout isolé **C:/Users/theop/.codex/worktrees/add4/RaceAtlas** réutilisé propre après merge, aucun autre writer. Base locale/distante vérifiée **87d7dd53efcdb144c38e2d3ef1f83c89e63654fc**, mainCI43515934267 SUCCESS791backend138,79s/67frontend. Ce commit de cadrage sera publié puis Draft PR créée ; SHA/URL/CI relevés Root, pas de code PLAN ou verdict encore.
 
-**Prochaine action sûre :** commit/push cohérent, communiquer le SHA puis STOP éditions. Demander une revue d'acceptation **COMPLETE A+B1+B2+C0+C1+C2 du backend PR12**, pas une simple APPROVE C2. Exiger la CI du même SHA et une base à jour avant intégration. [Mission C2](../lot-7/auth-http-email-mission.md), [handoff C2](../lot-7/auth-http-email-handoff.md), [mission globale](../lot-7/auth-http-mission.md). Planning HTTP/ICS/UI attendent intégration auth + mainCI et nouvelle attribution.
+**Prochaine action sûre :** publier PLAN-00/Draft et suivre CI, puis attribuer PLAN-A API/snapshot au Developer selon [mission](../lot-7/planning-mission.md). Root possède ces trois docs jusqu'au transfert, ensuite PR/notes seulement ; Tester read-only. Aucun test/commande/worker précédent pendant, aucune UI/lot8/main direct.
 
 | Tâche | État |
 |---|---|
-| ACC-01 identité/sauvegardes | DONE intégré PR11/mainCI |
-| Auth A/B1/B2/C0/C1 | Jalons APPROVE antérieurs ; verdict non transférable |
-| C2 routes email/dispatcher/probes | Implémenté,225 ciblés PASS ; acceptation complète/CI TODO |
-| Backend PR12 intégré | TODO, PR Draft non fusionnée |
-| Planning API / ICS / UI / lot7 complet | TODO, exclus C2 |
-| DNS/envoi réel/service/déploiement | BLOCKED autorisation/préconditions, aucun effectué |
+|Lots0–6/PRE-01|DONE intégrés, preuves docs lots/readiness|
+|ACC-01 identité/sauvegardes internes|DONE PR11/main5e2c84, CI457/67|
+|ACC-02 backend A+B1+B2+C0+C1+C2|DONE PR12/merge87d7/APPROVE exactda5743/PRetmainCI791/67|
+|PLAN-00 mission/Draft/integrationauth|IN_PROGRESS publication/CI TODO|
+|PLAN-A API privée+snapshot|TODO|
+|PLAN-B ICS/cachemétadonnées|TODO|
+|PLAN-FINAL|TODO SHAfinal/revue/CI/merge/mainCI|
+|ACC-UI/acceptation complète lot7|TODO après intégrations, expéditeur réel non qualifié|
+|Lot8/candidatV1/activation|TODO dépendances/owner gates, aucun deploy autorisé|
 
-## Comportement et limites C2
+## Intégration et choix acquis
 
-C1 est conservé : droits COOKIE uniquement, Basic preview permis mais pas identité compte, CSRF/Origin/admission C0 avant KDF.401 passive sans Set-Cookie pour éviter une réponse ancienne effaçant loginB ; réauth403 sans mint. Cookies site host-only/Secure HTTPS/HttpOnly/Lax/Path=/,7jours absolus/24h idle serveur. Corpus appliqué seulement aux nouveaux secrets, Unicode/espaces/NUL exacts.
+[PR12](https://github.com/TheoxProject/RaceAtlas/pull/12) : reviewed **da5743c500603a11366080e97cd2e76db7cbcb33**, merge/main **87d7dd53efcdb144c38e2d3ef1f83c89e63654fc**, arbres identiques **dafa5967ca7f9726729e9a94cefae5f3a102deba**. Tester239PASS locaux (22545,70s+14sondes6,98s), APPROVE complet ; CI PR43514658079 SUCCESS791backend161,56s/67frontend et main43515934267 SUCCESS791backend138,79s/67frontend, sources exactes avant/après. [Intégration auth](../lot-7/auth-integration.md), rapport final intégral PR. UI/ICS/lot7 entière non couverts.
 
-C2 register/resend/forgot :202 constant pour résultats métier connus/inconnus/limités, file pleine/fermée et panne provider. Aucune promesse envoyé/reçu. Périmètre HTTP400/403/413/429/503 avant lookup, indépendant de l'existence. Confirmation/reset POST avec X-Account-Proof +CSRF, jamais query/JSONtoken ou auto-login. ResetB garde cookieA. IntentNone normal commité ; registration1hash si intent, sinon1dummy après commit/close sous slot.0KDF formes invalides/admission refusée/resend/resetrequest. Pas de temps constant revendiqué.
+B2-F1 transactionexterne corrigé par AccountFlowSession ; C0-F1 fixtureURLstr masquée etC0-F2 bodycache8KiB corrigés. CI35f710PASS/7FAIL reste échec historique.401passive sansSet-Cookie, récupérationGETcsrf→login. C2 queue16+1/worker paresseux/channels16/probePGclos avantprovider, pertecrash/inflight/stop incomplet honnêtes,1KDF registration, pas garantie temporelle/capacité. Tous mails simulés, SDKfakewire avec sockets/DNS interdits.
 
-EmailIntent.account_id privé OPTIONNEL KEYWORD-ONLY, copié depuis Account déjà verrouillé ; operation_id reste quatrième position. Pas de lookup Account après Budget. Legacy sans ID peut dispatcher B2 directement mais pas entrer dans la queue HTTP. Probe worker PG non consommateur : hash/purpose/account/recipient/version/expiry/date de vérification, puis transaction et Session FERMÉES avant provider. DB en panne/preuve obsolète : abandon sans retry.
+Altitude2,5D initial/Summit3D à la demande ; carte/calendrier gardent période/filtres/caméra. Email+PW puis confirmation avantconnexion ; ICS planned+registered, statuts parscope et Inscrit déclaratif. AND même scope, centrescommune seulement, absence→to_verify jamais annulation inventée.
 
-Dispatcher partagé : **16 pending +1 actif /16 channels /1 worker par processus**. Services B1 isolés par channel, Condition libérée avant probe et provider. Cadence conservatrice0,2s après fin de tentative, donc ≥0,2s entre débuts ; pas garantie quota équipe. Lazy channel : aucun worker pour auth désactivée/incomplète, C0/C1 ou demande sans intent. Close annule pending du channel, conserve les autres, signale un actif bloqué sans hard-cancel ou deuxième worker. Fixtures C0/C1/conftest/C2 ferment runtime avant Engine. Dernier job libéré avant idle/drain ; aucune Session/Connection/Flask app/context dans un job. Development garde ses20messages locaux B1, sans promesse d'effacement physique des strings.
+Resend Free définitif ; club déclaré propriétaire **ucthonon.fr/Webador**, sousdomaine **raceatlas.ucthonon.fr emailseulement**, From futur **RaceAtlas <notifications@raceatlas.ucthonon.fr>** non vérifiés. APP_BASE_URL réelleRender inconnue/indépendanteHost-email. Defaultsauthfermée/Developmentlocal, clés/From/URLvides/gardesfalse. Aucun DNS club modifié ou compte/clé/email/service/coût/remoteDB/deploy/collecte. Premier deployprivé aprèslot8/candidatV1 sousautorisationdistincte ; droits/compatibilitéréelleFFC/terrain/délivrabilité/capacité physique nonacquis.
 
-Delete hook après commit/close : cancel_pending(channel,AccountID), jamais email, nouveau compte même email préservé. Autre channel peut garder un job mais son probe le rejette après CASCADE. Delete après probe/provider peut laisser finir un envoi in-flight, dont la preuve est invalide. Pas de tombstone illimité, outbox durable, scheduler ou effacement distant promis. Crash après commit : intent perdu possible, renvoi comme récupération et réservation conservée.
+PLAN : mission fige READCOMMITTEDauth puis SELECTgrapheunique/scoped, caps1000saved/1000events/2MiB/16KiBchamp/10000paires, UIDUUIDv5fixe account+scope, cachefingerprint/DTSTAMPDB/SEQUENCE retenujusqu'àcompte/scopepurge. Aucun feed/optionproduitnouvelle. Parser indépendanticalendar7.3.0 dev-only autorisé, vérifiervenv/transitifs puis pinsréels sansruntime/Django.
 
-## Preuves exécutées
+## Environnement à réutiliser
 
-- C2 premiers11PASS5,79s, étendu31PASS9,18s, complet37PASS11,07s, tous exit0 ; JUnit ignorés `.local-tools/c2-first.xml`, `c2-expanded.xml`, `c2-complete.xml`.
-- Final `pytest tests/backend/test_auth_http_email.py tests/backend/test_account_flows.py tests/backend/test_auth_http_sessions.py tests/backend/test_auth_http_foundation.py tests/backend/test_foundation.py tests/backend/test_catalog_options.py -q --tb=short --junitxml=.local-tools/c2-final-seams.xml` : **225PASS44,09s exit0** =37C2+89B2+29C1+47C0+23public. Fixture migration upgrade/check/base/upgrade/check sur `_test` ; migration source inchangée.
-- Parcours Development complet, hash-only24h/30min/replay/renvoi/nonoverwrite, cookieA/proofB et révocation deux devices, commitfailure aucune queue ; pending/in-flight/delete/nouvel Account/autre channel ; full/slow/probe/stop/deux apps/cadence/GCrefs/PGidle avant provider/429 sans retry/DBdrop ;1 ou0KDF natif selon périmètre et compatibilité legacy UUID.
-- Profils `.local-tools/c2-registration-profiles.jsonl` sans PII :7branches1KDF, premier profil89,26–200,95ms Windows (bootstrap/DB/KDF inclus, hors drain). Un échantillon par branche/run : nonconstant, pas SLA ou capacité Render mesurée.
-- Ruff check PASS ; format **70 fichiers conformes** ; contrats **26PASS** ; pipcheck/diff PASS. A/B1/modèles/migrations/pins/source/frontend/serve/ops/CI inchangés vérifiés. Interfaces B2/C1 et nettoyages fixtures seulement. Pas de fullbackend/browser local répété ; vraie pile SDK B1 fake-wire réutilisable après diff.
-- Toutes commandes terminées ; dernier inventaire natif aucun Python/Chrome actif, workers de tests fermés. PostgreSQL38028 conservé.
+Python3.12.14 **C:/Users/theop/.codex/worktrees/1a1e/RaceAtlas/.venv/Scripts/python.exe**, pip via runtimePython `-m pip --python <venv>` (venv sanspipmodule). Argon2/Resend+transitifs installés proprement ; pas réinstallaveugle. Node24.22.1/pnpm10.20.0/node_modules/browsers existants. Pas wrapperpnpm11 ni fauxClockPlaywrightglobal (carteDateProxyseulement).
 
-## Gates précédents et historique
+PG17.11 existant127.0.0.1:55434, cluster `.local-tools/pgdata-lot2-native`, user **raceatlas_local**, dernierPID38028. Vérifierpg_ctlstatus, jamaisinitdb/reseed/killglobal. DeveloperDB **raceatlas_lot2_test**, TesterDB **raceatlas_lot2_review** distinctes, **RACEATLAS_DISPOSABLE_DB=1**, preview **raceatlas_map_demo** préservée. Schéma main **f61d338ab204**, futuremigrationPLANaprès ; nepaslancerancienworktreecontreDBdéjàmigréePLAN. Dernierscontrôles aucunPython/Chrome/workertest, sourceReviewerlibérée.
 
-C1 exactc06b2dc52cc832dee0e5a5548a6c40dbde5deea3 APPROVE68+9PASS ; CI43508577610 SUCCESS754backend233,70s/67frontend, gardes exactes. C0a2bf APPROVE15PASS11,12s et CI43465480107 SUCCESS725/67. Historique35f : CI43462508000 FAILED710PASS/7FAIL180,30s, str(URL) cachait password malgré62localtrustPASS + cache>8KiB ; corrigés sans assouplir PG/CI, C0CIa2bf a réellement validé password-auth.
-
-B2b12d APPROVE107PASS18,07s/CI678/67 ; B1c79c APPROVE68+10/CI589/67 ; A9dfd APPROVE/CI521/67 restent antérieurs. C1 ancien138PASS65,01s et incident de capacité automatic-review résolu sont conservés dans son handoff. Aucun verdict ne vaut approbation du nouveau SHA ; revue backend COMPLETE obligatoire.
-
-## Environnement et opérations interdites
-
-Python3.12.14 `C:/Users/theop/.codex/worktrees/1a1e/RaceAtlas/.venv/Scripts/python.exe`, pip via runtime `-m pip --python <venv>`, dépendances déjà installées. PostgreSQL17.11 PID38028 loopback55434, cluster `.local-tools/pgdata-lot2-native`. DeveloperDB `raceatlas_lot2_test` avec opt-in, Tester_review distincte. Pas initdb/reseed/killglobal. Caches Node/Chromium préservés, aucun navigateur requis C2.
-
-AUTH_ENABLED=false par défaut, ENVIRONMENT app effectif, clés CSRF/Rate distinctes vides dans l'exemple, production mock refusée. Resend Free choisi ; `raceatlas.ucthonon.fr` email seul et From futur `RaceAtlas <notifications@raceatlas.ucthonon.fr>` non vérifiés ; URL Render réelle indépendante inconnue. Aucun compte externe/DNS/clé réelle/email/service/coût/remoteDB/deploy/collecte. Premier déploiement après lot8 sous autorisation distincte ; aucune délivrabilité/quotas réels/capacité production établis. Après publication : gel et arrêt, attendre revue complète/CI ; pas de main/merge/UI anticipé.
+Copie personnelle main2e03cd8 et autresworktreesintacts ; feature/account-authentication conservéeauSHArevu, pasreset/forcepush. Helpers/rapports/profils/probes ignorés `.local-tools`, jamaisgitaddglobal/.env/secrets. Canoniqueauth `.local-tools/tester-report-auth.md` publiéintégralPR12. Ne pasrejouer138/225testsverts pouruneinterruption sansnouveaurisque/source. Le dépôt et Git/CI font foi sur ce checkpoint de cadrage.
