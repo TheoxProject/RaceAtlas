@@ -51,3 +51,7 @@ L'activation/délivrance réelle et les droits/prérequis de domaine restent **B
 ## Reprise B1 et preuves
 
 WIP sauvegardé au SHA **1464dfa2db250e1816e2f7120fde371479575338**, CI43402452005 SUCCESS589backend227,04s/67frontend ; preuve distincte du premier run tronqué dont le résultat reste inconnu. Reprise du même Developer le13novembre : objet reset corrigé et testé par attendu littéral, email **68PASS2,02s**, auth pertinente **64PASS20,66s**, quatre rendus HTML desktop/mobile synthétiques inspectés. [Handoff B1](email-handoff.md), [guide Resend/Webador](resend-guide.md) et checkpoint détaillent les commandes et limites. Nouvelle CI/revue du SHA publié requises ; aucune approbation transférée du WIP ou de A.
+
+## Suite après gate B1
+
+B1 exactc79c557e32fed3fd56c85ed1ce786f0bd46fde04 APPROVE ciblé et CI43404533408 SUCCESS589/67 ; source libérée. Le cadrage initial B2 ci-dessus est précisé par [la mission des preuves et limites](account-flows-mission.md). Developer a intégré ces documents avec le jalon B2 et son [handoff](account-flows-handoff.md) ; aucun verdict B1 transféré à ce prochain SHA.
