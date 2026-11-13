@@ -48,6 +48,6 @@ Reset distinct, hash seul, **30min**, consommation atomique, aucun password par 
 
 L'activation/délivrance réelle et les droits/prérequis de domaine restent **BLOCKED** jusqu'aux actions et autorisations du propriétaire. Les tests simulés valident l'intégration de code demandée, pas cette exploitation. Premier déploiement privé après lot8/candidatV1 inchangé.
 
-## Interruption B1
+## Reprise B1 et preuves
 
-Le code WIP a été conservé après limite d'utilisation Developer ; résultats du premier run tronqués et non réconciliés. Aucune validation B1/guide/visuel/inscription HTTP revendiquée. Le sujet reset dans templates/tests doit encore être aligné sur la dernière demande. Reprise exacte et tâches au checkpoint, pas de source jetée ou de nouvelle implémentation parallèle.
+WIP sauvegardé au SHA **1464dfa2db250e1816e2f7120fde371479575338**, CI43402452005 SUCCESS589backend227,04s/67frontend ; preuve distincte du premier run tronqué dont le résultat reste inconnu. Reprise du même Developer le13novembre : objet reset corrigé et testé par attendu littéral, email **68PASS2,02s**, auth pertinente **64PASS20,66s**, quatre rendus HTML desktop/mobile synthétiques inspectés. [Handoff B1](email-handoff.md), [guide Resend/Webador](resend-guide.md) et checkpoint détaillent les commandes et limites. Nouvelle CI/revue du SHA publié requises ; aucune approbation transférée du WIP ou de A.

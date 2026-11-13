@@ -6,7 +6,7 @@ from .config import EmailInputError, mailbox
 
 SUBJECTS = {
     "confirmation": "Confirmez votre adresse e-mail — RaceAtlas",
-    "reset": "Réinitialisation de votre mot de passe — RaceAtlas",
+    "reset": "Réinitialisez votre mot de passe — RaceAtlas",
 }
 
 

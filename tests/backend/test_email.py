@@ -24,7 +24,6 @@ from raceatlas.email.providers import (
     BoundedResendHTTPClient,
     DevelopmentEmailProvider,
 )
-from raceatlas.email.templates import SUBJECTS
 
 TOKEN = "syntheticToken" + "A" * 29
 KEY = "re_synthetic_key_never_real"
@@ -99,19 +98,31 @@ def sdk_service(fake, **patch):
 
 
 @pytest.mark.parametrize(
-    "purpose,button,expiry,key",
+    "purpose,button,expiry,key,subject",
     [
-        ("confirmation", "Confirmer mon adresse e-mail", "24 heures", "confirm-email"),
-        ("reset", "Réinitialiser mon mot de passe", "30 minutes", "reset-password"),
+        (
+            "confirmation",
+            "Confirmer mon adresse e-mail",
+            "24 heures",
+            "confirm-email",
+            "Confirmez votre adresse e-mail — RaceAtlas",
+        ),
+        (
+            "reset",
+            "Réinitialiser mon mot de passe",
+            "30 minutes",
+            "reset-password",
+            "Réinitialisez votre mot de passe — RaceAtlas",
+        ),
     ],
 )
 def test_french_models_and_root_fragments_are_static_private_and_resource_free(
-    purpose, button, expiry, key
+    purpose, button, expiry, key, subject
 ):
     service = EmailService.from_environment(environment())
     message = service.render(purpose, RECIPIENT, TOKEN)
     link = f"https://site.example.test/#{key}={TOKEN}"
-    assert message.subject == SUBJECTS[purpose]
+    assert message.subject == subject
     assert button in message.html and button in message.text
     assert expiry in message.html and expiry in message.text
     assert link in message.html and link in message.text
