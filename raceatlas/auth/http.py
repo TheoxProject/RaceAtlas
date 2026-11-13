@@ -10,6 +10,7 @@ from flask import Blueprint, g, jsonify, request
 from .admission import AdmissionPolicy, admit_http
 from .csrf import AuthRequestError, check_origin, issue, set_cookie
 from .http_settings import AuthConfigurationError, load_auth_settings
+from .sessions_http import register_session_routes
 
 
 @dataclass(repr=False)
@@ -80,4 +81,5 @@ def init_auth(app):
             set_cookie(response, settings, cookie)
         return response
 
+    register_session_routes(app, blueprint, runtime, account_boundary, account_error)
     app.register_blueprint(blueprint)

@@ -3,7 +3,7 @@
   "info": {
     "title": "RaceAtlas private account HTTP API",
     "version": "1.0.0",
-    "description": "C0 foundation only: CSRF bootstrap. Session and account-flow endpoints remain future C1/C2 milestones."
+    "description": "C0/C1: CSRF bootstrap and cookie-only session/account security. Email confirmation/reset HTTP workflows remain future C2."
   },
   "paths": {
     "/api/v1/auth/csrf": {
@@ -64,6 +64,654 @@
           }
         }
       }
+    },
+    "/api/v1/auth/login": {
+      "post": {
+        "operationId": "loginAccount",
+        "description": "Cookie identity only. Basic Authorization from outer private-preview middleware is permitted but never grants account identity. Passive 401 never clears cookies; no auto-login on password change. All responses no-store.",
+        "responses": {
+          "200": {
+            "description": "Success; no session bearer in JSON.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginSuccess"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed request or invalid new-password policy.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication rejected. Passive response does not modify cookies; GET csrf then fresh login can replace stale cookies.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CSRF/Origin rejected or valid session with wrong current password; cookies and sessions preserved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Body exceeds 8192 bytes, including pre-cached bodies.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Admission/concurrency refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Configuration or storage unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountError"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 512
+            },
+            "description": "Exact canonical APP_BASE_URL origin, no Host/Forwarded fallback."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "email",
+                  "password"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "CsrfProof": []
+          }
+        ]
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "operationId": "logoutCurrentSession",
+        "description": "Cookie identity only. Basic Authorization from outer private-preview middleware is permitted but never grants account identity. Passive 401 never clears cookies; no auto-login on password change. All responses no-store.",
+        "responses": {
+          "204": {
+            "description": "Committed explicit operation; site session and CSRF cookies cleared."
+          },
+          "400": {
+            "description": "Malformed request or invalid new-password policy.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication rejected. Passive response does not modify cookies; GET csrf then fresh login can replace stale cookies.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CSRF/Origin rejected or valid session with wrong current password; cookies and sessions preserved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Body exceeds 8192 bytes, including pre-cached bodies.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Admission/concurrency refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Configuration or storage unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountError"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 512
+            },
+            "description": "Exact canonical APP_BASE_URL origin, no Host/Forwarded fallback."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [],
+                "properties": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SiteSession": [],
+            "CsrfProof": []
+          },
+          {
+            "LoopbackSession": [],
+            "CsrfProof": []
+          }
+        ]
+      }
+    },
+    "/api/v1/auth/logout-all": {
+      "post": {
+        "operationId": "logoutAllSessions",
+        "description": "Cookie identity only. Basic Authorization from outer private-preview middleware is permitted but never grants account identity. Passive 401 never clears cookies; no auto-login on password change. All responses no-store.",
+        "responses": {
+          "204": {
+            "description": "Committed explicit operation; site session and CSRF cookies cleared."
+          },
+          "400": {
+            "description": "Malformed request or invalid new-password policy.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication rejected. Passive response does not modify cookies; GET csrf then fresh login can replace stale cookies.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CSRF/Origin rejected or valid session with wrong current password; cookies and sessions preserved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Body exceeds 8192 bytes, including pre-cached bodies.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Admission/concurrency refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Configuration or storage unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountError"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 512
+            },
+            "description": "Exact canonical APP_BASE_URL origin, no Host/Forwarded fallback."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "current_password"
+                ],
+                "properties": {
+                  "current_password": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SiteSession": [],
+            "CsrfProof": []
+          },
+          {
+            "LoopbackSession": [],
+            "CsrfProof": []
+          }
+        ]
+      }
+    },
+    "/api/v1/auth/password/change": {
+      "post": {
+        "operationId": "changeAccountPassword",
+        "description": "Cookie identity only. Basic Authorization from outer private-preview middleware is permitted but never grants account identity. Passive 401 never clears cookies; no auto-login on password change. All responses no-store.",
+        "responses": {
+          "204": {
+            "description": "Committed explicit operation; site session and CSRF cookies cleared."
+          },
+          "400": {
+            "description": "Malformed request or invalid new-password policy.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication rejected. Passive response does not modify cookies; GET csrf then fresh login can replace stale cookies.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CSRF/Origin rejected or valid session with wrong current password; cookies and sessions preserved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Body exceeds 8192 bytes, including pre-cached bodies.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Admission/concurrency refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Configuration or storage unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountError"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 512
+            },
+            "description": "Exact canonical APP_BASE_URL origin, no Host/Forwarded fallback."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "current_password",
+                  "new_password"
+                ],
+                "properties": {
+                  "current_password": {
+                    "type": "string"
+                  },
+                  "new_password": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SiteSession": [],
+            "CsrfProof": []
+          },
+          {
+            "LoopbackSession": [],
+            "CsrfProof": []
+          }
+        ]
+      }
+    },
+    "/api/v1/me": {
+      "get": {
+        "operationId": "currentAccount",
+        "description": "Cookie identity only. Basic Authorization from outer private-preview middleware is permitted but never grants account identity. Passive 401 never clears cookies; no auto-login on password change. All responses no-store.",
+        "responses": {
+          "200": {
+            "description": "Success; no session bearer in JSON.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CurrentAccount"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed request or invalid new-password policy.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication rejected. Passive response does not modify cookies; GET csrf then fresh login can replace stale cookies.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CSRF/Origin rejected or valid session with wrong current password; cookies and sessions preserved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Body exceeds 8192 bytes, including pre-cached bodies.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Admission/concurrency refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Configuration or storage unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SiteSession": []
+          },
+          {
+            "LoopbackSession": []
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "deleteCurrentAccount",
+        "description": "Cookie identity only. Basic Authorization from outer private-preview middleware is permitted but never grants account identity. Passive 401 never clears cookies; no auto-login on password change. All responses no-store.",
+        "responses": {
+          "204": {
+            "description": "Committed explicit operation; site session and CSRF cookies cleared."
+          },
+          "400": {
+            "description": "Malformed request or invalid new-password policy.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication rejected. Passive response does not modify cookies; GET csrf then fresh login can replace stale cookies.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CSRF/Origin rejected or valid session with wrong current password; cookies and sessions preserved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Body exceeds 8192 bytes, including pre-cached bodies.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Admission/concurrency refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Configuration or storage unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountError"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 512
+            },
+            "description": "Exact canonical APP_BASE_URL origin, no Host/Forwarded fallback."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "current_password"
+                ],
+                "properties": {
+                  "current_password": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SiteSession": [],
+            "CsrfProof": []
+          },
+          {
+            "LoopbackSession": [],
+            "CsrfProof": []
+          }
+        ]
+      }
     }
   },
   "components": {
@@ -103,7 +751,10 @@
               "unavailable",
               "forbidden",
               "limited",
-              "invalid_request"
+              "invalid_request",
+              "authentication_failed",
+              "reauthentication_failed",
+              "invalid_password"
             ]
           },
           "message": {
@@ -118,6 +769,80 @@
             "format": "uuid"
           }
         }
+      },
+      "AccountProfile": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "email"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "email": {
+            "type": "string",
+            "maxLength": 254
+          }
+        }
+      },
+      "CurrentAccount": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "account"
+        ],
+        "properties": {
+          "account": {
+            "$ref": "#/components/schemas/AccountProfile"
+          }
+        }
+      },
+      "LoginSuccess": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "account",
+          "csrf_token",
+          "expires_in"
+        ],
+        "properties": {
+          "account": {
+            "$ref": "#/components/schemas/AccountProfile"
+          },
+          "csrf_token": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "expires_in": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1800
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "SiteSession": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "__Host-raceatlas-session",
+        "description": "HTTPS canonical site host-only, Secure/HttpOnly/SameSite=Lax/Path=/. Server expiry authoritative. Never JSON or Authorization."
+      },
+      "LoopbackSession": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "raceatlas_session_dev",
+        "description": "Only explicit local/test HTTP loopback configuration. Never enabled in production."
+      },
+      "CsrfProof": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-CSRF-Token",
+        "description": "Non-bearer proof returned by CSRF bootstrap, bound to signed HttpOnly nonce cookie and current session cookie. Required also before login."
       }
     }
   }

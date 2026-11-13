@@ -446,7 +446,7 @@ def test_auth_openapi_foundation_matches_real_csrf_and_error_responses(app):
         Draft202012Validator(
             spec["components"]["schemas"][kind], format_checker=FormatChecker()
         ).validate(response.json)
-    assert list(spec["paths"]) == ["/api/v1/auth/csrf"]
+    assert "get" in spec["paths"]["/api/v1/auth/csrf"]
 
 
 def test_http_admission_does_not_change_public_catalog_epoch(seeded, database):

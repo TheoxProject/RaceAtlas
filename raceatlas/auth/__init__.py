@@ -16,7 +16,7 @@ from sqlalchemy import delete, func, select
 from raceatlas.models import Account, AuthSession, PasswordCredential
 from raceatlas.planning import PlanningError, normalize_email
 
-from .errors import AuthenticationFailed, InvalidPassword
+from .errors import AuthenticationFailed, InvalidPassword, ReauthenticationFailed
 from .passwords import dummy_verify, hash_password, password_bytes, verify_password
 
 ABSOLUTE_LIFETIME = timedelta(days=7)
@@ -148,10 +148,16 @@ def logout_all(session, token):
     _revoke_all(session, _credential(session, account.id))
 
 
-def change_password(session, token, current_password, new_password):
+def reauthenticate(session, token, current_password):
+    """Verify current secret under Account lock without minting another session."""
     account = resolve_session(session, token)
+    if not verify_password(_credential(session, account.id).password_hash, current_password):
+        raise ReauthenticationFailed()
+    return account
+
+
+def change_password(session, token, current_password, new_password):
+    account = reauthenticate(session, token, current_password)
     credential = _credential(session, account.id)
-    if not verify_password(credential.password_hash, current_password):
-        raise AuthenticationFailed()
     credential.password_hash = hash_password(new_password)
     _revoke_all(session, credential)

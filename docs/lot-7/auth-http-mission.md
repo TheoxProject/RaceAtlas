@@ -41,3 +41,9 @@ Developer retourne exactSHA/fichiers/interfaces/commandes exitcodes/résultats/r
 ## Gate et étapes de livraison
 
 B2 exact **b12d2c37405ac754ee2331b95c696b3bf71c5c47** APPROVE ciblé, Tester107PASS18,07s (89B2+18indépendants), CI43458142079 SUCCESS678backend197,29s/67frontend avec gardes source avant/après. Source libérée, Developer seul writer ; ce verdict ne se transfère pas à C. Premier jalon C0 : configuration effective fermée, CSRF, admission persistante et corpus local ; publier un candidat testable puis gel pour revue ciblée avant C1/C2. Les endpoints de session/email complets ne seront pas prétendus livrés par C0 seul.
+
+## Attribution C1 après gate C0
+
+C0 correctif exact **a2bf1d64cca54a2c0ae957b6bec62057e3299d47** APPROVE Tester15PASS11,12s et CI43465480107 SUCCESS725backend225,68s/67frontend, source avant/après confirmée. Historique35f : CI710PASS/7FAIL dûfixture URLmasquée ; correction conserveobjetURL et bornecache8KiB, pas assouplissementPG. C1 attribué seul depuisa2bf : login/me/logout/logoutall/passwordchange/delete, réauth sansmint, Cookie401invalide vscurrentPW403, admission/CSRFbranchés et commit/closeavantcookies, purgeprivée sanssource/autrui/globalbudget. C2routesemail/worker, savedAPI/ICS/UI exclus. PlanC1ignoré accepté, aucun verdictC0transféréauprochainSHA.
+
+Révision technique C1 du Coordinator : **toute401 passive ne modifie aucun cookie/nonce**, car une réponse ancienne pourrait effacer le cookie d’un login récent dans un autre onglet. Récupération GETcsrf→login remplace les cookies résiduels ; clear seulement sur succès explicites logout/global/change/delete après commit. Mauvaise réauth403 conserve cookies et sessions. Cette révision est exercée par réponse401 retardée après loginB, sans prétendre ordonner deux actions explicites volontairement concurrentes. [Handoff C1](auth-http-sessions-handoff.md), nouvelle revue/CI requises.

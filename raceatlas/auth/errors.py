@@ -11,3 +11,7 @@ class InvalidPassword(ValueError):
 class AuthenticationUnavailable(RuntimeError):
     def __init__(self):
         super().__init__("Authentication temporarily unavailable.")
+
+
+class ReauthenticationFailed(AuthenticationFailed):
+    """Session was valid, but current password was rejected; retain base message."""
