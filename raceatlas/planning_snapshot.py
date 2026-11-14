@@ -21,6 +21,8 @@ class PlanningLimits:
     saved_entries: int = 1000
     response_bytes: int = 2 * 1024 * 1024
     text_bytes: int = 16 * 1024
+    events: int = 1000
+    cache_pairs: int = 10000
 
     def __post_init__(self):
         if any(
@@ -29,6 +31,8 @@ class PlanningLimits:
                 (self.saved_entries, 1000),
                 (self.response_bytes, 2 * 1024 * 1024),
                 (self.text_bytes, 16 * 1024),
+                (self.events, 1000),
+                (self.cache_pairs, 10000),
             )
         ):
             raise ValueError("Invalid personal selection limits.")
@@ -116,7 +120,7 @@ def _document(saved, race):
     }
 
 
-def snapshot_documents(session, actor, *, entry_id=None, limits=None):
+def snapshot_documents(session, actor, *, entry_id=None, limits=None, calendar_only=False):
     limits = PlanningLimits() if limits is None else limits
     account_id = _actor_id(session, actor)
     statement = (
@@ -136,6 +140,8 @@ def snapshot_documents(session, actor, *, entry_id=None, limits=None):
         .order_by(SavedEntry.created_at, SavedEntry.id)
         .execution_options(populate_existing=True, planning_graph_snapshot=True)
     )
+    if calendar_only:
+        statement = statement.where(SavedEntry.status.in_(("planned", "registered")))
     if entry_id is not None:
         statement = statement.where(SavedEntry.id == _target_id(entry_id)).limit(1)
     else:

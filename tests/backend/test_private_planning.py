@@ -146,7 +146,7 @@ def test_auth_csrf_origin_no_actor_filters_or_calendar_stub(app, database, seede
     )
     assert write(client, target, {"status": "planned", "actor_id": "other"}).status_code == 400
     assert client.get(BASE + "?year=2027", base_url=ORIGIN).status_code == 400
-    assert client.get("/api/v1/me/calendar.ics", base_url=ORIGIN).status_code == 404
+    assert client.get("/api/v1/me/calendar.ics", base_url=ORIGIN).status_code == 200
     assert save(client, scopes(seeded)[0]).status_code == 200
     assert (
         client.get(

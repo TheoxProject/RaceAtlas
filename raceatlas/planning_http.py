@@ -1,4 +1,4 @@
-"""Cookie-authenticated private saved scopes; no calendar/ICS endpoint in PLAN-A."""
+"""Cookie-authenticated private saved scopes and static personal ICS."""
 
 from flask import Blueprint, request
 from sqlalchemy import func, select
@@ -8,6 +8,7 @@ from raceatlas.auth.admission import admit_http
 from raceatlas.auth.csrf import AuthRequestError, check_origin, parse_json, verify_request
 from raceatlas.auth.errors import AuthenticationFailed
 from raceatlas.auth.flows import AccountFlowSession
+from raceatlas.calendar_store import materialize_calendar
 from raceatlas.models import SavedEntry
 from raceatlas.planning import (
     PlanningError,
@@ -27,7 +28,7 @@ from raceatlas.planning_snapshot import (
 
 
 def register_planning_routes(app, runtime, boundary, error_handler):
-    blueprint = Blueprint("private_planning", __name__, url_prefix="/api/v1/me/saved-entries")
+    blueprint = Blueprint("private_planning", __name__, url_prefix="/api/v1/me")
     blueprint.before_request(boundary)
     blueprint.errorhandler(AuthRequestError)(error_handler)
     app.extensions["planning_limits"] = PlanningLimits()
@@ -83,7 +84,7 @@ def register_planning_routes(app, runtime, boundary, error_handler):
     def response(data):
         return app.response_class(data, mimetype="application/json")
 
-    @blueprint.get("")
+    @blueprint.get("/saved-entries")
     def saved_entries():
         prepare()
 
@@ -94,7 +95,7 @@ def register_planning_routes(app, runtime, boundary, error_handler):
 
         return response(run(read))
 
-    @blueprint.put("/by-scope/<scope_id>")
+    @blueprint.put("/saved-entries/by-scope/<scope_id>")
     def put(scope_id):
         body = prepare({"status"})
 
@@ -125,7 +126,7 @@ def register_planning_routes(app, runtime, boundary, error_handler):
 
         return response(run(save))
 
-    @blueprint.patch("/<entry_id>")
+    @blueprint.patch("/saved-entries/<entry_id>")
     def patch(entry_id):
         body = prepare({"status"})
 
@@ -138,10 +139,18 @@ def register_planning_routes(app, runtime, boundary, error_handler):
 
         return response(run(update))
 
-    @blueprint.delete("/<entry_id>")
+    @blueprint.delete("/saved-entries/<entry_id>")
     def delete(entry_id):
         prepare(set())
         run(lambda session, actor, limits: delete_saved_entry(session, actor, entry_id))
         return app.response_class(status=204)
+
+    @blueprint.get("/calendar.ics")
+    def calendar():
+        prepare()
+        data = run(materialize_calendar)
+        result = app.response_class(data, content_type="text/calendar; charset=utf-8")
+        result.headers["Content-Disposition"] = 'attachment; filename="raceatlas-planning.ics"'
+        return result
 
     app.register_blueprint(blueprint)

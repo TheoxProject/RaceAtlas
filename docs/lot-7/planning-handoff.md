@@ -1,5 +1,7 @@
 # PLAN-A — Handoff Developer
 
+Document historique du jalon A approuvé au SHA ae446a5. Pour le candidat final API+ICS, voir [handoff PLAN-A+B](planning-ics-handoff.md). Les mentions ICS absent décrivent uniquement ce jalon antérieur.
+
 Jalon API privée CRUD/liste et snapshot, branche `feature/private-planning`, [Draft PR13](https://github.com/TheoxProject/RaceAtlas/pull/13), base **87d7dd53efcdb144c38e2d3ef1f83c89e63654fc**. Ce document accompagne le commit candidat ; le SHA exact publié est communiqué au Coordinator au gel. Aucun verdict indépendant PLAN-A ou résultat CI du candidat n'est présumé. Auth backend intégré et approuvé au SHA da5743c500603a11366080e97cd2e76db7cbcb33, merge PR12 87d7dd53efcdb144c38e2d3ef1f83c89e63654fc et mainCI43515934267 SUCCESS791/67 : preuves réutilisées pour les modules auth inchangés, pas approbation de ce jalon.
 
 ## Livraison et interfaces

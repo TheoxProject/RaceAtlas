@@ -1,4 +1,17 @@
-# PLAN-A — Vérification locale Windows
+# PLAN-A+B — Vérification locale Windows
+
+## Candidat final ICS
+
+Sur les mêmes Python/PG/_test opt-in ci-dessous, commande réellement exécutée :
+
+```powershell
+& C:/Users/theop/.codex/worktrees/1a1e/RaceAtlas/.venv/Scripts/python.exe -m pytest tests/backend/test_planning_ics.py tests/backend/test_personal_calendar.py tests/backend/test_private_planning.py tests/backend/test_auth_http_sessions.py tests/backend/test_foundation.py tests/backend/test_catalog_options.py -q --tb=short --maxfail=3 --junitxml=.local-tools/plan-b-final.xml
+```
+
+**113 PASS97,59s**,21+21+19+29+20+3, migration upgrade/check/base/upgrade/check incluse. Après ce run, test `test_planning_ics.py::test_new_process_restart_host_and_timezone_do_not_change_uid_or_bytes` ajouté puis exécuté seul :1PASS3,47s (`.local-tools/plan-b-process-formatted.xml`), produit inchangé. Total114 via113+1. Schéma actuel **a74d915e3c02**, ne pas exécuter un ancien worktree contre cette base migrée. Ruff lint/format78, Node26contrats, planningrefs17, pipcheck/diff PASS. Parser dev-only icalendar7.3.0/dateutil4.0.0 installés via runtimepip --python, provenance/licences dans docs/third-party. GET/HEAD `/api/v1/me/calendar.ics` existe maintenant ; aucune UI/feed. [Handoff final](planning-ics-handoff.md). Ne pas relancer les113 verts pour un checkpoint documentaire.
+
+## Historique PLAN-A (avant ICS)
+
 
 Réutiliser Python3.12.14 de `C:/Users/theop/.codex/worktrees/1a1e/RaceAtlas/.venv/Scripts/python.exe`. PostgreSQL17.11 existant sur127.0.0.1:55434, cluster `.local-tools/pgdata-lot2-native`, PID38028 confirmé le14nov. Vérifier le statut et les processus avant les tests ; ne pas initdb, recréer ou arrêter globalement les processus. Base Developer `_test`, Reviewer `_review` distincte. Le schéma actuel reste **f61d338ab204**, aucune migration PLAN-A.
 
