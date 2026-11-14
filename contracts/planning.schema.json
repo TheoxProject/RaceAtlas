@@ -1,0 +1,580 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:raceatlas:contracts:private-planning:v1",
+  "title": "RaceAtlas private planning PLAN-A scoped DTOs",
+  "description": "All personal scopes, no implicit public filters. Target scope only; personal eligibility is not evaluated. UTF-8 text16KiB/response2MiB limits enforced before commit. No calendar export endpoint in A.",
+  "$defs": {
+    "Department": {
+      "enum": [
+        "01",
+        "03",
+        "07",
+        "15",
+        "26",
+        "38",
+        "42",
+        "43",
+        "63",
+        "69",
+        "73",
+        "74"
+      ]
+    },
+    "Category": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]{1,63}$"
+    },
+    "Coordinates": {
+      "type": "array",
+      "prefixItems": [
+        {
+          "type": "number",
+          "minimum": -180,
+          "maximum": 180
+        },
+        {
+          "type": "number",
+          "minimum": -90,
+          "maximum": 90
+        }
+      ],
+      "minItems": 2,
+      "maxItems": 2,
+      "items": false
+    },
+    "Location": {
+      "type": "object",
+      "properties": {
+        "commune_id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9_-]{2,63}$"
+        },
+        "insee_code": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[0-9]{5}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "commune_name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "department": {
+          "$ref": "#/$defs/Department"
+        },
+        "coordinates": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Coordinates"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "precision": {
+          "enum": [
+            "commune_center"
+          ]
+        },
+        "provenance": {
+          "enum": [
+            "synthetic",
+            "geo_api",
+            "verified_source"
+          ]
+        },
+        "geocoded_at": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "commune_id",
+        "insee_code",
+        "commune_name",
+        "department",
+        "coordinates",
+        "precision",
+        "provenance",
+        "geocoded_at"
+      ],
+      "additionalProperties": false
+    },
+    "Source": {
+      "type": "object",
+      "properties": {
+        "provider": {
+          "enum": [
+            "synthetic",
+            "ffc"
+          ]
+        },
+        "source_season": {
+          "type": "integer",
+          "minimum": 2000,
+          "maximum": 2200
+        },
+        "race_number": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_url": {
+          "type": "string",
+          "format": "uri"
+        },
+        "checked_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "provider",
+        "source_season",
+        "race_number",
+        "source_url",
+        "checked_at"
+      ],
+      "additionalProperties": false
+    },
+    "Restrictions": {
+      "type": "object",
+      "properties": {
+        "sex": {
+          "enum": [
+            "men",
+            "women",
+            "any",
+            "unknown"
+          ]
+        },
+        "min_age": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 120
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "max_age": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 120
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "age_reference": {
+          "enum": [
+            "season_end",
+            "event_date",
+            "unknown"
+          ]
+        },
+        "age_season": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 2000,
+              "maximum": 2200
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "engagers": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "other_text": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "sex",
+        "min_age",
+        "max_age",
+        "age_reference",
+        "age_season",
+        "engagers",
+        "other_text"
+      ],
+      "additionalProperties": false
+    },
+    "Rule": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9_-]{2,63}$"
+        },
+        "category_codes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Category"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "restrictions": {
+          "$ref": "#/$defs/Restrictions"
+        },
+        "raw_label": {
+          "type": "string",
+          "minLength": 1
+        },
+        "evidence_id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9_-]{2,63}$"
+        },
+        "normalization_version": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "id",
+        "category_codes",
+        "restrictions",
+        "raw_label",
+        "evidence_id",
+        "normalization_version"
+      ],
+      "additionalProperties": false
+    },
+    "Scope": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9_-]{2,63}$"
+        },
+        "kind": {
+          "enum": [
+            "entry_list",
+            "race"
+          ]
+        },
+        "source_list_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "identity_status": {
+          "enum": [
+            "verified",
+            "unverified",
+            "needs_review"
+          ]
+        },
+        "eligibility_status": {
+          "enum": [
+            "confirmed",
+            "unknown",
+            "ambiguous"
+          ]
+        },
+        "raw_label": {
+          "type": "string",
+          "minLength": 1
+        },
+        "rules": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Rule"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "source_list_id",
+        "identity_status",
+        "eligibility_status",
+        "raw_label",
+        "rules"
+      ],
+      "additionalProperties": false
+    },
+    "Race": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9_-]{2,63}$"
+        },
+        "competition_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9_-]{2,63}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "discipline": {
+          "enum": [
+            "road",
+            "gravel",
+            "mtb",
+            "cyclocross"
+          ]
+        },
+        "types": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "road_race",
+              "time_trial",
+              "gravel_race",
+              "xco",
+              "enduro",
+              "downhill",
+              "cyclocross"
+            ]
+          },
+          "minItems": 0,
+          "uniqueItems": true
+        },
+        "organizer": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "start_date": {
+          "type": "string",
+          "format": "date"
+        },
+        "end_date": {
+          "type": "string",
+          "format": "date"
+        },
+        "status": {
+          "enum": [
+            "scheduled",
+            "cancelled",
+            "postponed",
+            "unknown"
+          ]
+        },
+        "source_presence": {
+          "enum": [
+            "present",
+            "missing",
+            "to_verify"
+          ]
+        },
+        "location": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Location"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "department": {
+          "$ref": "#/$defs/Department"
+        },
+        "source": {
+          "$ref": "#/$defs/Source"
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "personal_eligibility": {
+          "enum": [
+            "not_evaluated"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "competition_id",
+        "name",
+        "discipline",
+        "types",
+        "organizer",
+        "start_date",
+        "end_date",
+        "status",
+        "source_presence",
+        "location",
+        "department",
+        "source",
+        "revision",
+        "personal_eligibility"
+      ],
+      "additionalProperties": false
+    },
+    "SavedItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "scope_id",
+        "status",
+        "revision",
+        "created_at",
+        "updated_at",
+        "race",
+        "scope"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/Id"
+        },
+        "scope_id": {
+          "$ref": "#/$defs/Id"
+        },
+        "status": {
+          "enum": [
+            "interested",
+            "planned",
+            "registered",
+            "completed"
+          ]
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "race": {
+          "$ref": "#/$defs/Race"
+        },
+        "scope": {
+          "$ref": "#/$defs/Scope"
+        }
+      }
+    },
+    "SavedList": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "items"
+      ],
+      "properties": {
+        "items": {
+          "type": "array",
+          "maxItems": 1000,
+          "items": {
+            "$ref": "#/$defs/SavedItem"
+          }
+        }
+      }
+    },
+    "SavedResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "item"
+      ],
+      "properties": {
+        "item": {
+          "$ref": "#/$defs/SavedItem"
+        }
+      }
+    },
+    "PlanningError": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "fields",
+        "request_id"
+      ],
+      "properties": {
+        "code": {
+          "enum": [
+            "not_found",
+            "invalid_status",
+            "selection_limit",
+            "authentication_failed",
+            "forbidden",
+            "limited",
+            "unavailable",
+            "invalid_request"
+          ]
+        },
+        "message": {
+          "type": "string"
+        },
+        "fields": {
+          "type": "array",
+          "maxItems": 0
+        },
+        "request_id": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    },
+    "Id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64
+    }
+  }
+}

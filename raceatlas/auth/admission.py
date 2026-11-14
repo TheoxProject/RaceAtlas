@@ -57,6 +57,7 @@ def admit_http(engine, rate_key, action, peer, *, address=None, policy=None):
             "proof",
             "sensitive",
             "read",
+            "planning",
         }
     ):
         raise AuthConfigurationError()
