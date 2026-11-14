@@ -5,8 +5,15 @@ import { MapView } from './MapView.jsx';
 import { formatDate, RaceDetails } from './RaceDetails.jsx';
 import { Calendar, CalendarPeriodControls } from './Calendar.jsx';
 import { projectCalendar, selectCalendarMonth } from './calendar.js';
+import { AccountPanel } from './AccountPanel.jsx';
+import { useAccount } from './useAccount.js';
+import { clearAccountAction } from './accountBootstrap.js';
 
-export function App() {
+export function App({ initialAccountAction = null }) {
+  const [account, accountController] = useAccount();
+  const [accountOpen, setAccountOpen] = useState(Boolean(initialAccountAction)), [accountAction, setAccountAction] = useState(initialAccountAction);
+  const discardProof = () => { clearAccountAction(accountAction); setAccountAction(null); };
+  const closeAccount = () => { setAccountOpen(false); discardProof(); accountController.cancel(); };
   const [period, setPeriod] = useState(initialPeriod), [filters, setFilters] = useState(initialFilters);
   const [mode, setMode] = useState('altitude'), [attempt, setAttempt] = useState(0);
   const [terrainFailed, setTerrainFailed] = useState(false);
@@ -45,7 +52,7 @@ export function App() {
   const onCenter = point => { setFilters(value => ({ ...value, geography: { mode: 'radius', center: point, radius_km: value.geography.radius_km || 50 } })); setChooseCenter(false); };
   const allSynthetic = items.length > 0 && items.every(item => item.race.source.provider === 'synthetic');
   return <main className="atlas-app">
-    <header className="app-header"><a href="/" className="brand" aria-label="RaceAtlas, accueil"><span className="brand-mark">↗</span>Race<span>Atlas</span></a><span className="region-label">AUVERGNE-RHÔNE-ALPES <span>12 départements · un terrain de jeu</span></span><span className="header-tag">Trouvez votre prochaine ligne de départ.</span></header>
+    <header className="app-header"><a href="/" className="brand" aria-label="RaceAtlas, accueil"><span className="brand-mark">↗</span>Race<span>Atlas</span></a><span className="region-label">AUVERGNE-RHÔNE-ALPES <span>12 départements · un terrain de jeu</span></span><span className="header-tag">Trouvez votre prochaine ligne de départ.</span><button className="account-entry" onClick={() => { setAccountOpen(true); accountController.refresh(); }}>Compte</button></header>
     <div className="app-body">
       <aside className={`filters-panel ${filtersOpen ? 'is-open' : ''}`} aria-label="Filtres des courses">
         <div className="panel-heading"><div><p className="eyebrow">À vous de jouer</p><h1>Votre prochaine<br />course commence ici.</h1></div><button className="mobile-only text-button" onClick={() => setFiltersOpen(false)} aria-label="Fermer les filtres">✕</button></div>
@@ -83,5 +90,6 @@ export function App() {
         <footer className="workspace-footer"><span><i />{allSynthetic ? 'Données synthétiques · courses fictives' : 'Centres de communes · départs à vérifier'}</span>{data?.unlocated_count > 0 && <button className="text-button" onClick={() => { setDayTitle(isRadius ? 'Localisations à confirmer' : 'Courses non localisées'); setGroupIds([...unlocated]); setSelected(null); setExplore(true); }}>{data.unlocated_count} localisation{data.unlocated_count > 1 && 's'} à préciser ↗</button>}<span>{data?.coverage.last_successful_sync_at ? `Dernière synchronisation réussie : ${formatDate(data.coverage.last_successful_sync_at.slice(0, 10))}` : 'Couverture de la source non établie'}</span></footer>
       </section>
     </div>
+    <AccountPanel open={accountOpen} action={accountAction} account={account} controller={accountController} onClose={closeAccount} onProofUsed={discardProof} />
   </main>;
 }

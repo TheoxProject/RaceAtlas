@@ -11,7 +11,7 @@
 | FFC-07 | Robots, validateurs HTTP, flux incrémental | Robots vérifié ponctuellement le11novembre ; règles respectées, aucun droit de réutilisation déduit. Validateurs/flux incrémental non établis globalement. [Qualification](../readiness/ffc-qualification.md) |
 | FFC-08 | Compatibilité réelle du dialecte HTML synthétique | Échecs reproduits sur calendrier et fiche ciblés : layout_changed/debut et html_structure. Bloque activation de l'import live ; fixtures et travaux indépendants autorisés. [Preuves et suite](../readiness/ffc-qualification.md) |
 | OPS-01 | Comptes Render/Neon/GitHub et plafonds financiers effectifs | Non testés ; offres exclusivement gratuites ; garde-fous et approbation propriétaire avant activation |
-| OPS-02 | Expéditeur et délivrabilité d'email de récupération | Non désignés/testés ; API HTTPS gratuite nécessaire ; aucun email de changement de course |
+| OPS-02 | Expéditeur et délivrabilité d'email de récupération | Resend Free choisi ; domaine email déclaré raceatlas.ucthonon.fr et From cible RaceAtlas <notifications@raceatlas.ucthonon.fr>. DNS/clé/envoi/délivrabilité non validés ; aucune activation autorisée, aucun email de changement de course |
 | OPS-03 | Support de sauvegarde et restauration | À désigner et tester avant données personnelles réelles |
 | MAP-01 | Performance WebGL, mobile, DEM indisponible et licences finales | Lot5 intégré avec WebGL réel, mobile390px, pannes DEM/fond/WebGL et crédits vérifiés. Qualification Summit live et matériel mobile/régional/licences finales restent à achever avant ouverture publique |
 

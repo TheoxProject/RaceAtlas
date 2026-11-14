@@ -35,6 +35,7 @@ def token(client):
 @pytest.mark.parametrize(
     "path,method",
     [
+        ("/api/v1/me", "get"),
         ("/api/v1/me/saved-entries", "get"),
         ("/api/v1/me/calendar.ics", "get"),
         ("/api/v1/me/calendar.ics", "head"),
@@ -145,3 +146,24 @@ def test_html_shell_antiframing_and_referrer_headers_are_narrow(app, tmp_path):
     assert response.headers["Content-Security-Policy"] == "frame-ancestors 'none'"
     assert response.headers["Referrer-Policy"] == "no-referrer"
     assert "Content-Security-Policy" not in app.test_client().get("/api/health/live").headers
+
+
+def test_preflight_b_a_b_cannot_attest_actor_a_with_proof_bound_to_b(app, database, seeded):
+    first, alice = actor_client(app, database)
+    second, _ = actor_client(app, database, "bob@example.test")
+    proof_b = token(second)  # GETcsrf has captured B before the next tab restores A.
+    settings = app.extensions["auth"].settings
+    nonce_b = second.get_cookie(settings.csrf_cookie, domain="127.0.0.1").value
+    first.set_cookie(settings.csrf_cookie, nonce_b, domain="127.0.0.1")
+    me_a = first.get("/api/v1/me", base_url=ORIGIN)
+    assert me_a.json["account"]["id"] == alice  # legacy no-header read still compatible
+    response = first.get("/api/v1/me", base_url=ORIGIN, headers={"X-CSRF-Token": proof_b})
+    assert response.status_code == 403  # cannot combine proofB with identityA as preflight
+    assert "Set-Cookie" not in response.headers
+    # B's own proof remains valid under B; refusal above must stop UI before this intent.
+    assert (
+        second.get(
+            "/api/v1/me/calendar.ics", base_url=ORIGIN, headers={"X-CSRF-Token": proof_b}
+        ).status_code
+        == 200
+    )

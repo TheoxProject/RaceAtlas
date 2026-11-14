@@ -21,9 +21,9 @@ Fichiers autorisés : frontend bootstrap/main/App, nouveaux client/contrôleur/f
 
 ## Liaison des lectures à l'intention UI
 
-Extension technique minimale et compatible : `verify_request(..., *, mutation=True)` conserve son défaut pour toutes les mutations. En mode False, Origin absent est permis, mais Origin fourni et Sec-Fetch-Site restent contrôlés. Dans GET saved-entries et GET/HEAD calendar.ics, si X-CSRF-Token est **présent**, vérifier son nonce/MAC/expiration/liaison au cookie avant admission/session/snapshot/ledger. Header vide ou invalide =>403, aucun fallback. Sans header, clients GET actuels inchangés. Le proof ne confère aucune identité sans cookie.
+Extension technique minimale et compatible : `verify_request(..., *, mutation=True)` conserve son défaut pour toutes les mutations. En mode False, Origin absent est permis, mais Origin fourni et Sec-Fetch-Site restent contrôlés. Dans GETme, GET saved-entries et GET/HEAD calendar.ics, si X-CSRF-Token est **présent**, vérifier son nonce/MAC/expiration/liaison au cookie avant admission/session/snapshot/ledger. Header vide ou invalide =>403, aucun fallback. Sans header, clients GET actuels inchangés. Le proof ne confère aucune identité sans cookie.
 
-UI : CSRF → GETme attendu → GET données/export avec le même proof, puis garde génération avant publication/download. Un switch A→B entre preflight et GET doit refuser avant de lire B ; restaurer A ensuite ne transforme pas ce refus en succès. Pas besoin de nouveau bearer, acteur client, token URL ou identifiant dans l'ICS. Documenter le header optionnel dans le contrat de lecture. Ce raccord répond au nouveau besoin d'intention UI, sans prétendre à un défaut d'autorisation historique du backend.
+UI : CSRF → GETme attendu portant CE proof → GET données/export avec le même proof, puis garde génération avant publication/download. Un switch A→B entre preflight et GET doit refuser avant de lire B ; restaurer A ensuite ne transforme pas ce refus en succès. Pas besoin de nouveau bearer, acteur client, token URL ou identifiant dans l'ICS. Documenter le header optionnel dans le contrat de lecture. Ce raccord répond au nouveau besoin d'intention UI, sans prétendre à un défaut d'autorisation historique du backend.
 
 ## UI-2 — saison et compte complet
 
@@ -40,7 +40,7 @@ Vrai navigateur React **compilé → Flask → PostgreSQL jetable**, Development
 
 Desktop et mobile390px : clavier complet/Escape/focus restauré, labels/live errors, scroll jusqu'aux dernières actions, pas overflow. Vérifier caméra noninitiale/zoom/Summit60°, période/filtres/sélection avant/après ; fixture DateProxy seulement (pas page.clock.set_fixed_time). Providers carte/terrain interceptés offline selon map_support existant. Captures synthétiques seulement, aucun HAR ou log de headers/bodies secrets. Arrêter serveurs/browsers/workers puis runtime.close avant Engine.dispose.
 
-Contrats Node, lint/format appropriés, frontend unit/lint/build, PostgreSQL ciblé, browser réel et non-régression publique ; CI complète à chaque push avec gardes SHA. Geler UI-1 pour revue ciblée puis UI-2 pour acceptation complète finale ; toute modification suivie renouvelle revue/CI. Fusion seulement après gates AGENTS.md et mainCI vert.
+Contrats Node, lint/format appropriés, frontend unit/lint/build, PostgreSQL ciblé, browser réel et non-régression publique ; CI développement ciblée à chaque push avec gardes SHA ; CI complète nommée integrated obligatoire au head final avant fusion et sur main après merge. Un development vert ne suffit jamais à la fusion. Geler UI-1 pour revue ciblée puis UI-2 pour acceptation complète finale ; toute modification suivie renouvelle revue/CI. Fusion seulement après gates AGENTS.md et mainCI vert.
 
 ## Restrictions et limites
 
