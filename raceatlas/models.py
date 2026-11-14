@@ -406,6 +406,25 @@ class SavedEntry(Base):
     scope: Mapped[EntryScope] = relationship()
 
 
+class PersonalCalendarEventStore(Base):
+    """Private materialized ICS metadata; survives unsave, never contains payloads."""
+
+    __tablename__ = "personal_calendar_event_store"
+    __table_args__ = (
+        CheckConstraint("sequence BETWEEN 0 AND 2147483647", name="sequence"),
+        CheckConstraint("fingerprint ~ '^[a-f0-9]{64}$'", name="fingerprint"),
+    )
+    account_id: Mapped[str] = mapped_column(
+        ForeignKey("account.id", ondelete="CASCADE"), primary_key=True
+    )
+    scope_id: Mapped[str] = mapped_column(
+        ForeignKey("entry_scope.id", ondelete="CASCADE"), primary_key=True, index=True
+    )
+    fingerprint: Mapped[str] = mapped_column(String(64))
+    stamp: Mapped[datetime] = mapped_column(PrivateUTCDateTime())
+    sequence: Mapped[int] = mapped_column(BigInteger)
+
+
 class PasswordCredential(Base):
     __tablename__ = "password_credential"
     __table_args__ = (

@@ -9,6 +9,7 @@ from flask import Blueprint, g, jsonify, request
 
 from raceatlas.email import EmailService
 from raceatlas.email.providers import DevelopmentEmailProvider, ResendEmailProvider
+from raceatlas.planning_http import register_planning_routes
 
 from .admission import AdmissionPolicy, admit_http
 from .csrf import AuthRequestError, check_origin, issue, set_cookie
@@ -133,4 +134,5 @@ def init_auth(app):
 
     register_session_routes(app, blueprint, runtime, account_boundary, account_error)
     register_email_routes(app, blueprint, runtime, account_error)
+    register_planning_routes(app, runtime, account_boundary, account_error)
     app.register_blueprint(blueprint)

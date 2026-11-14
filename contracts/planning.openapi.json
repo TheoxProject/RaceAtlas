@@ -1,0 +1,707 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "RaceAtlas private saved scopes",
+    "version": "1.0.0",
+    "description": "Private cookie-authenticated saved scopes and static personal planned/registered calendar. No implicit public-map filters. Registered is user-declared."
+  },
+  "paths": {
+    "/api/v1/me/saved-entries": {
+      "get": {
+        "parameters": [],
+        "security": [
+          {
+            "SiteSession": []
+          },
+          {
+            "LoopbackSession": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Committed result; no session token, no-store.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "planning.schema.json#/$defs/SavedList"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed request or invalid status after ownership check.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "planning.schema.json#/$defs/PlanningError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid session; passive, no cookie changes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "planning.schema.json#/$defs/PlanningError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origin/CSRF rejected.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "planning.schema.json#/$defs/PlanningError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Foreign/nonexistent/malformed target, same generic error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "planning.schema.json#/$defs/PlanningError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Creation/list/response/text limit exceeded, no truncation or partial commit.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "planning.schema.json#/$defs/PlanningError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Independent admission/concurrency refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "planning.schema.json#/$defs/PlanningError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Accounts disabled/incomplete or storage unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "planning.schema.json#/$defs/PlanningError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/saved-entries/by-scope/{scope_id}": {
+      "put": {
+        "parameters": [
+          {
+            "name": "scope_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            }
+          },
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Exact canonical site origin, no Host/Forwarded fallback."
+          }
+        ],
+        "security": [
+          {
+            "SiteSession": [],
+            "CsrfProof": []
+          },
+          {
+            "LoopbackSession": [],
+            "CsrfProof": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Committed result; no session token, no-store.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "planning.schema.json#/$defs/SavedResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed request or invalid status after ownership check.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "planning.schema.json#/$defs/PlanningError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid session; passive, no cookie changes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "planning.schema.json#/$defs/PlanningError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origin/CSRF rejected.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "planning.schema.json#/$defs/PlanningError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Foreign/nonexistent/malformed target, same generic error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "planning.schema.json#/$defs/PlanningError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Creation/list/response/text limit exceeded, no truncation or partial commit.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "planning.schema.json#/$defs/PlanningError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Independent admission/concurrency refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "planning.schema.json#/$defs/PlanningError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Accounts disabled/incomplete or storage unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "planning.schema.json#/$defs/PlanningError"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "status"
+                ],
+                "properties": {
+                  "status": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/saved-entries/{entry_id}": {
+      "patch": {
+        "parameters": [
+          {
+            "name": "entry_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            }
+          },
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Exact canonical site origin, no Host/Forwarded fallback."
+          }
+        ],
+        "security": [
+          {
+            "SiteSession": [],
+            "CsrfProof": []
+          },
+          {
+            "LoopbackSession": [],
+            "CsrfProof": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Committed result; no session token, no-store.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "planning.schema.json#/$defs/SavedResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed request or invalid status after ownership check.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "planning.schema.json#/$defs/PlanningError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid session; passive, no cookie changes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "planning.schema.json#/$defs/PlanningError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origin/CSRF rejected.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "planning.schema.json#/$defs/PlanningError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Foreign/nonexistent/malformed target, same generic error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "planning.schema.json#/$defs/PlanningError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Creation/list/response/text limit exceeded, no truncation or partial commit.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "planning.schema.json#/$defs/PlanningError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Independent admission/concurrency refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "planning.schema.json#/$defs/PlanningError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Accounts disabled/incomplete or storage unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "planning.schema.json#/$defs/PlanningError"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "status"
+                ],
+                "properties": {
+                  "status": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "parameters": [
+          {
+            "name": "entry_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            }
+          },
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Exact canonical site origin, no Host/Forwarded fallback."
+          }
+        ],
+        "security": [
+          {
+            "SiteSession": [],
+            "CsrfProof": []
+          },
+          {
+            "LoopbackSession": [],
+            "CsrfProof": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Committed result; no session token, no-store."
+          },
+          "400": {
+            "description": "Malformed request or invalid status after ownership check.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "planning.schema.json#/$defs/PlanningError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid session; passive, no cookie changes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "planning.schema.json#/$defs/PlanningError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origin/CSRF rejected.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "planning.schema.json#/$defs/PlanningError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Foreign/nonexistent/malformed target, same generic error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "planning.schema.json#/$defs/PlanningError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Creation/list/response/text limit exceeded, no truncation or partial commit.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "planning.schema.json#/$defs/PlanningError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Independent admission/concurrency refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "planning.schema.json#/$defs/PlanningError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Accounts disabled/incomplete or storage unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "planning.schema.json#/$defs/PlanningError"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [],
+                "properties": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/calendar.ics": {
+      "get": {
+        "security": [
+          {
+            "SiteSession": []
+          },
+          {
+            "LoopbackSession": []
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Malformed request or invalid status after ownership check.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "planning.schema.json#/$defs/PlanningError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid session; passive, no cookie changes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "planning.schema.json#/$defs/PlanningError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origin/CSRF rejected.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "planning.schema.json#/$defs/PlanningError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Creation/list/response/text limit exceeded, no truncation or partial commit.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "planning.schema.json#/$defs/PlanningError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Independent admission/concurrency refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "planning.schema.json#/$defs/PlanningError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Accounts disabled/incomplete or storage unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "planning.schema.json#/$defs/PlanningError"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Static personal calendar, committed metadata and closed Session before response. All-day end-exclusive events. HEAD materializes metadata but sends no body. No-store; attachment raceatlas-planning.ics.",
+            "headers": {
+              "Content-Disposition": {
+                "schema": {
+                  "type": "string",
+                  "const": "attachment; filename=\"raceatlas-planning.ics\""
+                }
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "text/calendar": {
+                "schema": {
+                  "type": "string",
+                  "description": "RFC5545 UTF8 CRLF, <=75 octets per folded physical line. No METHOD/invites/remote resources. Bound to2MiB,1000 events,16KiB emitted text field. Metadata cache retained until account/scope purge, max10000 pairs."
+                }
+              }
+            }
+          }
+        }
+      },
+      "head": {
+        "security": [
+          {
+            "SiteSession": []
+          },
+          {
+            "LoopbackSession": []
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Malformed request or invalid status after ownership check.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "planning.schema.json#/$defs/PlanningError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid session; passive, no cookie changes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "planning.schema.json#/$defs/PlanningError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origin/CSRF rejected.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "planning.schema.json#/$defs/PlanningError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Creation/list/response/text limit exceeded, no truncation or partial commit.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "planning.schema.json#/$defs/PlanningError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Independent admission/concurrency refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "planning.schema.json#/$defs/PlanningError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Accounts disabled/incomplete or storage unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "planning.schema.json#/$defs/PlanningError"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Static personal calendar, committed metadata and closed Session before response. All-day end-exclusive events. HEAD materializes metadata but sends no body. No-store; attachment raceatlas-planning.ics.",
+            "headers": {
+              "Content-Disposition": {
+                "schema": {
+                  "type": "string",
+                  "const": "attachment; filename=\"raceatlas-planning.ics\""
+                }
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "text/calendar": {
+                "schema": {
+                  "type": "string",
+                  "description": "RFC5545 UTF8 CRLF, <=75 octets per folded physical line. No METHOD/invites/remote resources. Bound to2MiB,1000 events,16KiB emitted text field. Metadata cache retained until account/scope purge, max10000 pairs."
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "SiteSession": {
+        "$ref": "auth.openapi.json#/components/securitySchemes/SiteSession"
+      },
+      "LoopbackSession": {
+        "$ref": "auth.openapi.json#/components/securitySchemes/LoopbackSession"
+      },
+      "CsrfProof": {
+        "$ref": "auth.openapi.json#/components/securitySchemes/CsrfProof"
+      }
+    }
+  }
+}
