@@ -27,6 +27,8 @@ UI : CSRF → GETme attendu portant CE proof → GET données/export avec le mê
 
 ## UI-2 — saison et compte complet
 
+**Découpage attribué : UI-2A sauvegardes par scope + Ma saison (en cours), puis gate ciblé ; UI-2B export ICS + opérations sensibles et acceptation finale complète (TODO, non attribué).** Gate UI-1 acquis exact bbc4e1f09ddb72a8fb4f9d42d08fa712ceb56022 : APPROVE ciblé complet, CI43625467407 development290backend266,47s/85frontend, gardes exactes.
+
 - Actions pour LE entry_scope affiché : interested, planned, registered, completed, suppression explicite. Libellés français cohérents (Intéressé, Prévue, Inscrit, Terminée). « Inscrit » déclaré par l'utilisateur, pas vérifié FFC. Anonyme : invitation connexion puis nouvelle action explicite, jamais autosave différé.
 - Ma saison montre toutes les sauvegardes du compte, sans filtres publics. Détails à partir du snapshot privé du seul scope, règles/restrictions/provenance/incertitudes/localisation conservées ; pas admissibilité inventée ni fusion de scopes.
 - Export explicite ICS, planned+registered (« Prévues et Inscrit »), fichier statique sans feed ni nouvelles options. Requête privée liée au contexte ci-dessus, status/type/taille 2MiB vérifiés ; Blob URL éphémère révoquée, nom exact `raceatlas-planning.ics`, aucune publication de réponse obsolète. Expliquer qu'un import antérieur ne se synchronise pas automatiquement.

@@ -1,4 +1,9 @@
-# UI-1 — Handoff ciblé PR14
+# UI-1/UI-2A — Handoff PR14
+
+## UI-2A WIP, pas gel final
+
+Gate UI-1 acquis exactbbc4e1f09ddb72a8fb4f9d42d08fa712ceb56022 : APPROVE ciblé complet, CI43625467407 development290backend266,47s/85frontend. UI-2A scope/saison attribué, UI-2B export/sensibles TODO. Store propriétaire entries, ticket distinct contextEpoch, purge immédiate/lease après await/écritures server-authoritative ; ScopeSaveActions exacts et Ma saison DTO seulscope, pas filtre public.13clientUI1+8store+3composants+5dialog+9App PASS ciblés ; lint/build3,51s PASS. Deux browsers2A sont encore locaux non exécutés/non livrés dans ce checkpoint ; ne pas prétendre acceptation. Whitelist screenshot ajoute seulement season-desktop/mobile, gardes et rétention inchangés. Prochaineaction browsercarte/calendrier réel puis gel à SHA suivant.
+
 
 ## UI1-F1 cycle1 (14nov)
 

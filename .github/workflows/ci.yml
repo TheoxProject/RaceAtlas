@@ -119,7 +119,7 @@ jobs:
               cp -- "$source" "$RUNNER_TEMP/raceatlas-results/screenshots/calendar-$name.png"
             fi
           done
-          for name in dialog-desktop reset-form-mobile account-reset account-mobile; do
+          for name in dialog-desktop reset-form-mobile account-reset account-mobile season-desktop season-mobile; do
             source=".local-tools/accounts-ui-screenshots/$name.png"
             if [[ -f "$source" && ! -L "$source" ]]; then
               cp -- "$source" "$RUNNER_TEMP/raceatlas-results/screenshots/accounts-$name.png"

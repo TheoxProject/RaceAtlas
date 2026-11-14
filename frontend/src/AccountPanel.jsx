@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { asciiEmailError, newPasswordError } from './accountBootstrap.js';
 import './account.css';
+import { SeasonPanel } from './SeasonPanel.jsx';
 
-const TITLES = { login: 'Se connecter', register: 'Créer un compte', resend: 'Renvoyer la confirmation', forgot: 'Mot de passe oublié', confirm: 'Confirmer mon adresse', reset: 'Choisir un nouveau mot de passe', invalid: 'Lien invalide', member: 'Mon compte' };
+const TITLES = { login: 'Se connecter', register: 'Créer un compte', resend: 'Renvoyer la confirmation', forgot: 'Mot de passe oublié', confirm: 'Confirmer mon adresse', reset: 'Choisir un nouveau mot de passe', invalid: 'Lien invalide', member: 'Mon compte', season: 'Ma saison' };
 function errorMessage(error, mode) {
   if (error.code === 'context_changed') return 'Le compte actif a changé. Vérifiez le compte affiché puis recommencez votre action.';
   if (error.code === 'invalid_proof') return 'Ce lien est invalide, expiré ou déjà utilisé. Demandez un nouveau message.';
@@ -65,8 +66,9 @@ function Contents({ action, account, controller, onProofUsed }) {
     <div className="account-context" aria-live="polite">{account.status === 'unknown' ? 'Vérification du compte…' : account.account ? <>Connecté comme <strong>{account.account.email}</strong>.</> : account.status === 'unavailable' ? 'Comptes indisponibles pour le moment.' : 'Vous n’êtes pas connecté.'}</div>
     {account.message && <p className="account-message" role="status">{account.message}</p>}
     {account.error && <div><p className="account-error" role="alert">{errorMessage(account.error, mode)}</p><button className="text-button" disabled={account.busy} onClick={() => controller.refresh()}>Actualiser le compte</button></div>}
-    {mode === 'invalid' ? <p role="alert">Ce lien ne contient pas une preuve valide. Ouvrez un lien complet récent ou demandez un nouveau message.</p> : mode === 'member' ? <p>Votre connexion est active. Fermez ce panneau pour continuer à explorer les courses.</p> : <AccountForm key={mode} mode={mode} proof={mode === action?.kind ? action.proof : undefined} account={account} controller={controller} onProofUsed={finishProof} />}
+    {mode === 'season' && account.account ? <SeasonPanel account={account} controller={controller} /> : mode === 'invalid' ? <p role="alert">Ce lien ne contient pas une preuve valide. Ouvrez un lien complet récent ou demandez un nouveau message.</p> : mode === 'member' ? <p>Votre connexion est active. Fermez ce panneau pour continuer à explorer les courses.</p> : <AccountForm key={mode} mode={mode} proof={mode === action?.kind ? action.proof : undefined} account={account} controller={controller} onProofUsed={finishProof} />}
     <nav className="account-navigation" aria-label="Actions du compte">
+      {account.account && mode !== 'season' && <button className="text-button" disabled={account.busy || account.revalidating} onClick={() => navigate('season')}>Ma saison</button>}
       {mode !== 'login' && <button className="text-button" disabled={account.busy} onClick={() => navigate('login')}>{account.account ? 'Utiliser un autre compte' : 'Déjà un compte ? Se connecter'}</button>}
       {mode !== 'register' && <button className="text-button" disabled={account.busy} onClick={() => navigate('register')}>Créer un compte</button>}
       {mode !== 'resend' && <button className="text-button" disabled={account.busy} onClick={() => navigate('resend')}>Renvoyer la confirmation</button>}
@@ -76,12 +78,15 @@ function Contents({ action, account, controller, onProofUsed }) {
 }
 
 export function AccountPanel({ open, action, account, controller, onClose, onProofUsed }) {
-  const dialog = useRef(null);
+  const dialog = useRef(null), opener = useRef(null);
   useEffect(() => {
     if (open) {
-      if (!dialog.current.open) dialog.current.showModal();
+      if (!dialog.current.open) { opener.current = document.activeElement; dialog.current.showModal(); }
       if (!dialog.current.contains(document.activeElement)) dialog.current.querySelector('button')?.focus();
-    } else if (dialog.current.open) dialog.current.close();
+    } else if (dialog.current.open) {
+      dialog.current.close();
+      (opener.current?.isConnected ? opener.current : document.querySelector('.account-entry'))?.focus();
+    }
   }, [open, account.account?.id, action?.kind]);
   return <dialog ref={dialog} className="account-dialog" aria-labelledby="account-title" onCancel={event => { event.preventDefault(); onClose(); }} onClose={() => { if (open) onClose(); }}>
     {open && <><button className="account-close text-button" aria-label="Fermer le compte" onClick={onClose}>Fermer ✕</button><Contents key={action?.kind || account.account?.id || 'guest'} action={action} account={account} controller={controller} onProofUsed={onProofUsed} /></>}
