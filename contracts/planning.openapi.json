@@ -8,7 +8,18 @@
   "paths": {
     "/api/v1/me/saved-entries": {
       "get": {
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "description": "Optional read-intent proof bound to HttpOnly nonce and current session cookie. If present, it must be valid, including on HEAD; empty/malformed/expired/mismatched proof returns403 before private data/ledger. Without this header existing GET clients are unchanged. Origin may be absent on reads, but a supplied Origin must be canonical. Cookie is the only bearer.",
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            }
+          }
+        ],
         "security": [
           {
             "SiteSession": []
@@ -590,7 +601,19 @@
               }
             }
           }
-        }
+        },
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "description": "Optional read-intent proof bound to HttpOnly nonce and current session cookie. If present, it must be valid, including on HEAD; empty/malformed/expired/mismatched proof returns403 before private data/ledger. Without this header existing GET clients are unchanged. Origin may be absent on reads, but a supplied Origin must be canonical. Cookie is the only bearer.",
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            }
+          }
+        ]
       },
       "head": {
         "security": [
@@ -687,7 +710,19 @@
               }
             }
           }
-        }
+        },
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "description": "Optional read-intent proof bound to HttpOnly nonce and current session cookie. If present, it must be valid, including on HEAD; empty/malformed/expired/mismatched proof returns403 before private data/ledger. Without this header existing GET clients are unchanged. Origin may be absent on reads, but a supplied Origin must be canonical. Cookie is the only bearer.",
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            }
+          }
+        ]
       }
     }
   },
