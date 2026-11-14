@@ -57,7 +57,10 @@ def register_planning_routes(app, runtime, boundary, error_handler):
 
     def prepare(fields=None):
         if fields is None:
-            check_origin(runtime.settings, request, mutation=False)
+            if "X-CSRF-Token" in request.headers:
+                verify_request(runtime.settings, request, mutation=False)
+            else:
+                check_origin(runtime.settings, request, mutation=False)
             return None
         verify_request(runtime.settings, request)
         return parse_json(request, fields)

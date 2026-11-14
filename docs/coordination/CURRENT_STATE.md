@@ -1,12 +1,12 @@
 # Point de reprise RaceAtlas
 
-**UTC 2026-11-14T08:52Z — lot 7, ACC-UI cadrage initial avant transfert Developer.**
+**UTC 2026-11-14T08:52Z — lot 7, ACC-UI UI-1 IN_PROGRESS après transfert Developer.**
 
 ## État et prochaine action
 
 Branche **feature/accounts-ui**, checkout isolé **C:/Users/theop/.codex/worktrees/add4/RaceAtlas** réutilisé proprement après PR13. Base HEAD=origin/main **b55f4c66e579046c09ee5cd8745fbeed4f566848** avant ce commit de cadrage ; futur SHA local/remote obtenu après commit, pas deviné ici. Draft PR à ouvrir immédiatement après push ; pas de code UI livré/revu. Root seul writer du cadrage, Developer en attente ; après transfert Developer seul writer suivi, Root PR/notes ignorées, Tester read-only au gel.
 
-**Prochaine action sûre :** publier ce cadrage en Conventional Commit/Draft PR, constater CI au SHA exact puis attribuer UI-1 selon [mission](../lot-7/accounts-ui-mission.md). Pas d'édition produit avant transfert ; pas de merge avant acceptation finale et CI exacte.
+**Prochaine action sûre :** implémenter et vérifier UI-1 selon [mission](../lot-7/accounts-ui-mission.md). Pas d'édition produit avant transfert ; pas de merge avant acceptation finale et CI exacte.
 
 | Tâche | État |
 |---|---|
@@ -14,8 +14,8 @@ Branche **feature/accounts-ui**, checkout isolé **C:/Users/theop/.codex/worktre
 | ACC-01 identité/sauvegardes internes | DONE PR11/main5e2c84 |
 | ACC-02 backend compte/email | DONE PR12/merge87d7, APPROVE exactda5743, PR/mainCI791/67 |
 | PLAN API privée/ICS | DONE PR13/mergeb55, APPROVE exact679ec3, PR/mainCI853/67 |
-| UI-00 cadrage/Draft | IN_PROGRESS Root |
-| UI-1 fondations/parcours compte | TODO Developer après transfert, puis revue ciblée |
+| UI-00 cadrage/Draft | DONE 5643a8d/PR14, CI suivie Root |
+| UI-1 fondations/parcours compte | IN_PROGRESS Developer seul writer, puis revue ciblée |
 | UI-2 saison/export/opérations sensibles | TODO après UI-1 |
 | ACC-UI FINAL/lot7 local | TODO acceptation complète finale/CI/merge/mainCI |
 | Lot8/candidatV1/activation | TODO dépendances et owner gates |
@@ -43,3 +43,7 @@ Copie personnelle main2e03cd8 et autres worktrees intacts. Branches historiques 
 ## Limites externes
 
 Resend Free retenu ; club déclare posséder ucthonon.fr/Webador, raceatlas.ucthonon.fr email seulement, futur From RaceAtlas <notifications@raceatlas.ucthonon.fr> non vérifié. APP_BASE_URL Render réelle inconnue. Aucun compte/service/DNS/email réel/achat/remoteDB/déploiement/collecte autorisé. Premier déploiement privé après lot8/candidatV1 et autorisation distincte. Droits FFC/terrain, délivrabilité, capacité Free/physicalGPU restent à qualifier ; aucune activation automatisée. Owner silence jamais approbation. Quotas non mesurables, pas de promesse de reprise automatique.
+
+Transfert réel UI-1 : HEAD=origin feature/accounts-ui **5643a8d0dd2590df69cc71a1dfda4fa089994b9b**, [Draft PR14](https://github.com/TheoxProject/RaceAtlas/pull/14). Checkout/processus vérifiés propres et aucun Python/Chrome actif. Developer seul writer suivi, Root PR/notes ; pas UI-2. Première étape raccord read-proof compatible et headers HTML ciblés, puis bootstrap/client/dialog et preuves réelles compilées. Ne pas lancer de campagne853 backend locale redondante.
+
+UI-1 checkpoint intermédiaire : raccord lecture X-CSRF-Token optionnel et verify_request mutation keyword-only, headers HTML frame-ancestors/XFO/referrer ciblés implémentés.9 tests PG/HTTP PASS24,72s (.local-tools/ui1-read-context.xml) : cookie A/proof A puis cookie B même nonce/retour A refus avant tout SQL privé, GET/HEAD/sans-header compatibles, invalid/expiry/no_nonce, preuve seule nonbearer et Origin mutation requis. Ruff format79/lint et contrats publics26 PASS. Pas de migration/deps ; frontend bootstrap/controller en cours non livrés dans ce checkpoint, pas APPROVE UI. CI cadrage43577679731 SUCCESS853backend171,84s/67frontend au5643, ne valide pas ce nouveau raccord. Prochaine action : publier cet incrément backend testé pour CI, puis poursuivre uniquement UI-1 ; aucun UI-2.

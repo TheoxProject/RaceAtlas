@@ -51,6 +51,10 @@ def create_app(config=None):
     def response_headers(response):
         response.headers["X-Request-ID"] = g.request_id
         response.headers["X-Content-Type-Options"] = "nosniff"
+        if response.mimetype == "text/html":
+            response.headers["X-Frame-Options"] = "DENY"
+            response.headers["Content-Security-Policy"] = "frame-ancestors 'none'"
+            response.headers["Referrer-Policy"] = "no-referrer"
         if response.is_json:
             response.headers["Cache-Control"] = "no-store"
         return response
