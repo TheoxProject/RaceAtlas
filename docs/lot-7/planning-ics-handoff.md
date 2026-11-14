@@ -1,5 +1,16 @@
 # PLAN-A+B — Handoff final Developer PR13
 
+## Correction PLAN-F1 cycle1 (14nov)
+
+Revue complète initiale **REQUEST CHANGES exact aa07746ae7af78000f40de910ccd67f36d1c229e** :113PASS/1FAIL89,01s et16sondes indépendantes PASS16,31s, rapport initial `.local-tools/tester-report-planning.md` conservé. Unique finding P2 : le test enfant recevait des bytes UTF8 mais `json.load(sys.stdin)` utilisait CP1252 sous Windows/UTF8mode0. Aucun défaut codec runtime établi. CI Linux43575055846 SUCCESS853backend170,07s/67frontend ne clôturait pas cet échec natif. Les113+1 Developer précédents sont un historique séparé, influencé par l’environnement UTF8 hérité, pas une validation du cas CP1252.
+
+Correction uniquement test : `sys.stdin.buffer.read().decode("utf-8")`, JSON ensure_ascii=False et preuve que le wire contient du nonASCII. Deux enfants contrôlés (stdin CP1252/UTF8mode0 ; stdin UTF8/mode1), vérification effective des encodages/modes dans chaque enfant ; hosts/TZ/hashseeds différents et égalité stricte octets entre enfants ET codec parent conservées. Aucun changement global d’encodage applicatif, aucun changement codec/ledger/route/modèle/migration/deps.
+
+Exécuté sous parent `PYTHONIOENCODING=cp1252`, `PYTHONUTF8=0` : **22 codec/parser PASS3,50s**, `.local-tools/plan-f1-codec.xml`, exit0. Ruff check et format --check78 PASS, contrats publics26 PASS et diff check PASS. Diff nul `aa07746 -- raceatlas migrations contracts requirements.txt requirements-dev.txt constraints.txt frontend ops .github`, versions inchangées ; aucune DB/navigateur/campagne113 relancée. Réutilisation explicite des113 réussites produit et16sondes de la revue complète, après vérification du runtime inchangé. Nouveau SHA annoncé après push, puis STOP ; acceptation complète PR13 et CI doivent être renouvelées pour ce SHA.
+
+## Livraison et historique du candidat initial
+
+
 Branche `feature/private-planning`, [Draft PR13](https://github.com/TheoxProject/RaceAtlas/pull/13), base87d7dd53efcdb144c38e2d3ef1f83c89e63654fc. Ce document accompagne le commit candidat final A+B ; le SHA exact est annoncé au Coordinator après push, puis les éditions s'arrêtent. Pas de verdict/CI de ce candidat présumé. PLAN-A a passé gate exacte **ae446a5f1ff266a1f4590930485469ce973dff5e**, Tester139+8 sondes PASS, rapport `.local-tools/tester-report-planA.md`, CI43572962256 SUCCESS810backend162,74s/67frontend et gardes avant/après. L'approbation A ne vaut pas acceptation finale A+B.
 
 ## Livraison et transactions

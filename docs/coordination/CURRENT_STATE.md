@@ -1,12 +1,12 @@
 # Point de reprise RaceAtlas
 
-**UTC2026-11-14T08:15Z — lot7, PLAN-A+B candidat final implémenté/testé, publication et gel pour acceptation complète.** Aucun réseau fournisseur, email réel, DNS, coût, service, DB distante ou déploiement. Même Developer, WIP/caches préservés à la reprise.
+**UTC2026-11-14T08:28Z — lot7, correction PLAN-F1 cycle1 test-only prête à publier/figer pour renouvellement acceptation complète.**
 
 ## Branche et prochaine action
 
-Branche **feature/private-planning**, checkout isolé **C:/Users/theop/.codex/worktrees/add4/RaceAtlas**, Developer seul writer suivi ; Root PR/notes ignorées, Tester read-only au gel. [Draft PR13](https://github.com/TheoxProject/RaceAtlas/pull/13), base **87d7dd53efcdb144c38e2d3ef1f83c89e63654fc** inchangée. HEAD=origin avant publication finale **ae446a5f1ff266a1f4590930485469ce973dff5e** ; le commit contenant ce checkpoint est le candidat final A+B, son SHA exact est communiqué après push puis vérifié par Git.
+Branche **feature/private-planning**, checkout isolé **C:/Users/theop/.codex/worktrees/add4/RaceAtlas**, Developer seul writer suivi ; Root PR/notes ignorées, Tester read-only au gel. [Draft PR13](https://github.com/TheoxProject/RaceAtlas/pull/13), base **87d7dd53efcdb144c38e2d3ef1f83c89e63654fc** inchangée. HEAD=origin avant correction **aa07746ae7af78000f40de910ccd67f36d1c229e** ; le commit contenant ce checkpoint est le candidat final A+B, son SHA exact est communiqué après push puis vérifié par Git.
 
-**Prochaine action sûre :** commit/push cohérent B, communiquer SHA exact et STOP éditions. Root suit nouvelle CI et demande acceptation indépendante **COMPLÈTE PR13 PLAN-A+B** ; pas une approbation B seule ni lot7 terminé. Aucun prochain push avant conclusion CI précédente, aucune UI/lot8/main direct. [Mission](../lot-7/planning-mission.md), [handoff final](../lot-7/planning-ics-handoff.md), [commandes](../lot-7/planning-local-development.md).
+**Prochaine action sûre :** commit/push cohérent test+docs PLAN-F1, communiquer SHA exact et STOP éditions. Root suit nouvelle CI et demande acceptation indépendante **COMPLÈTE PR13 PLAN-A+B** ; pas une approbation B seule ni lot7 terminé. Aucun prochain push avant conclusion CI précédente, aucune UI/lot8/main direct. [Mission](../lot-7/planning-mission.md), [handoff final](../lot-7/planning-ics-handoff.md), [commandes](../lot-7/planning-local-development.md).
 
 | Tâche | État |
 |---|---|
@@ -19,6 +19,12 @@ Branche **feature/private-planning**, checkout isolé **C:/Users/theop/.codex/wo
 | PLAN-FINAL | TODO SHA final/revue complète/CI/merge/mainCI |
 | ACC-UI/acceptation complète lot7 | TODO après intégrations |
 | Lot8/candidatV1/activation | TODO dépendances/owner gates ; aucun deploy autorisé |
+
+## PLAN-F1 cycle1 (réouverture du candidat final)
+
+Tester complet REQUEST CHANGES exactaa07746 :113PASS/1FAIL89,01s +16sondes indépendantesPASS16,31s, rapport initial `.local-tools/tester-report-planning.md` conservé. CI43575055846 Linux SUCCESS853backend170,07s/67frontend ne remplaçait pas validation native CP1252. Unique P2 harness : json.load(stdin texte) décodait les bytesUTF8 enCP1252 ; aucune anomalie runtime codec établie. Source libérée explicitement, Developer seul writer pour test/handoff/checkpoint.
+
+Correctif local test uniquement : stdin.buffer/read/decodeUTF8, ensure_ascii=False/payloadnonASCII conservés, assertions bytes/UID/hosts/TZ/hashseeds fortes. Deux enfants encodage/mode explicitement vérifiés CP1252/mode0 et UTF8/mode1. Parent CP1252/mode0 : **22PASS3,50s**, `.local-tools/plan-f1-codec.xml`, Ruff lint/format78 PASS, Node26contrats/diff PASS. Aucun changement runtime/migrations/contrats/deps/frontend/ops/CI (git diff --exit-code aa07746 nul), versions identiques. Les113 succès produit et16sondes indépendantes sont réutilisés après diff ; aucun rerun113, DB ou navigateur. Les113+1 Developer initiaux restent historiques sous contexte d’encodage hérité, pas validation deCP1252. Nouveau SHA/CI/revue complète à acquérir, pas de clôture par la seule correction.
 
 ## Gate A et candidat B
 

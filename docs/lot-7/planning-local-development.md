@@ -1,5 +1,17 @@
 # PLAN-A+B — Vérification locale Windows
 
+## Correction portable PLAN-F1
+
+Le premier candidat aa07746 a obtenu113PASS/1FAIL chez Tester sous Windows/CP1252, même si CI Linux853/67 était verte. Le test subprocess seul lisait le JSON UTF8 avec l’encodage texte local ; code runtime inchangé. Commande réellement exécutée, sans DB :
+
+```powershell
+$env:PYTHONIOENCODING='cp1252'
+$env:PYTHONUTF8='0'
+& C:/Users/theop/.codex/worktrees/1a1e/RaceAtlas/.venv/Scripts/python.exe -m pytest tests/backend/test_planning_ics.py -q --tb=short --junitxml=.local-tools/plan-f1-codec.xml
+```
+
+**22 PASS3,50s**. Le harness enfant décode explicitement son stdin binaire en UTF8 et vérifie les deux contextes CP1252/mode0 et UTF8/mode1 sans dépendre du parent. Ces variables servent uniquement à la commande de régression, pas au runtime RaceAtlas. Aucun PYTHONUTF8 global requis ni assertion relâchée. Réutiliser les113 succès produit/16sondes indépendantes après diff nul runtime, pas de rerun backend complet ou DB pour cette seule correction. Ruff lint/format78, Node26contrats/diff PASS.
+
 ## Candidat final ICS
 
 Sur les mêmes Python/PG/_test opt-in ci-dessous, commande réellement exécutée :

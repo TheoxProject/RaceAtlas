@@ -200,11 +200,13 @@ def test_excluded_unrepresentable_item_does_not_invalidate_export(item):
 
 def test_new_process_restart_host_and_timezone_do_not_change_uid_or_bytes(item):
     script = """
-import json, sys
+import json, os, sys
 from datetime import datetime, timezone
 from raceatlas.planning_ics import event_payloads, render_calendar, EventMetadata
 from raceatlas.planning_snapshot import PlanningLimits
-item=json.load(sys.stdin)
+assert sys.stdin.encoding.lower() == os.environ["PYTHONIOENCODING"]
+assert sys.flags.utf8_mode == int(os.environ["PYTHONUTF8"])
+item=json.loads(sys.stdin.buffer.read().decode("utf-8"))
 limits=PlanningLimits()
 parts=event_payloads([item], 'account-one', limits)
 metadata={
@@ -214,14 +216,23 @@ metadata={
 sys.stdout.buffer.write(render_calendar(parts,metadata,limits))
 """
     outputs = []
-    for host, zone, seed in (
-        ("https://site-one.example.test", "UTC", "17"),
-        ("https://site-two.example.test", "Pacific/Honolulu", "29"),
+    wire = json.dumps(item, ensure_ascii=False).encode("utf-8")
+    assert any(byte >= 128 for byte in wire)
+    for host, zone, seed, encoding, utf8_mode in (
+        ("https://site-one.example.test", "UTC", "17", "cp1252", "0"),
+        ("https://site-two.example.test", "Pacific/Honolulu", "29", "utf-8", "1"),
     ):
-        environment = {**os.environ, "APP_BASE_URL": host, "TZ": zone, "PYTHONHASHSEED": seed}
+        environment = {
+            **os.environ,
+            "APP_BASE_URL": host,
+            "TZ": zone,
+            "PYTHONHASHSEED": seed,
+            "PYTHONIOENCODING": encoding,
+            "PYTHONUTF8": utf8_mode,
+        }
         result = subprocess.run(
             [sys.executable, "-c", script],
-            input=json.dumps(item, ensure_ascii=False).encode("utf-8"),
+            input=wire,
             capture_output=True,
             env=environment,
             timeout=10,
