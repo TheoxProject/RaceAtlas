@@ -2,6 +2,7 @@ name: Core foundation
 
 on:
   pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled, ready_for_review, converted_to_draft]
   push:
     branches: [main, feature/core-foundation]
 
@@ -14,6 +15,7 @@ concurrency:
 
 jobs:
   integrated:
+    name: ${{ (github.event_name == 'pull_request' && github.event.pull_request.draft && !contains(github.event.pull_request.labels.*.name, 'ci:full')) && 'development' || 'integrated' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     services:
@@ -36,6 +38,7 @@ jobs:
       RACEATLAS_ENV: test
       EXPECTED_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
       PR_NUMBER: ${{ github.event.pull_request.number || '' }}
+      PR_BASE_SHA: ${{ github.event.pull_request.base.sha || '' }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -70,6 +73,9 @@ jobs:
           cache-dependency-path: |
             requirements*.txt
             constraints.txt
+      - name: Select conservative development seams or complete integration
+        id: selection
+        run: python ops/ci_selection.py --plan "$RUNNER_TEMP/raceatlas-selection.json"
       - uses: pnpm/action-setup@v4
         with:
           version: 10.20.0
@@ -80,16 +86,18 @@ jobs:
           cache-dependency-path: frontend/pnpm-lock.yaml
       - run: python -m pip install -r requirements-dev.txt
       - run: python -m pip check
-      - run: python -m ruff check raceatlas migrations tests/backend
-      - run: python -m ruff format --check raceatlas migrations tests/backend
+      - run: python -m ruff check raceatlas migrations tests/backend ops/ci_selection.py
+      - run: python -m ruff format --check raceatlas migrations tests/backend ops/ci_selection.py
       - run: node --test tests/contracts/contracts.test.mjs
       - run: pnpm --dir frontend install --frozen-lockfile
       - run: pnpm --dir frontend lint
       - run: pnpm --dir frontend test
       - run: pnpm --dir frontend build
-      - run: python -m playwright install --with-deps chromium
-      # Tests run upgrade/check/downgrade/upgrade/check, constraints and compiled React E2E.
-      - run: python -m pytest -v --junitxml="$RUNNER_TEMP/raceatlas-results/backend.xml"
+      - if: steps.selection.outputs.browser == 'true'
+        run: python -m playwright install --with-deps chromium
+      # Integrated always discovers ALL tests, including migration/compiled-browser fixtures.
+      - name: Run selected backend validation (never an integration gate in development mode)
+        run: python ops/ci_selection.py --run "$RUNNER_TEMP/raceatlas-selection.json" --junit "$RUNNER_TEMP/raceatlas-results/backend.xml"
       - name: Recheck source and current PR head after validation
         shell: bash
         run: bash "$RUNNER_TEMP/raceatlas-check-source.sh"
@@ -111,6 +119,12 @@ jobs:
               cp -- "$source" "$RUNNER_TEMP/raceatlas-results/screenshots/calendar-$name.png"
             fi
           done
+          for name in dialog-desktop reset-form-mobile account-reset account-mobile; do
+            source=".local-tools/accounts-ui-screenshots/$name.png"
+            if [[ -f "$source" && ! -L "$source" ]]; then
+              cp -- "$source" "$RUNNER_TEMP/raceatlas-results/screenshots/accounts-$name.png"
+            fi
+          done
       - name: Upload synthetic failure evidence for one day
         if: failure()
         uses: actions/upload-artifact@v4
@@ -124,8 +138,16 @@ jobs:
         shell: bash
         env:
           VALIDATION_STATUS: ${{ job.status }}
+          VALIDATION_MODE: ${{ steps.selection.outputs.mode }}
+          BACKEND_MODE: ${{ steps.selection.outputs.backend }}
+          SELECTION_REASON: ${{ steps.selection.outputs.reason }}
         run: |
           printf '## RaceAtlas validation\n\nSource SHA: %s\n\nResult: %s\n' "$EXPECTED_SOURCE_SHA" "$VALIDATION_STATUS" >> "$GITHUB_STEP_SUMMARY"
+          printf '\nMode: %s; backend: %s; reason: %s\n' \
+            "$VALIDATION_MODE" "$BACKEND_MODE" "$SELECTION_REASON" >> "$GITHUB_STEP_SUMMARY"
+          if [[ "$VALIDATION_MODE" != integrated ]]; then
+            printf '\nDevelopment evidence only: a green run is NOT the merge gate.\n' >> "$GITHUB_STEP_SUMMARY"
+          fi
           printf '\nRun: %s/%s/actions/runs/%s\n' "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID" >> "$GITHUB_STEP_SUMMARY"
           if [[ "$VALIDATION_STATUS" == failure ]]; then
             echo "::error title=RaceAtlas validation failed::Inspect the failing step and synthetic artifacts for source $EXPECTED_SOURCE_SHA."

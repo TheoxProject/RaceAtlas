@@ -60,10 +60,12 @@ For each independently testable feature or lot:
 7. Require all merge gates below, then mark the PR ready and merge autonomously. Prefer **merge commits for substantial lots** and squash only for small fixes/docs when suitable.
 8. Confirm the resulting `main` SHA, tree and post-merge CI/health checks where applicable, and record the integration result. Wait for configured `main` checks to pass before starting the next dependent lot. Start the next approved lot from updated `main`.
 
+**CI policy (owner update, 14 November 2026):** During development, Draft PRs run a named `development` check with lint/format/contracts/frontend tests/build and conservative backend seams; unknown runtime/dependency/schema/shared-fixture changes fall back to all backend tests. A development success is never a merge approval, even when it fell back to full backend. The final frozen head must have the named `integrated` check successful with the complete suite. The Coordinator requests this with `ci:full` before making the PR ready/merging; non-Draft PRs and pushes to `main` also run complete integration. Keep source/head guards, inspect every push, and report concise commands/counts/failures/risks. Never use `[skip ci]` to substitute for these gates.
+
 **Merge gate (all mandatory):**
 - Acceptance criteria met and integrated behavior actually exercised.
 - Tester returns `APPROVE` for the exact current PR head SHA.
-- Required GitHub Actions checks are green **for that SHA**; no required check is merely pending, skipped without justification, or stale.
+- Required GitHub Actions checks, including the complete named `integrated` check, are green **for that SHA**; no required check is merely pending, skipped without justification, or stale.
 - No unresolved critical/major bug, security issue, contract regression, or source-rights violation.
 - PR is mergeable and its base is current. If a base change affects the candidate, update and revalidate before merge.
 - No restricted operation (deployment, paid action, live collection, etc.) is smuggled into the PR workflow.
