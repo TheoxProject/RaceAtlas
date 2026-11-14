@@ -119,7 +119,7 @@ test('identity-changing passive refresh discards prior feedback, same-actor refr
   const fetcher = vi.fn(async path => path.endsWith('/csrf') ? reply(200, { csrf_token: proof }) : path === '/api/v1/me' ? reply(200, { account: actor }) : reply(202, { status: 'accepted' }));
   const c = createAccountController(fetcher); await c.refresh();
   expect(await c.submit('forgot', { email: B.email })).toBe(true);
-  const message = c.getSnapshot().message; expect(message).toMatch(/admissible/);
+  const message = c.getSnapshot().message; expect(message).toBe('Demande prise en compte. Vérifiez votre boîte de réception et vos courriers indésirables ; si un message vous parvient, suivez ses instructions.');
   await c.refresh(); expect(c.getSnapshot().message).toBe(message);
   actor = B; await c.refresh();
   expect(c.getSnapshot()).toMatchObject({ account: B, message: null, error: null });

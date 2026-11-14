@@ -5,7 +5,7 @@ const ACTIONS = {
 };
 const READS = { entries: '/api/v1/me/saved-entries', calendar: '/api/v1/me/calendar.ics' };
 const ROUTES = new Set(['/api/v1/me', AUTH + 'csrf', ...Object.values(ACTIONS).map(path => AUTH + path), ...Object.values(READS)]);
-const ACCEPTED = 'Si cette demande est admissible, un message vous sera envoyé. Vérifiez aussi vos courriers indésirables.';
+const ACCEPTED = 'Demande prise en compte. Vérifiez votre boîte de réception et vos courriers indésirables ; si un message vous parvient, suivez ses instructions.';
 
 export class AccountRequestError extends Error {
   constructor(code, status = 0) { super('La demande de compte n’a pas abouti.'); this.code = code; this.status = status; }

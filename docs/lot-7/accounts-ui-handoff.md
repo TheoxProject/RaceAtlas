@@ -1,5 +1,18 @@
 # UI-1 — Handoff ciblé PR14
 
+## UI1-F1 cycle1 (14nov)
+
+Baseline8f3aaf88cceb9f33cfda28d56a4413f8c86cb8f4 : CI43623571912 development288backend167,17s/85frontend verte, mais Tester REQUEST CHANGES ciblé (rapport initial `.local-tools/tester-report-ui1-initial-8f3.md`, publié PR14). Unique P2 : copie202 promettait conditionnellement un envoi malgré refus quota provider. SOURCE RELEASED, pas APPROVE du nouveauSHA.
+
+Seul changement produit : ACCEPTED devient exactement « Demande prise en compte. Vérifiez votre boîte de réception et vos courriers indésirables ; si un message vous parvient, suivez ses instructions. » Même texte connu/inconnu/limité/providerfail, aucun état transport exposé. Contrôleur horsconstante, dialog/CSS/bootstrap/readguards/backend/migrations/deps/CI inchangés par diff.
+
+Ciblés exécutés : privateAccount13PASS1,82s ; lintfrontend/build8,16s PASS ; navigateur Reactcompilé→Flask→PG **2PASS16,04s** (2anciensflows désélectionnés), `.local-tools/ui1-f1-copy-browser-final.xml`. Provider simulé refuse réellement1tentative, drain confirmé ; cooldown puis adresse inconnue donnent exactement la même copie. Desktop/mobile390 et scroll/captures vus : dialog-desktop.png/account-mobile.png. Premier run1PASS/1FAIL26,51s conservé : mêmeadresse entre paramètres maintenait correctement le cooldown, donc aucune tentative mobile ; adresses synthétiques isolées par port de fixture, aucune limite désactivée/timeout modifié. Ruff82/diff PASS.
+
+Réutilisation explicite après diff nul des autres chemins :104backend/18frontend/App9 et parcours métier/4sondes indépendantes passés dans revue initiale (panne renderer initiale et reprise desktop conservées). Pas de replay104/full881 ni nouveau verdict copié. NouveauSHA communiqué après push puis STOP pour renouvellement revue UI-1 complète et CIdevelopment courante. UI-2 toujours TODO ; aucun emailréel/service/DNS/remoteDB.
+
+## Livraison UI-1 initiale et preuves conservées
+
+
 Branche `feature/accounts-ui`, [Draft PR14](https://github.com/TheoxProject/RaceAtlas/pull/14), base **b55f4c66e579046c09ee5cd8745fbeed4f566848**. Le SHA exact du candidat est communiqué après push, puis STOP pour revue ciblée. UI-2/Ma Saison/scopes/export/opérations sensibles non commencés ; UI-1 ne clôt pas lot7.
 
 ## Livré

@@ -16,8 +16,13 @@ from test_private_planning import isolation as isolation
 from werkzeug.serving import make_server
 
 from raceatlas import create_app
+from raceatlas.email.config import EmailDeliveryError
 
 SHOTS = Path(__file__).resolve().parents[2] / ".local-tools" / "accounts-ui-screenshots"
+ACCEPTED_TEXT = (
+    "Demande prise en compte. Vérifiez votre boîte de réception et vos courriers indésirables ; "
+    "si un message vous parvient, suivez ses instructions."
+)
 
 
 @pytest.fixture
@@ -173,17 +178,13 @@ def test_compiled_signup_explicit_confirmation_login_and_late_401_keep_discovery
             page.get_by_label("Nouveau mot de passe", exact=True).fill(PASSWORD)
             page.get_by_label("Confirmer le mot de passe", exact=True).fill(PASSWORD)
             page.get_by_role("button", name="Créer un compte", exact=True).click()
-            expect(page.locator(".account-message")).to_contain_text(
-                "Si cette demande est admissible"
-            )
+            expect(page.locator(".account-message")).to_have_text(ACCEPTED_TEXT)
             confirmation_link = take_link(sent, "confirmation", origin)
             # Renvoi refused by cooldown still reports202 and does not invalidate the first proof.
             page.get_by_role("button", name="Renvoyer la confirmation", exact=True).click()
             page.get_by_label("Adresse email", exact=True).fill("alice@example.test")
             page.get_by_role("button", name="Renvoyer la confirmation", exact=True).click()
-            expect(page.locator(".account-message")).to_contain_text(
-                "Si cette demande est admissible"
-            )
+            expect(page.locator(".account-message")).to_have_text(ACCEPTED_TEXT)
             assert app.extensions["auth"].drain(5) and sent.empty()
             page.keyboard.press("Escape")
             expect(page.locator("dialog.account-dialog")).not_to_be_visible()
@@ -286,9 +287,7 @@ def test_mobile_forgot_reset_b_keeps_a_until_explicit_login_and_scroll_keyboard(
             page.get_by_role("button", name="Mot de passe oublié", exact=True).click()
             page.get_by_label("Adresse email", exact=True).fill("bob@example.test")
             page.get_by_role("button", name="Mot de passe oublié", exact=True).click()
-            expect(page.locator(".account-message")).to_contain_text(
-                "Si cette demande est admissible"
-            )
+            expect(page.locator(".account-message")).to_have_text(ACCEPTED_TEXT)
             reset_link = take_link(sent, "reset", origin)
             proof_page = context.new_page()
             prepare(proof_page, mobile=True)
@@ -363,4 +362,60 @@ def test_mobile_forgot_reset_b_keeps_a_until_explicit_login_and_scroll_keyboard(
             raise
         finally:
             context.close()
+            browser.close()
+
+
+@pytest.mark.e2e
+@pytest.mark.parametrize("mobile", [False, True], ids=["desktop", "mobile390"])
+def test_copy202_is_identical_without_delivery_promise_when_provider_fails_or_no_mail_is_admitted(
+    account_server, monkeypatch, mobile
+):
+    origin, sent, app = account_server
+    address = f"provider-failure-{urlsplit(origin).port}@example.test"
+    runtime = app.extensions["auth"]
+    attempted = threading.Event()
+    calls = []
+
+    def refuse_quota(message, operation_id):
+        calls.append(True)
+        attempted.set()
+        raise EmailDeliveryError("quota_exceeded")
+
+    monkeypatch.setattr(runtime.email_service()._provider, "send", refuse_quota)
+    with sync_playwright() as playwright:
+        browser = launch(playwright)
+        page = browser.new_page(timezone_id="Europe/Paris")
+        prepare(page, mobile=mobile)
+        try:
+            page.goto(origin)
+            account(page)
+            page.get_by_role("button", name="Créer un compte", exact=True).click()
+            page.get_by_label("Adresse email", exact=True).fill(address)
+            page.get_by_label("Nouveau mot de passe", exact=True).fill(PASSWORD)
+            page.get_by_label("Confirmer le mot de passe", exact=True).fill(PASSWORD)
+            page.get_by_role("button", name="Créer un compte", exact=True).click()
+            expect(page.locator(".account-message")).to_have_text(ACCEPTED_TEXT)
+            assert attempted.wait(timeout=5) and runtime.drain(5)
+            assert len(calls) == 1 and sent.empty()
+            page.locator(".account-message").scroll_into_view_if_needed()
+            expect(page.locator(".account-message")).to_be_visible()
+            screenshot(page, "account-mobile.png" if mobile else "dialog-desktop.png")
+            # Same account/cooldown refusal and unknown address get exactly the same UI copy.
+            page.get_by_role("button", name="Renvoyer la confirmation", exact=True).click()
+            page.get_by_label("Adresse email", exact=True).fill(address)
+            page.get_by_role("button", name="Renvoyer la confirmation", exact=True).click()
+            expect(page.locator(".account-message")).to_have_text(ACCEPTED_TEXT)
+            page.get_by_role("button", name="Mot de passe oublié", exact=True).click()
+            page.get_by_label("Adresse email", exact=True).fill("unknown@example.test")
+            page.get_by_role("button", name="Mot de passe oublié", exact=True).click()
+            expect(page.locator(".account-message")).to_have_text(ACCEPTED_TEXT)
+            assert runtime.drain(5) and len(calls) == 1
+            page.get_by_role(
+                "button", name="Créer un compte", exact=True
+            ).scroll_into_view_if_needed()
+            expect(page.get_by_role("button", name="Créer un compte", exact=True)).to_be_visible()
+        except Exception:
+            screenshot(page, "account-mobile.png" if mobile else "dialog-desktop.png")
+            raise
+        finally:
             browser.close()
