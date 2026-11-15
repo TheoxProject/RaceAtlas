@@ -1,3 +1,18 @@
+# UI-2A — contrôles courants
+
+Même environnement réutilisé ci-dessous, uniquement `_test` opt-in/PG38028/55434/schémaa74. Aucun install/deps/nouveau schéma.
+
+- Depuis frontend : `node node_modules/vitest/vitest.mjs run src/season.test.js src/privateAccount.test.js src/SeasonPanel.test.jsx src/AccountPanel.test.jsx --pool=threads --maxWorkers=1` :30PASS13,01s. OptionCLI threads pour startupfork Windows, configuration repo inchangée.
+- `node node_modules/eslint/bin/eslint.js . --max-warnings 0` PASS ; `node node_modules/vite/bin/vite.js build` PASS5,64s.
+- Venvpytest `tests/backend/test_accounts_ui_e2e.py::test_season_scope_actions_map_two_accounts_outside_public_filters -q --tb=short --junitxml=.local-tools/ui2a-desktop-complete.xml` :1PASS40,94s.
+- Venvpytest mêmefichier `::test_season_two_cookie_devices_do_not_share_private_identity ... --junitxml=.local-tools/ui2a-devices.xml` :1PASS14,26s.
+- Mobile `::test_mobile_calendar_scopes_and_season_keep_month_and_private_scope` PASS dans premier run2A (`-k 'season_scope or mobile_calendar_scopes'`, JUnit ui2a-browser-first.xml), desktopFAIL initial conservé. Ne pas déclarer une campagne3PASS inexistante ; les3parcours ont des preuves distinctes.
+- Ruff82/Node26contrats/diff PASS, pas campagne backend complète locale. Capture2PNG season-desktop/mobile whitelisted bornée, jamais HAR/headers/body/proofs bruts.
+
+Le candidat gelé et les limites figurent au [handoff](accounts-ui-handoff.md). Ne pas lancer vieuxcheckout contre_test migrée, aucun _review, aucun test retenu ; fermer runtime avantEngine.dispose. UI-2B non commencé.
+
+## Historique UI-1
+
 # UI-1 — commandes ciblées Windows
 
 Réutiliser venv Python3.12.14 `C:/Users/theop/.codex/worktrees/1a1e/RaceAtlas/.venv/Scripts/python.exe`, Node24/pnpm10.20 et Chromium existants. PG17 PID38028/port55434/cluster `.local-tools/pgdata-lot2-native`, schémaa74d915e3c02 ; vérifier processus/statut, jamais initdb/reseed/anciencheckout. `_test` Developer et `_review` Tester séparés.

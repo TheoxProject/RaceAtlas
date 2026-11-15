@@ -143,17 +143,19 @@ export function createAccountController(fetcher = (...args) => globalThis.fetch(
     loadEntries() {
       if (!state.account || state.status !== 'member' || state.revalidating || state.busy) return Promise.resolve(false);
       if (listTask) return listTask;
-      const epoch = contextEpoch;
+      let readContext = null;
       publish({ entries: { status: 'loading', items: [], error: null }, entryError: null });
       const task = (async () => {
         try {
-          const result = await api.readPrivate('entries');
+          const pendingRead = api.readPrivate('entries');
+          readContext = api.captureContext();
+          const result = await pendingRead;
           if (!isCurrent(result.context)) return false;
           if (!Array.isArray(result.data.items) || result.data.items.length > 1000) throw new AccountRequestError('invalid_response');
           publish({ entries: { status: 'ready', items: result.data.items, error: null } });
           return true;
         } catch (error) {
-          if (epoch === contextEpoch && error.name !== 'AbortError') publish({ entries: { status: 'error', items: [], error: { code: error.code || 'network', status: error.status || 0 } } });
+          if (isCurrent(readContext) && error.name !== 'AbortError') publish({ entries: { status: 'error', items: [], error: { code: error.code || 'network', status: error.status || 0 } } });
           return false;
         } finally { if (listTask === task) listTask = null; }
       })();

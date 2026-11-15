@@ -419,3 +419,226 @@ def test_copy202_is_identical_without_delivery_promise_when_provider_fails_or_no
             raise
         finally:
             browser.close()
+
+
+@pytest.mark.e2e
+def test_season_scope_actions_map_two_accounts_outside_public_filters(account_server, database):
+    from sqlalchemy import select
+    from sqlalchemy.orm import Session
+
+    from raceatlas.models import SavedEntry
+
+    origin, _, _ = account_server
+    alice = identity(database, "alice@example.test")
+    bob = identity(database, "bob@example.test")
+    with sync_playwright() as playwright:
+        browser = launch(playwright)
+        page = browser.new_page(timezone_id="Europe/Paris")
+        prepare(page)
+        try:
+            page.goto(origin)
+            expect(page.locator(".map-canvas")).to_have_attribute(
+                "data-ready", "true", timeout=20000
+            )
+            page.get_by_role("button", name="Mois", exact=True).click()
+            page.get_by_label("Mois", exact=True).select_option("11")
+            page.get_by_label("Route", exact=True).check()
+            page.get_by_placeholder("Course, commune ou club…").fill("race-road-split")
+            expect(page.locator(".result-count strong")).to_have_text("1", timeout=15000)
+            page.get_by_role("button", name=re.compile("Summit")).click()
+            wait_camera_pitch(page, 60)
+            page.wait_for_function(
+                "Number(document.querySelector('.map-canvas').dataset.elevation)>100", timeout=10000
+            )
+            page.locator(".maplibregl-ctrl-zoom-in").click()
+            page.wait_for_function(
+                "JSON.parse(document.querySelector('.map-canvas').dataset.camera).zoom===7.5"
+            )
+            before = camera(page)
+            node = page.locator(".map-canvas").element_handle()
+            if not page.locator(".results-panel").is_visible():
+                page.get_by_role("button", name="Explorer les communes", exact=True).click()
+            page.locator(".race-row").filter(has_text="race-road-split").click()
+            page.locator(".race-detail .scope").first.get_by_role(
+                "button", name="Se connecter pour sauvegarder cette liste", exact=True
+            ).click()
+            sign_in(page, "alice@example.test", PASSWORD)
+            with Session(database) as session:
+                assert (
+                    list(session.scalars(select(SavedEntry).where(SavedEntry.account_id == alice)))
+                    == []
+                )
+            page.keyboard.press("Escape")
+            expect(page.get_by_role("button", name="Compte", exact=True)).to_be_focused()
+            one = page.locator('.scope-save[data-scope-id="scope-split-one"]')
+            two = page.locator('.scope-save[data-scope-id="scope-split-two"]')
+            one.get_by_label("Votre statut pour cette liste").select_option("planned")
+            one.get_by_role("button", name="Sauvegarder cette liste", exact=True).click()
+            expect(one.locator(".scope-saved")).to_have_text("Sauvegardée : Prévue")
+            two.get_by_label("Votre statut pour cette liste").select_option("registered")
+            two.get_by_role("button", name="Sauvegarder cette liste", exact=True).click()
+            expect(two.locator(".scope-saved")).to_have_text("Sauvegardée : Inscrit")
+            account(page)
+            page.get_by_role("button", name="Ma saison", exact=True).click()
+            expect(page.locator(".season-row")).to_have_count(2)
+            page.keyboard.press("Escape")
+            page.get_by_label("Mois", exact=True).select_option("1")
+            expect(page.locator(".result-count strong")).to_have_text("0", timeout=15000)
+            account(page)
+            page.get_by_role("button", name="Ma saison", exact=True).click()
+            expect(page.locator(".season-row")).to_have_count(2)
+            page.locator(".season-row").first.click()
+            expect(page.locator(".season-detail .scope")).to_have_count(1)
+            expect(
+                page.locator('.season-detail .scope-save[data-scope-id="scope-split-one"]')
+            ).to_be_visible()
+            expect(
+                page.locator('.season-detail .scope-save[data-scope-id="scope-split-two"]')
+            ).to_have_count(0)
+            selected = page.locator(".season-detail .scope-save")
+            selected.get_by_label("Votre statut pour cette liste").select_option("completed")
+            expect(selected.locator(".scope-saved")).to_have_text("Sauvegardée : Terminée")
+            selected.get_by_role("button", name="Retirer cette sauvegarde", exact=True).click()
+            expect(page.locator(".season-row")).to_have_count(1)
+            screenshot(page, "season-desktop.png")
+            sign_in(page, "bob@example.test", PASSWORD)
+            page.get_by_role("button", name="Ma saison", exact=True).click()
+            expect(page.get_by_text("Votre saison est vide.", exact=False)).to_be_visible()
+            page.keyboard.press("Escape")
+            page.get_by_label("Mois", exact=True).select_option("11")
+            expect(page.locator(".result-count strong")).to_have_text("1", timeout=15000)
+            if not page.locator(".results-panel").is_visible():
+                page.get_by_role("button", name="Explorer les communes", exact=True).click()
+            page.locator(".race-row").filter(has_text="race-road-split").click()
+            two = page.locator('.scope-save[data-scope-id="scope-split-two"]')
+            expect(
+                two.get_by_role("button", name="Sauvegarder cette liste", exact=True)
+            ).to_be_visible()
+            two.get_by_role("button", name="Sauvegarder cette liste", exact=True).click()
+            expect(two.locator(".scope-saved")).to_have_text("Sauvegardée : Intéressé")
+            with Session(database) as session:
+                values = {
+                    (row.account_id, row.scope_id): row.status
+                    for row in session.scalars(select(SavedEntry))
+                }
+            assert values == {
+                (alice, "scope-split-two"): "registered",
+                (bob, "scope-split-two"): "interested",
+            }
+            assert node.evaluate("node=>node===document.querySelector('.map-canvas')")
+            assert_camera_unchanged(camera(page), before)
+            expect(page.get_by_label("Mois", exact=True)).to_have_value("11")
+            expect(page.get_by_label("Route", exact=True)).to_be_checked()
+        except Exception:
+            screenshot(page, "season-desktop.png")
+            raise
+        finally:
+            browser.close()
+
+
+@pytest.mark.e2e
+def test_mobile_calendar_scopes_and_season_keep_month_and_private_scope(account_server, database):
+    origin, _, _ = account_server
+    identity(database, "alice@example.test")
+    with sync_playwright() as playwright:
+        browser = launch(playwright)
+        page = browser.new_page(timezone_id="Europe/Paris")
+        prepare(page, mobile=True)
+        try:
+            page.goto(origin)
+            expect(page.locator(".map-canvas")).to_have_attribute(
+                "data-ready", "true", timeout=20000
+            )
+            node = page.locator(".map-canvas").element_handle()
+            page.get_by_role("button", name="Calendrier", exact=True).click()
+            expect(page.locator(".calendar-view")).to_have_attribute("aria-busy", "false")
+            page.locator('td[data-date="2026-11-11"] .calendar-day').click()
+            page.locator(".race-row").filter(has_text="race-road-split").click()
+            first = page.locator(".race-detail .scope").first
+            first.get_by_role(
+                "button", name="Se connecter pour sauvegarder cette liste", exact=True
+            ).scroll_into_view_if_needed()
+            first.get_by_role(
+                "button", name="Se connecter pour sauvegarder cette liste", exact=True
+            ).click()
+            sign_in(page, "alice@example.test", PASSWORD)
+            page.keyboard.press("Escape")
+            expect(page.get_by_role("button", name="Compte", exact=True)).to_be_focused()
+            one = page.locator('.scope-save[data-scope-id="scope-split-one"]')
+            one.get_by_role(
+                "button", name="Sauvegarder cette liste", exact=True
+            ).scroll_into_view_if_needed()
+            one.get_by_role("button", name="Sauvegarder cette liste", exact=True).click()
+            expect(one.locator(".scope-saved")).to_have_text("Sauvegardée : Intéressé")
+            two = page.locator('.scope-save[data-scope-id="scope-split-two"]')
+            two.get_by_label("Votre statut pour cette liste").scroll_into_view_if_needed()
+            two.get_by_label("Votre statut pour cette liste").select_option("planned")
+            two.get_by_role("button", name="Sauvegarder cette liste", exact=True).click()
+            expect(two.locator(".scope-saved")).to_have_text("Sauvegardée : Prévue")
+            page.get_by_role("button", name="Fermer les détails", exact=True).click()
+            page.get_by_role("button", name="Mois suivant", exact=True).scroll_into_view_if_needed()
+            page.get_by_role("button", name="Mois suivant", exact=True).click()
+            expect(page.locator(".calendar-view")).to_have_attribute("aria-busy", "false")
+            expect(page.get_by_role("heading", name="Décembre 2026", exact=True)).to_be_visible()
+            account(page)
+            page.get_by_role("button", name="Ma saison", exact=True).click()
+            expect(page.locator(".season-row")).to_have_count(2)
+            screenshot(page, "season-mobile.png")
+            page.locator(".season-row").last.click()
+            expect(page.locator(".season-detail .scope")).to_have_count(1)
+            scope = page.locator('.season-detail .scope-save[data-scope-id="scope-split-two"]')
+            scope.get_by_label("Votre statut pour cette liste").scroll_into_view_if_needed()
+            scope.get_by_label("Votre statut pour cette liste").select_option("registered")
+            expect(scope.locator(".scope-saved")).to_have_text("Sauvegardée : Inscrit")
+            expect(
+                scope.get_by_text("« Inscrit » est votre déclaration, non vérifiée par la FFC.")
+            ).to_be_visible()
+            page.keyboard.press("Escape")
+            expect(page.get_by_role("button", name="Compte", exact=True)).to_be_focused()
+            expect(page.get_by_role("heading", name="Décembre 2026", exact=True)).to_be_visible()
+            assert node.evaluate("node=>node===document.querySelector('.map-canvas')")
+        except Exception:
+            screenshot(page, "season-mobile.png")
+            raise
+        finally:
+            browser.close()
+
+
+@pytest.mark.e2e
+def test_season_two_cookie_devices_do_not_share_private_identity(account_server, database):
+    from sqlalchemy.orm import Session
+
+    from raceatlas.models import Account
+    from raceatlas.planning import put_saved_entry
+
+    origin, _, _ = account_server
+    alice = identity(database, "alice@example.test")
+    identity(database, "bob@example.test")
+    with Session(database) as session, session.begin():
+        put_saved_entry(session, session.get(Account, alice), "scope-split-one", "planned")
+    with sync_playwright() as playwright:
+        browser = launch(playwright)
+        first = browser.new_context(timezone_id="Europe/Paris")
+        second = browser.new_context(timezone_id="Europe/Paris")
+        try:
+            pages = [first.new_page(), second.new_page()]
+            for page in pages:
+                prepare(page)
+                page.goto(origin)
+                account(page)
+                sign_in(page, "alice@example.test", PASSWORD)
+                page.get_by_role("button", name="Ma saison", exact=True).click()
+                expect(page.locator(".season-row")).to_have_count(1)
+                expect(page.locator(".season-row")).to_contain_text("Prévue")
+            sign_in(pages[1], "bob@example.test", PASSWORD)
+            pages[1].get_by_role("button", name="Ma saison", exact=True).click()
+            expect(pages[1].get_by_text("Votre saison est vide.", exact=False)).to_be_visible()
+            pages[0].bring_to_front()
+            pages[0].get_by_role("button", name="Actualiser ma saison", exact=True).click()
+            expect(pages[0].locator(".account-context")).to_contain_text("alice@example.test")
+            expect(pages[0].locator(".season-row")).to_have_count(1)
+            expect(pages[0].locator(".season-row")).to_contain_text("Prévue")
+        finally:
+            first.close()
+            second.close()
+            browser.close()

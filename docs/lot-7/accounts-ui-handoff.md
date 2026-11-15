@@ -1,42 +1,24 @@
-# UI-1/UI-2A — Handoff PR14
+# UI-2A — Handoff ciblé PR14
 
-## UI-2A WIP, pas gel final
+Branche `feature/accounts-ui`, [Draft PR14](https://github.com/TheoxProject/RaceAtlas/pull/14), baseb55f4c66e579046c09ee5cd8745fbeed4f566848. Candidat à figer après ce commit ; SHA exact communiqué au push. Gate UI-1 **bbc4e1f09ddb72a8fb4f9d42d08fa712ceb56022 APPROVE**, CI43625467407 development290/85. Checkpoint WIP **e80c0a6e953ea2f23281e4b8de8f230d49fb982f**, CI43627955030 development290backend278,41s/96frontend/gardes exactes ; ne valide pas les nouvelles preuves locales/catch corrigé.
 
-Gate UI-1 acquis exactbbc4e1f09ddb72a8fb4f9d42d08fa712ceb56022 : APPROVE ciblé complet, CI43625467407 development290backend266,47s/85frontend. UI-2A scope/saison attribué, UI-2B export/sensibles TODO. Store propriétaire entries, ticket distinct contextEpoch, purge immédiate/lease après await/écritures server-authoritative ; ScopeSaveActions exacts et Ma saison DTO seulscope, pas filtre public.13clientUI1+8store+3composants+5dialog+9App PASS ciblés ; lint/build3,51s PASS. Deux browsers2A sont encore locaux non exécutés/non livrés dans ce checkpoint ; ne pas prétendre acceptation. Whitelist screenshot ajoute seulement season-desktop/mobile, gardes et rétention inchangés. Prochaineaction browsercarte/calendrier réel puis gel à SHA suivant.
+## Livré UI-2A
 
+- Store propriétaire des sauvegardes, ticket d'opération distinct de contextEpoch/acteur, nettoyage immédiat à revalidation/switch ; publication normale ET erreur sous lease complète, contrôlée après await. Pas de listeA sousB ni retry implicite, résultat réseau inconnu impose une lecture explicite.
+- ScopeSaveActions : création/modification/retrait sur scope exact/IDopaque encodé, quatre statuts serveur, Inscrit déclaré/nonFFC. Anonyme ouvre connexion puis doit agir à nouveau, aucune sauvegarde différée. Focus revient à Compte si le déclencheur a disparu après login.
+- SeasonPanel dans dialog existant : toutes sauvegardes hors filtres publics, détail DTO du seulscope/règles/incertitudes/source/centrecommune, sans témoins inventés. Carte/calendrier/Summit/caméra/période/filtres conservés. **UI-2B export et contrôles sensibles restent TODO/non attribués.**
+- Whitelist CI ajoute seulement season-desktop/mobile avec accord Coordinator, contrôles PNG régulier/non-symlink/rétention1jour inchangés. Aucun backend/migration/dépendance modifié.
 
-## UI1-F1 cycle1 (14nov)
+## Preuves réelles
 
-Baseline8f3aaf88cceb9f33cfda28d56a4413f8c86cb8f4 : CI43623571912 development288backend167,17s/85frontend verte, mais Tester REQUEST CHANGES ciblé (rapport initial `.local-tools/tester-report-ui1-initial-8f3.md`, publié PR14). Unique P2 : copie202 promettait conditionnellement un envoi malgré refus quota provider. SOURCE RELEASED, pas APPROVE du nouveauSHA.
+- Frontend actuel : **30PASS13,01s**, `vitest run src/season.test.js src/privateAccount.test.js src/SeasonPanel.test.jsx src/AccountPanel.test.jsx --pool=threads --maxWorkers=1` ; lint PASS, build5,64s PASS. Réutilisation App9/e80 CI96 pour chemins publics inchangés, pas verdict copié.
+- Browser carte/scopes/deuxacteurs/horsfiltres/Summit60°/DEM>100/caméra : **1PASS40,94s**, `.local-tools/ui2a-desktop-complete.xml`.
+- Browser calendrier/mobile390/scopes/détailprivé/focus/moisconservé : **1PASS** dans `.local-tools/ui2a-browser-first.xml` (run1FAILdesktop/1PASSmobile59,28s) ; chemin normal inchangé par correction catch tardif, preuve réutilisée explicitement.
+- Browser deuxcontextes cookies : **1PASS14,26s**, `.local-tools/ui2a-devices.xml` ; mêmeA voit mêmes sauvegardes, switchB sur device2 ne change pas identité/saisonA sur device1.
+- Ruff lint/format82, Node26contrats/diff PASS ; API/modèles/migrations/pins/MapView/Calendar/Filters/source inchangés par diff. Pas fullbackend local. Fixtures_test opt-in vérifient schemaa74, runtimes fermés avant Engines.
 
-Seul changement produit : ACCEPTED devient exactement « Demande prise en compte. Vérifiez votre boîte de réception et vos courriers indésirables ; si un message vous parvient, suivez ses instructions. » Même texte connu/inconnu/limité/providerfail, aucun état transport exposé. Contrôleur horsconstante, dialog/CSS/bootstrap/readguards/backend/migrations/deps/CI inchangés par diff.
+Incidents conservés : première attente sélection défaut5s avant finAPI≈6s puis test15s cohérent calendrier (strictcaméra10s inchangé) ; toggleExplorer du test refermait panneau déjàouvert, corrigé conditionnellement sans forceclick. Catch ancienTypeError mêmeepoch reproduit8PASS/1FAIL puis garde ticket+epoch+acteur corrigée. Fork Vitest n'avait démarré aucun test ; exécution threads ciblée sans configuration changée. Ce ne sont pas des passes réétiquetées.
 
-Ciblés exécutés : privateAccount13PASS1,82s ; lintfrontend/build8,16s PASS ; navigateur Reactcompilé→Flask→PG **2PASS16,04s** (2anciensflows désélectionnés), `.local-tools/ui1-f1-copy-browser-final.xml`. Provider simulé refuse réellement1tentative, drain confirmé ; cooldown puis adresse inconnue donnent exactement la même copie. Desktop/mobile390 et scroll/captures vus : dialog-desktop.png/account-mobile.png. Premier run1PASS/1FAIL26,51s conservé : mêmeadresse entre paramètres maintenait correctement le cooldown, donc aucune tentative mobile ; adresses synthétiques isolées par port de fixture, aucune limite désactivée/timeout modifié. Ruff82/diff PASS.
+Captures synthétiques **vues** : `.local-tools/accounts-ui-screenshots/season-desktop.png` et `season-mobile.png`. Deuxflows réels depuis carte ET calendrier,2scopes d'une race,2acteurs/statuts distincts et2devices ; aucune email/network réel. Handoff/commandes environnement : [local](accounts-ui-local-development.md). Initiale copie202 corrigée UI1-F1, formulation retenue par le Coordinateur ; rapport initial préservé en Git/PR, pas attribution mot-pour-mot propriétaire.
 
-Réutilisation explicite après diff nul des autres chemins :104backend/18frontend/App9 et parcours métier/4sondes indépendantes passés dans revue initiale (panne renderer initiale et reprise desktop conservées). Pas de replay104/full881 ni nouveau verdict copié. NouveauSHA communiqué après push puis STOP pour renouvellement revue UI-1 complète et CIdevelopment courante. UI-2 toujours TODO ; aucun emailréel/service/DNS/remoteDB.
-
-## Livraison UI-1 initiale et preuves conservées
-
-
-Branche `feature/accounts-ui`, [Draft PR14](https://github.com/TheoxProject/RaceAtlas/pull/14), base **b55f4c66e579046c09ee5cd8745fbeed4f566848**. Le SHA exact du candidat est communiqué après push, puis STOP pour revue ciblée. UI-2/Ma Saison/scopes/export/opérations sensibles non commencés ; UI-1 ne clôt pas lot7.
-
-## Livré
-
-- Bootstrap avant createRoot : fragments stricts capturés en RAM/scrub sans POST au montage. Enveloppe partagée main/props effaçable à fermeture/succès/invalidité définitive ; pas promesse de zeroisation JS. StrictMode ne consomme pas une seconde fois la preuve.
-- Compte en dialog natif FR : inscription/connexion/renvoi/oubli/confirmation explicite/reset. Unicode15–128points/512UTF8 sans trim/maxLengthUTF16, login legacy inchangé, email ASCII expliqué pour nouvelles demandes.202 uniforme sans promesse d'envoi. Confirmation/reset ne connectent pas ; resetB conserveA.
-- Contrôleur privé séparé : même origine/routes constantes/cookie-only, génération+abort même si abort ignoré, pas retry automatique ni clear global sur login401. Réponse passive ancienne ignorée aprèsB ; feedback ancien effacé si identité change. Focus recentré seulement si un remount a sorti le focus du dialog.
-- Préflight **CSRF → GETme portant CEproof → opération mêmeproof**. Vérification serveur optionnelle GETme/liste/ICS si header présent,403 vide/invalide/autre cookie AVANT SQL privé ; sansheader compatible et Origin absent lecture accepté. Le conseil initial GETme non lié est invalidé par la trace B→A→B, reproduite puis corrigée. Aucun acteur client/nouveau bearer.
-- Shell HTML seulement : XFO DENY, CSP frame-ancestors 'none', Referrer-Policy no-referrer. Carte/Summit/période/filtres/détails restent montés, aucun fetch public dû au compte. OPS02 aligné Resend choisi/non vérifié, pas rapport historique prédeploy réécrit.
-- CI propriétaire : job YAML unique, nom API **development** draft sansci:full (sélection stdlib conservatrice) ou **integrated** main/nonDraft/ci:full (suite complète). Gardes/permissions/artifacts1jour conservés. Development vert ne vaut jamais fusion. [Guide](../readiness/ci-validation.md).
-
-## Preuves
-
-Commandes/cache : [local](accounts-ui-local-development.md).87 PG/HTTP PASS40,02s (11readguard+29C1+47C0),18 frontend ciblés (13client+5dialog), App9PASS avant derniers handlers d'UI,17 tests sélectionCI PASS0,10s ; Ruff82/lintfrontend/build3,50s/Node26contrats/diff PASS ; YAML parsé avec js-yaml existant et4 blocs Bash syntaxe PASS (pas nouvelle dépendance). Browser compilé→Flask→PG :2PASS26,09s, desktop+mobile390. Contraste desktop supplémentaire mois/filtre/recherche/détail noninitiaux :1PASS31,27s, `.local-tools/ui1-browser-context-fixed.xml` ; setup initial Summit intercepté par détails, corrigé en réglant caméra avant détails, sans source produit changée. Aucun full862 local rejoué. CI862/67 au6b91 est antérieure, pas validation du futur candidat UI.
-
-Browser : DevelopmentEmailProvider lu RAM par fixture, zéro endpoint debug-mail ; preuve URL navigation neutralisée en cas d'erreur. Signup/renvoi202/confirmation explicite/login/wrong401/late401 ignorée aprèsB ; resetB/A et loginB explicite, clavier/focus/scroll et caméra zoom+Summit60/DEMréel>100. Réponse meB retenue puis libérée sur inputA pour exercer remount/focus/feedback. Captures synthétiques vues : `.local-tools/accounts-ui-screenshots/dialog-desktop.png`, `reset-form-mobile.png`, `account-reset.png`. `account-mobile.png` réservé échec ; PNGwhitelist réguliers/non symlinks seulement.
-
-Incidents conservés : reproduction BAB1FAIL5,90s avant correctif ; browser initial1PASS/1FAIL focus, diagnostic timing1PASS puis barrière mal déclenchée1timeout, corrigée par événement explicite ; final2PASS. Vitest groupé n'avait démarré aucun worker (2timeouts), puis runs isolés verts sans changer config. Une erreur de callback local a été captée par4testsdialog/lint puis corrigée,5PASS. JUnit ignorés, pas assimilation pytestcache à résultat.
-
-## Revue et limites
-
-Tester : SHA gelé exact, revalider frontières/proofABA/fragmentpurge/générations et vrai browser, focus/accessibilité/mobile/découverte. CI réelle doit exercer nouveau mode et sélection ; avant fusion finale UI-2, Root exige integratedsuccess au mêmehead puis mainCI complète. Tous tests/serveurs/workers fermés ; PG local conservé, `_review` réservé. Aucun email réel/DNS/clé/Resend/service/remoteDB/achat/deploy/collecte ; délivrabilité réelle non validée. Prochain jalon UI-2 seulement après gate ciblé.
+Prochaineaction : publier/geler ce SHA pour revue ciblée UI-2A et CIdevelopment courante ; STOP éditions ensuite. UI-2B uniquement après nouveau gate. Avant fusion finale PR14 : acceptation complète et **integrated** exact obligatoire puis mainCI. Ni délivrabilité/service/DNS/remoteDB/deploy/collecte ni lot7 complet déclarés. Aucun test/browser/serveur retenu, PG38028 conservé, _review réservé au Tester.

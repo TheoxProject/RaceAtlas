@@ -4,7 +4,7 @@ import { opaqueSegment } from './season.js';
 const A = { id: 'a', email: 'alice@example.test' }, B = { id: 'b', email: 'bob@example.test' };
 const row = (id, scope, status = 'interested') => ({ id, scope_id: scope, status, created_at: '2026-11-14T00:00:00Z', race: { id: 'same-race' }, scope: { id: scope } });
 const reply = (status, data = {}) => ({ status, ok: status >= 200 && status < 300, json: async () => data });
-const deferred = () => { let resolve; const promise = new Promise(done => { resolve = done; }); return { promise, resolve }; };
+const deferred = () => { let resolve, reject; const promise = new Promise((done, fail) => { resolve = done; reject = fail; }); return { promise, resolve, reject }; };
 function fixture(initial = [row('entry-one', 'scope-one'), row('entry-two', 'scope-two', 'planned')]) {
   let actor = A, failure = null, held = null, heldWrite = null;
   const store = { a: initial, b: [] };
@@ -106,4 +106,20 @@ test('refresh during dispatched write hides private data, then revalidates witho
   expect(c.getSnapshot().entries.items).toEqual([]);
   expect(f.store.a.find(item => item.scope_id === 'scope-one').status).toBe('registered');
   expect(f.fetcher.mock.calls.filter(([,options]) => options.method === 'PATCH')).toHaveLength(1);
+});
+
+test('old unabortable TypeError in the same epoch cannot publish over a newer operation', async () => {
+  const f = fixture(), c = f.controller; await c.refresh();
+  const held = deferred(); f.hold(held);
+  const old = c.loadEntries();
+  await vi.waitFor(() => expect(f.fetcher.mock.calls.some(([path]) => path.endsWith('/saved-entries'))).toBe(true));
+  const epoch = c.getSnapshot().contextEpoch;
+  const newer = await c.readPrivate('entries');
+  expect(c.getSnapshot().contextEpoch).toBe(epoch);
+  expect(c.isCurrent(newer.context)).toBe(true);
+  const currentEntries = c.getSnapshot().entries;
+  held.reject(new TypeError('synthetic late network failure'));
+  await old;
+  expect(c.getSnapshot().entries).toBe(currentEntries);
+  expect(c.getSnapshot().entries.error).toBeNull();
 });
