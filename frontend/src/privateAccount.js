@@ -1,11 +1,18 @@
+import { readCalendar } from './calendarDownload.js';
 import { opaqueSegment, SAVED_LABELS } from './season.js';
 const AUTH = '/api/v1/auth/';
 const ACTIONS = {
   login: 'login', register: 'register', resend: 'confirmation/resend', forgot: 'password-reset/request',
   confirm: 'confirmation/complete', reset: 'password-reset/complete',
 };
+const SENSITIVE = {
+  logout: { path: AUTH + 'logout', method: 'POST' },
+  logoutAll: { path: AUTH + 'logout-all', method: 'POST' },
+  changePassword: { path: AUTH + 'password/change', method: 'POST' },
+  deleteAccount: { path: '/api/v1/me', method: 'DELETE' },
+};
 const READS = { entries: '/api/v1/me/saved-entries', calendar: '/api/v1/me/calendar.ics' };
-const ROUTES = new Set(['/api/v1/me', AUTH + 'csrf', ...Object.values(ACTIONS).map(path => AUTH + path), ...Object.values(READS)]);
+const ROUTES = new Set(['/api/v1/me', AUTH + 'csrf', ...Object.values(ACTIONS).map(path => AUTH + path), ...Object.values(READS), ...Object.values(SENSITIVE).map(item => item.path)]);
 const ACCEPTED = 'Demande prise en compte. Vérifiez votre boîte de réception et vos courriers indésirables ; si un message vous parvient, suivez ses instructions.';
 
 export class AccountRequestError extends Error {
@@ -28,7 +35,7 @@ export function createAccountController(fetcher = (...args) => globalThis.fetch(
   const contextFor = operation => Object.freeze({ generation: operation.ticket, contextEpoch: operation.epoch, accountId: state.account?.id || null });
   const isCurrent = context => context && context.generation === generation && context.contextEpoch === contextEpoch && context.accountId === state.account?.id && state.status === 'member' && !state.revalidating;
   const entryPath = /^\/api\/v1\/me\/saved-entries\/(?:by-scope\/)?[^/?#]+$/;
-  async function request(path, operation, { method = 'GET', body, headers = {}, binary = false } = {}) {
+  async function request(path, operation, { method = 'GET', body, headers = {}, binary = false, expectedStatus } = {}) {
     if (!ROUTES.has(path) && !entryPath.test(path)) throw new AccountRequestError('invalid_request');
     const response = await fetcher(path, {
       method, credentials: 'same-origin', cache: 'no-store', redirect: 'error', referrerPolicy: 'no-referrer', mode: 'same-origin',
@@ -42,7 +49,12 @@ export function createAccountController(fetcher = (...args) => globalThis.fetch(
       assertCurrent(operation);
       throw new AccountRequestError(code, response.status);
     }
-    const result = binary ? await response.blob() : response.status === 204 ? null : await response.json();
+    if (expectedStatus !== undefined && response.status !== expectedStatus) {
+      try { await response.body?.cancel(); } catch { /* unknown response, no body exposed */ }
+      assertCurrent(operation);
+      throw new AccountRequestError('unconfirmed_response');
+    }
+    const result = binary ? await readCalendar(response, () => assertCurrent(operation)) : response.status === 204 ? null : await response.json();
     assertCurrent(operation);
     return result;
   }
@@ -138,6 +150,41 @@ export function createAccountController(fetcher = (...args) => globalThis.fetch(
         if (current(operation) && error.status === 401) showAccount(null);
         failure(error, operation);
         throw error;
+      } finally { settle(operation); }
+    },
+    async prepareCalendar() {
+      if (!state.account || state.status !== 'member' || state.busy || state.revalidating) return null;
+      const expected = state.account, operation = begin();
+      publish({ busy: true, error: null });
+      try {
+        const csrf = await preflight(operation, expected);
+        const blob = await request(READS.calendar, operation, { headers: { 'X-CSRF-Token': csrf }, binary: true, expectedStatus: 200 });
+        const context = contextFor(operation);
+        if (!isCurrent(context)) throw stopped();
+        return { blob, context };
+      } catch (error) {
+        if (current(operation) && error.status === 401) showAccount(null);
+        failure(error, operation);
+        return null;
+      } finally { settle(operation); }
+    },
+    async sensitive(action, fields = {}) {
+      if (!Object.hasOwn(SENSITIVE, action) || !state.account || state.status !== 'member' || state.busy || state.revalidating) return false;
+      const config = SENSITIVE[action], expected = state.account;
+      const body = action === 'logout' ? {} : { current_password: fields.current_password, ...(action === 'changePassword' ? { new_password: fields.new_password } : {}) };
+      const patch = advanceContext(), operation = begin();
+      publish({ ...patch, busy: true, error: null, message: null });
+      try {
+        const csrf = await preflight(operation, expected);
+        await request(config.path, operation, { method: config.method, body, headers: { 'X-CSRF-Token': csrf }, expectedStatus: 204 });
+        assertCurrent(operation);
+        const message = action === 'deleteAccount' ? 'Votre compte et ses données personnelles ont été supprimés.' : action === 'changePassword' ? 'Mot de passe modifié. Reconnectez-vous ; vos anciennes sessions ont été révoquées.' : action === 'logoutAll' ? 'Déconnexion de tous vos appareils effectuée.' : 'Déconnexion effectuée sur cet appareil.';
+        showAccount(null, { busy: false, message, error: null });
+        return true;
+      } catch (error) {
+        if (current(operation) && error.status === 401) showAccount(null, { message: 'Votre connexion n’est plus active. Vérifiez le compte avant une nouvelle action.' });
+        failure(error, operation);
+        return false;
       } finally { settle(operation); }
     },
     loadEntries() {

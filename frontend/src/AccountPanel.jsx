@@ -1,10 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { asciiEmailError, newPasswordError } from './accountBootstrap.js';
 import './account.css';
+import { AccountSecurityPanel } from './AccountSecurityPanel.jsx';
 import { SeasonPanel } from './SeasonPanel.jsx';
 
-const TITLES = { login: 'Se connecter', register: 'Créer un compte', resend: 'Renvoyer la confirmation', forgot: 'Mot de passe oublié', confirm: 'Confirmer mon adresse', reset: 'Choisir un nouveau mot de passe', invalid: 'Lien invalide', member: 'Mon compte', season: 'Ma saison' };
+const TITLES = { login: 'Se connecter', register: 'Créer un compte', resend: 'Renvoyer la confirmation', forgot: 'Mot de passe oublié', confirm: 'Confirmer mon adresse', reset: 'Choisir un nouveau mot de passe', invalid: 'Lien invalide', member: 'Mon compte', season: 'Ma saison', security: 'Sécurité du compte' };
 function errorMessage(error, mode) {
+  if (error.code === 'calendar_format') return 'Le fichier reçu n’est pas un calendrier valide. Aucun téléchargement lancé.';
+  if (error.code === 'calendar_size') return 'Le calendrier dépasse la limite de 2 Mio. Aucun fichier tronqué n’est téléchargé.';
+  if (error.code === 'unconfirmed_response') return 'La réponse ne confirme pas l’opération. Son résultat est inconnu ; vérifiez le compte.';
   if (error.code === 'context_changed') return 'Le compte actif a changé. Vérifiez le compte affiché puis recommencez votre action.';
   if (error.code === 'invalid_proof') return 'Ce lien est invalide, expiré ou déjà utilisé. Demandez un nouveau message.';
   if (error.code === 'invalid_password') return 'Choisissez un mot de passe moins courant, de 15 à 128 caractères Unicode et au plus 512 octets UTF-8.';
@@ -65,9 +69,10 @@ function Contents({ action, account, controller, onProofUsed }) {
     <p className="eyebrow">Votre compte RaceAtlas</p><h2 id="account-title">{TITLES[mode]}</h2>
     <div className="account-context" aria-live="polite">{account.status === 'unknown' ? 'Vérification du compte…' : account.account ? <>Connecté comme <strong>{account.account.email}</strong>.</> : account.status === 'unavailable' ? 'Comptes indisponibles pour le moment.' : 'Vous n’êtes pas connecté.'}</div>
     {account.message && <p className="account-message" role="status">{account.message}</p>}
-    {account.error && <div><p className="account-error" role="alert">{errorMessage(account.error, mode)}</p><button className="text-button" disabled={account.busy} onClick={() => controller.refresh()}>Actualiser le compte</button></div>}
-    {mode === 'season' && account.account ? <SeasonPanel account={account} controller={controller} /> : mode === 'invalid' ? <p role="alert">Ce lien ne contient pas une preuve valide. Ouvrez un lien complet récent ou demandez un nouveau message.</p> : mode === 'member' ? <p>Votre connexion est active. Fermez ce panneau pour continuer à explorer les courses.</p> : <AccountForm key={mode} mode={mode} proof={mode === action?.kind ? action.proof : undefined} account={account} controller={controller} onProofUsed={finishProof} />}
+    {account.error && mode !== 'security' && <div><p className="account-error" role="alert">{errorMessage(account.error, mode)}</p><button className="text-button" disabled={account.busy} onClick={() => controller.refresh()}>Actualiser le compte</button></div>}
+    {mode === 'security' && account.account ? <AccountSecurityPanel account={account} controller={controller} /> : mode === 'season' && account.account ? <SeasonPanel account={account} controller={controller} /> : mode === 'invalid' ? <p role="alert">Ce lien ne contient pas une preuve valide. Ouvrez un lien complet récent ou demandez un nouveau message.</p> : mode === 'member' ? <p>Votre connexion est active. Fermez ce panneau pour continuer à explorer les courses.</p> : <AccountForm key={mode} mode={mode} proof={mode === action?.kind ? action.proof : undefined} account={account} controller={controller} onProofUsed={finishProof} />}
     <nav className="account-navigation" aria-label="Actions du compte">
+      {account.account && mode !== 'security' && <button className="text-button" disabled={account.busy || account.revalidating} onClick={() => navigate('security')}>Sécurité du compte</button>}
       {account.account && mode !== 'season' && <button className="text-button" disabled={account.busy || account.revalidating} onClick={() => navigate('season')}>Ma saison</button>}
       {mode !== 'login' && <button className="text-button" disabled={account.busy} onClick={() => navigate('login')}>{account.account ? 'Utiliser un autre compte' : 'Déjà un compte ? Se connecter'}</button>}
       {mode !== 'register' && <button className="text-button" disabled={account.busy} onClick={() => navigate('register')}>Créer un compte</button>}

@@ -1,3 +1,14 @@
+# UI-2B — checkpoint client/UI WIP PR14
+
+15 novembre 2026. Branche `feature/accounts-ui`, base UI-2A `9e9e196c63f18e482d9768a20a4dce2e4306ea0c` APPROVE ciblé et CI43692304078 development293/97. Ce checkpoint n'est pas le candidat final ni une approbation PR14.
+
+Livré : téléchargement ICS200 exact, MIME et stream réel≤2Mio, garde complète avant création URL/click et révocation ; contrôles sensibles204 exact,403 conserve acteur, réponses2xx inattendues/réseau inconnues sans retry. Dialog sécurité, confirmation suppression, nouveaux mots de passe Unicode exacts et purge des champs à fin/abandon. Aucun backend/migration/dépendance modifié.
+
+Ciblés observés : `vitest run src/privateAccount.test.js src/calendarDownload.test.js --environment=node --pool=threads --maxWorkers=1`19PASS1,68s ; `accountSensitive.test.js calendarDownload.test.js season.test.js`26PASS3,81s ; composants AccountSecurityPanel/SeasonPanel/AccountPanel10PASS18,19s ; ESLint PASS, build9,01s PASS (avertissement taille bundle existant). Incident initial6PASS/2FAIL causé par mock confondant GETme et DELETEme, corrigé sans assouplissement. Les chemins UI-2A inchangés réutilisent preuves gate9e9e ; limite jsdom Reviewer NONPASS distincte deCI97/4browsers.
+
+RESTE : vrais browsers compilés→Flask→PG_test pour export/parser, multi-appareils/révocations/purge et390px, puis gel final/acceptation COMPLÈTE PR14/integrated. PG arrêté au contrôle : cluster existant à redémarrer, pas initdb. Aucun processus de test restant. Aucun mail réel/DNS/service/remoteDB/deploy.
+
+## Handoff précédent conservé
 # UI-2A — Handoff ciblé PR14
 
 Branche `feature/accounts-ui`, [Draft PR14](https://github.com/TheoxProject/RaceAtlas/pull/14), baseb55f4c66e579046c09ee5cd8745fbeed4f566848. Candidat à figer après ce commit ; SHA exact communiqué au push. Gate UI-1 **bbc4e1f09ddb72a8fb4f9d42d08fa712ceb56022 APPROVE**, CI43625467407 development290/85. Checkpoint WIP **e80c0a6e953ea2f23281e4b8de8f230d49fb982f**, CI43627955030 development290backend278,41s/96frontend/gardes exactes ; ne valide pas les nouvelles preuves locales/catch corrigé.
@@ -22,3 +33,4 @@ Incidents conservés : première attente sélection défaut5s avant finAPI≈6s 
 Captures synthétiques **vues** : `.local-tools/accounts-ui-screenshots/season-desktop.png` et `season-mobile.png`. Deuxflows réels depuis carte ET calendrier,2scopes d'une race,2acteurs/statuts distincts et2devices ; aucune email/network réel. Handoff/commandes environnement : [local](accounts-ui-local-development.md). Initiale copie202 corrigée UI1-F1, formulation retenue par le Coordinateur ; rapport initial préservé en Git/PR, pas attribution mot-pour-mot propriétaire.
 
 Prochaineaction : publier/geler ce SHA pour revue ciblée UI-2A et CIdevelopment courante ; STOP éditions ensuite. UI-2B uniquement après nouveau gate. Avant fusion finale PR14 : acceptation complète et **integrated** exact obligatoire puis mainCI. Ni délivrabilité/service/DNS/remoteDB/deploy/collecte ni lot7 complet déclarés. Aucun test/browser/serveur retenu, PG38028 conservé, _review réservé au Tester.
+

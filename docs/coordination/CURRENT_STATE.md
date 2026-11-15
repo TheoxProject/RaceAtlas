@@ -1,26 +1,15 @@
 # Point de reprise RaceAtlas
 
-**UTC 2026-11-15T07:57Z — UI-2A implémenté/testé, publication puis gel pour revue ciblée.**
+**UI-2B IN_PROGRESS — transfert après gate UI-2A exact9e9e196c63f18e482d9768a20a4dce2e4306ea0c APPROVE ciblé.** CI43692304078 development293backend223,05s/97frontend, gardes exacts. HEAD=origin9e9e196, branche feature/accounts-ui/baseb55/PR14. Developer seul writer suivi, Root PR/notes, Tester STOP ; aucun Python/Chrome, PG38028/55434 vérifié, _test uniquement. _review réservé.
 
-Branche **feature/accounts-ui**, checkout isolé add4, [Draft PR14](https://github.com/TheoxProject/RaceAtlas/pull/14), base **b55f4c66e579046c09ee5cd8745fbeed4f566848**. HEAD=origin **e80c0a6e953ea2f23281e4b8de8f230d49fb982f**. CI **43627955030 development132547965768 SUCCESS290backend278,41s/96frontend**, Ruff82/contrats/build et gardes e80 avant/après. Les181lignes browser WIP locales ne sont pas dans cette CI. Premier run2A :1PASSmobile/1FAILdesktop59,28s (ui2a-browser-first.xml), attente publique total0 défault5s avant fin API/witness~6s. Capture inspectée, pas erreur produit établie ; attente sélection test15s cohérente calendrier, caméra60°/10s inchangée. Reprise desktop seule en cours.
-
-Developer seul writer suivi ; Root PR/notes, Tester STOP et_review réservé. Reprise explicite15nov après quota : WIP conservé, même agent, aucun Python/Chrome ; Node externes non revendiqués laissés intacts. PG38028/55434 actif/schémaa74, venv/Node/Chromium/distbuild3,51s réutilisés, aucun install/initdb/reseed.
-
-**Prochaine action sûre :** commit/push cohérent preuves browser+garde erreur store+docs, communiquer SHA exact puis STOP pour revue ciblée UI-2A et nouvelle CIdevelopment. Pas UI-2B avant libération ; final PR14 exigera integratedsuccess exact puis mainCI. [Mission](../lot-7/accounts-ui-mission.md), [handoff court](../lot-7/accounts-ui-handoff.md), [commandes](../lot-7/accounts-ui-local-development.md).
+Prochaine action : client/UI export200exact/stream2MiB/leaseclick/revoke et sensibles204EXACT/403conservecompte/réseauinconnu, puis ciblés/browser réel. Pas backend/migration/deps attendu, aucun mailréel/DNS/remoteDB/service/deploy/collecte. UI2Apreuves réutilisées après diff ; limites Reviewer jsdom NONPASS distinctes deCI97 et4browsersPASS. Derniercandidatfinal demandera acceptation COMPLÈTE PR14+ci:full/integratedexact puismainCI, pas de merge surdevelopment.
 
 | Tâche | État |
 |---|---|
-| Backend compte/PLAN/anciens lots | DONE intégrés, mainbaseb55 validée |
-| UI-1 | DONE ciblé exactbbc4e1f09ddb72a8fb4f9d42d08fa712ceb56022 : APPROVE complet du jalon, CI43625467407 development290/85 |
-| UI-2A scope/saison | IN_PROGRESS preuves acquises, revue/CI candidat TODO |
-| UI-2B ICS/sensibles | TODO non attribué |
-| PR14/lot7 final | TODO acceptation complète au SHAfinal + integratedsuccess puis merge/mainCI |
-
-UI-2A livré WIP : ticket distinct contextEpoch, purge immédiate, publication privée atomique aprèslease, ScopeSaveActions exacts et Ma saison DTOseulscope/sansfiltrespublics.8store+3composants+13client+5dialog+App9 ciblés PASS etlint/build3,51s acquis. Pas de nouveau backend/migration/deps. Whitelist PNG season-desktop/mobile ajoutée avec autorisation Root, mêmesgardes1jour. Ces preuves ne sont pas une approbation UI-2A. Formulation202 retenue par le Coordinateur (pas dictée mot pour mot par le propriétaire). CIdevelopment n'est jamais le gatefusion intégré. Aucun emailréel/DNS/clé/service/remoteDB/deploy/collecte.
-
-## Résultats courants à préserver
-
-30frontend ciblés PASS13,01s après garde complète dans catchloadEntries (TypeError obsolète mêmeepoch reproduit8PASS/1FAIL avant correction). Lint/build5,64s PASS. Browser desktop1PASS40,94s (ui2a-desktop-complete.xml), mobilePASSdu premier run2A59,28s(1FAILdesktop/1PASSmobile, chemin normal réutilisé), deuxdevices1PASS14,26s (ui2a-devices.xml). Pas prétendue campagne3PASS unique. Ruff82/Node26contrats/diff PASS. Captures season-desktop/mobile vues, sourceAPI/DB/migrations/pins/moteur carte inchangés. Aucun test/browser/serveur retenu ; PG38028 conservé. Premier défaut test5sreadiness et toggleExplorer conservés, aucun seuilcaméra relâché ; startupfork0testNONPASS remplacé par CLIthreads explicite sans config modifiée.
+| UI-1 | DONE ciblébbc APPROVE/CI290+85 |
+| UI-2A | DONE ciblé9e9e APPROVE/CI293+97 |
+| UI-2B export/sensibles | IN_PROGRESS |
+| PR14/lot7local final | TODO revue complète/integrated/fusion/mainCI |
 
 ## Historique conservé (états antérieurs, non réattribués au candidat actuel)
 
@@ -72,3 +61,5 @@ TRANSFERT UI-2A : gate UI-1 exactbbc4e1f09ddb72a8fb4f9d42d08fa712ceb56022 APPROV
 Checkpoint UI-2A WIP : store ticket/contextEpoch/purge/publication atomique et lectures/écritures scoped, composants ScopeSaveActions/SeasonPanel +détails scoped raccordés.8tests store PASS1,90s,3composants PASS2,07s, UI1client13PASS1,89s/dialog5PASS2,01s/App9PASS9,62s ; lint/build3,51s PASS. Un assert fixture d'index après réordonnancement remplacé par recherche scopeID,8PASS. Browser2A deuxcas créés localement mais NON exécutés et non inclus dans cet incrément, restent prochaine action ; pas gel UI-2A. Whitelist PNG étendue uniquement season-desktop/season-mobile autorisée Root, mêmes gardes1jour. Aucun backend/migration/deps/UI2B modifié. Prochaine action : publier store/composants testé WIP puis exécuter browser2A sur_test, Root suit CI du checkpoint.
 
 UI-2A ciblés reprise : mobilebrowser PASS, desktop initial5sreadiness puis seconde panne scénario toggleExplorer qui refermait panneau existant ; ouverture conditionnelle test corrigée, strictcaméra10s inchangé. CatchloadEntries mêmeepoch TypeError tardif reproduit :8PASS/1FAIL2,37s sous threads/maxWorkers1 (forkrunner précédentNONPASS0test) ; correction minimale garde leasecomplet ticket+epoch+acteur dans catch comme succès. Reprise ciblés puis desktop à faire, pas UI2B.
+
+Checkpoint UI-2B client/UI :26tests Node (11sensibles/6download/9store) PASS3,81s,10composants PASS18,19s,13client PASS dans run19/1,68s, lint/build9,01s PASS. Browsers UI-2B non exécutés ; PG arrêté, redémarrer cluster existant avant_test. Prochaine action sûre : publier ce WIP puis construire browsers. Aucun verdict final nouveau.

@@ -1,8 +1,15 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { RaceDetails, formatDate } from './RaceDetails.jsx';
+import { triggerCalendarDownload } from './calendarDownload.js';
 import { SAVED_LABELS, seasonError } from './season.js';
 
 export function SeasonPanel({ account, controller }) {
+  const urls = useRef(new Set());
+  useEffect(() => () => { urls.current.forEach(dispose => dispose()); }, []);
+  async function download() {
+    const result = await controller.prepareCalendar();
+    triggerCalendarDownload(result, controller.isCurrent, { register: dispose => urls.current.add(dispose), unregister: dispose => urls.current.delete(dispose) });
+  }
   const [selection, setSelection] = useState(null);
   useEffect(() => {
     if (account.status === 'member' && !account.revalidating && !account.busy && account.entries.status === 'idle') controller.loadEntries();
@@ -14,6 +21,8 @@ export function SeasonPanel({ account, controller }) {
   if (selected) return <div className="season-detail"><RaceDetails item={selected} privateScope={selected.scope} labels={{}} showMatches={false} account={account} controller={controller} onBack={() => setSelection(null)} /></div>;
   return <section className="season-panel" aria-label="Vos sauvegardes">
     <p>Toutes vos sauvegardes, sans les filtres de la carte ou du calendrier.</p>
+    <button className="account-primary" disabled={account.busy || account.revalidating} onClick={download}>Exporter les Prévues et Inscrit (.ics)</button>
+    <p className="hint">Export personnel des listes Prévue et Inscrit uniquement. Fichier statique : un import antérieur ne se synchronise pas automatiquement. Aucun abonnement.</p>
     <p role="status">{items.length} sauvegarde{items.length !== 1 && 's'}</p>
     {!items.length && <p>Votre saison est vide. Choisissez une liste dans les détails d’une course pour la sauvegarder.</p>}
     {items.map(item => <button className="season-row" key={item.id} onClick={() => setSelection({ id: item.id, epoch: account.contextEpoch })}><strong>{item.race.name}</strong><span>{item.scope.raw_label}</span><span>{SAVED_LABELS[item.status]} · {formatDate(item.race.start_date)}</span></button>)}
