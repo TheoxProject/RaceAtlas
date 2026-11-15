@@ -1,3 +1,14 @@
+# Point de reprise — CI-F1 PR14
+
+15nov2026 17:11UTC. `feature/accounts-ui`, DraftPR14/baseb55, local/origin avant commitc139a5d6a1685307cb16f7a2cac08fefe52603ec. **ReadyCI43736947900 FAIL890PASS/1FAIL392,58s**, countJanvier absent15s ; duplicateDraft43738714636 annulé volontairement. Anciennes full891/118/APPROVEc139 historiques. Source libérée, correction TESTS SEULEMENT.
+
+Écoutes avantselect pour3réponsespubliques finies races200/map200/témoin1, validationcorps/versions puis UI15s inchangée ; caméra10s/60°/DEM>100/acteurs/scopes/horsfiltres conservés. Ciblé1PASS26,77s (.local-tools/pr14-ci-f1-desktop-final.xml), validationAPI5000ms etUIprête même mesure ; Ruff82/rangediffcheck PASS, produit/backend/frontend/CI/contrats/pins inchangés. [Handoff](../lot-7/accounts-ui-handoff.md) conserve analyse/capture/incident tâches redondantes et limites. Pas de cause produit affirmée ni nouvelobjectifSLA.
+
+Commande finale terminée exit0/session7718, JUnit1/0/0 réconcilié après reprisequota sans rerun ; aucunePython/Chrome restante, runtime fermé/PG38028conservé, `_test` uniquement et `_review` intact. Aucun autre writer suivi. Ne pas répéter les autres preuves vertes ou campagne complète locale.
+
+**Prochaine action sûre : publier/geler nouveauSHA, STOP éditions puis Coordinator renouvelle acceptation FINALECOMPLÈTE et integrated exacte (ci:full présent), Ready/mainCI avant lot8.** Aucun emailréel/DNS/service/remoteDB/deploy/collecte.
+
+## Historique conservé — ne vaut pas verdict du prochain SHA
 # Point de reprise RaceAtlas
 
 **15 novembre 2026,16:16UTC — PR14 candidat final UI-1+UI-2A+UI-2B, à publier puis GEL.** Branche `feature/accounts-ui`, base `b55f4c66e579046c09ee5cd8745fbeed4f566848`, local/origin avant commit `e1f06dcbc39ee38ef9ed4d3fcabc45814f29d396`, PR https://github.com/TheoxProject/RaceAtlas/pull/14. SHA exact final communiqué au push, sans modifier ensuite ce checkpoint gelé. CI e1f06dc43733669390 development SUCCESS293backend217,22s/116frontend/gardes exactes ; pas gatefusion.

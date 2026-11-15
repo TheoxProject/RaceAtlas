@@ -1,10 +1,12 @@
 """Compiled React -> real Flask/PostgreSQL, synthetic memory email only."""
 
+import json
 import re
 import threading
+import time
 from pathlib import Path
 from queue import Queue
-from urllib.parse import urlsplit
+from urllib.parse import parse_qs, urlsplit
 
 import pytest
 import requests
@@ -116,6 +118,94 @@ def screenshot(page, name):
         raise AssertionError("Fragment not scrubbed before capture")
     SHOTS.mkdir(parents=True, exist_ok=True)
     page.screenshot(path=str(SHOTS / name), timeout=5000)
+
+
+def select_empty_january(page):
+    """Separate public selection transport from presentation; no private traffic retained."""
+    started = time.monotonic()
+    trace = {"phase": "public-selection", "events": []}
+
+    def matches(request, kind):
+        parsed = urlsplit(request.url)
+        path, limit = {
+            "races": ("/api/v1/races", "200"),
+            "map": ("/api/v1/map", "200"),
+            "witness": ("/api/v1/races", "1"),
+        }[kind]
+        if parsed.path != path:
+            return False
+        parameters = parse_qs(parsed.query)
+        try:
+            selection = json.loads(parameters.get("filter", [""])[0])
+        except (ValueError, TypeError):
+            return False
+        return (
+            parameters.get("limit") == [limit]
+            and selection.get("from") == "2026-01-01"
+            and selection.get("to") == "2026-01-31"
+            and selection.get("query") == "race-road-split"
+        )
+
+    try:
+        # List/map are parallel; their version witness is a subsequent mandatory fetch.
+        # All listeners are armed before selection and each transport budget is explicit.
+        with (
+            page.expect_event(
+                "requestfinished", predicate=lambda r: matches(r, "races"), timeout=15000
+            ) as races,
+            page.expect_event(
+                "requestfinished", predicate=lambda r: matches(r, "map"), timeout=15000
+            ) as markers,
+            page.expect_event(
+                "requestfinished", predicate=lambda r: matches(r, "witness"), timeout=15000
+            ) as witness,
+        ):
+            page.get_by_label("Mois", exact=True).select_option("1")
+        documents = {}
+        for kind, completed in (("races", races), ("map", markers), ("witness", witness)):
+            response = completed.value.response()
+            # requestfinished already proves completion; Response.finished() in the
+            # pinned driver creates redundant tasks that outlive browser teardown.
+            if response is None or response.status != 200:
+                raise AssertionError("Public selection transport was not completed successfully")
+            try:
+                document = response.json()
+            except Exception:
+                raise AssertionError(
+                    "Public selection returned invalid JSON; body withheld"
+                ) from None
+            if not isinstance(document, dict):
+                raise AssertionError("Public selection document shape invalid; body withheld")
+            documents[kind] = document
+            trace["events"].append(
+                {
+                    "kind": kind,
+                    "status": response.status,
+                    "finished": True,
+                    "validated_ms": round((time.monotonic() - started) * 1000, 2),
+                }
+            )
+        version = documents["races"].get("catalog_version")
+        if (
+            not isinstance(version, str)
+            or any(doc.get("catalog_version") != version for doc in documents.values())
+            or documents["races"].get("total") != 0
+            or documents["races"].get("items") != []
+            or documents["map"].get("features") != []
+            or documents["witness"].get("items") != []
+        ):
+            raise AssertionError("Public empty selection/version mismatch; bodies withheld")
+        trace["versions_equal"] = True
+        trace["api_finished_ms"] = round((time.monotonic() - started) * 1000, 2)
+        trace["phase"] = "presentation"
+        expect(page.locator(".result-count strong")).to_have_text("0", timeout=15000)
+        trace["phase"] = "ready"
+    except Exception:
+        trace["strong_nodes"] = page.locator(".result-count strong").count()
+        raise AssertionError("January selection failed: " + json.dumps(trace)) from None
+    finally:
+        trace["elapsed_ms"] = round((time.monotonic() - started) * 1000, 2)
+        print("JANUARY_SELECTION_TIMING " + json.dumps(trace))
 
 
 @pytest.mark.e2e
@@ -482,8 +572,7 @@ def test_season_scope_actions_map_two_accounts_outside_public_filters(account_se
             page.get_by_role("button", name="Ma saison", exact=True).click()
             expect(page.locator(".season-row")).to_have_count(2)
             page.keyboard.press("Escape")
-            page.get_by_label("Mois", exact=True).select_option("1")
-            expect(page.locator(".result-count strong")).to_have_text("0", timeout=15000)
+            select_empty_january(page)
             account(page)
             page.get_by_role("button", name="Ma saison", exact=True).click()
             expect(page.locator(".season-row")).to_have_count(2)

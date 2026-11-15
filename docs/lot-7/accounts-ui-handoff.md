@@ -1,3 +1,16 @@
+# PR14 — correction CI-F1 (candidat à publier puis figer)
+
+15nov2026 17:11UTC. Branche `feature/accounts-ui`, PR14 Draft/baseb55f4c66e579046c09ee5cd8745fbeed4f566848 ; head avant commitc139a5d6a1685307cb16f7a2cac08fefe52603ec. **CI Ready43736947900 FAIL890PASS/1FAIL392,58s**, countJanvier absent15s, conservée. Anciennes full891/118 et APPROVEc139 restent historiques, pas verdict du prochainSHA.
+
+Seul code modifié : test_accounts_ui_e2e.py, scénario desktop Ma saison. Écoutes requestfinished armées AVANT selectJanvier, rattachées dates/query/limites attendues, pour races200/map200 ET témoinraceslimit1 requis par loadSelection. Validation200/JSONpublics vides/versionségales sans corps ni headers loggés ; ensuite attenteUI15s inchangée. Caméra60°/DEM>100/10s et assertions acteurs/scopes/horsfiltres intactes. Timings hôte bornés/état minimal suréchec. Capture CI réellement vue :0course/Janvier/Route/étatvide ; avec les200, mélange transport/rendu plausible, pas de cause totale ni bugproduit prouvé.
+
+Commande `_test`, offline/DateProxy : `pytest tests/backend/test_accounts_ui_e2e.py -k season_scope_actions_map_two_accounts_outside_public_filters -q --tb=short --junitxml=.local-tools/pr14-ci-f1-desktop-final.xml -rP` : **1PASS26,77s**, trois réponses200/corps validés/versionségales à5000ms depuis sélection, UIready même mesure. Premier instrumenté1PASS27,19s avait créé3tâches PlaywrightTargetClosed par appels Response.finished redondants ; retirés, requestfinished garantit déjà transport fini, run final sans ces erreurs. Aucun retry masquant un FAIL.
+
+Ruff check/format82 PASS ; diff de range depuisb55 PASS. Runtime/frontend/backend/contrats/CI/pins/migrations strictement identiquesc139, preuves immuables réutilisables explicitement, pas verdict copié. Aucune campagne complète locale. Runtimes/serveurs/browsers fermés, PG38028 conservé. Interruptionquota après ciblé : commande documentaire rejetée SANS exécution, reprise explicite puis JUnit1/0/0 réconcilié sans rerun.
+
+Prochaine action : commit/push puis GEL exact pour acceptation indépendante FINALECOMPLÈTE PR14 et integrated exacte, puis Ready/mainCI avant lot8. Aucun mailréel/DNS/remoteDB/deploy/collecte. SHA exact communiqué au push, aucune commande pendante.
+
+## Handoff précédent conservé — preuves historiques
 # PR14 — candidat UI-1 + UI-2A + UI-2B
 
 Branche `feature/accounts-ui`, [PR14](https://github.com/TheoxProject/RaceAtlas/pull/14), base `b55f4c66e579046c09ee5cd8745fbeed4f566848`. SHA final communiqué après ce commit/push puis arrêt des éditions. UI-1 exact `bbc4e1f09ddb72a8fb4f9d42d08fa712ceb56022` et UI-2A exact `9e9e196c63f18e482d9768a20a4dce2e4306ea0c` ont leurs APPROVE ciblés ; ce ne sont pas des verdicts pour ce candidat final. Checkpoint UI-2B `e1f06dcbc39ee38ef9ed4d3fcabc45814f29d396` : CI43733669390 development SUCCESS293backend217,22s/116frontend, Ruff82/contrats/build/gardes SHA. Acceptation COMPLÈTE PR14 et CI **integrated** exact restent obligatoires avant fusion, puis mainCI.
