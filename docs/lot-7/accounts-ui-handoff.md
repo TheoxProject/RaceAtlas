@@ -1,36 +1,28 @@
-# UI-2B — checkpoint client/UI WIP PR14
+# PR14 — candidat UI-1 + UI-2A + UI-2B
 
-15 novembre 2026. Branche `feature/accounts-ui`, base UI-2A `9e9e196c63f18e482d9768a20a4dce2e4306ea0c` APPROVE ciblé et CI43692304078 development293/97. Ce checkpoint n'est pas le candidat final ni une approbation PR14.
+Branche `feature/accounts-ui`, [PR14](https://github.com/TheoxProject/RaceAtlas/pull/14), base `b55f4c66e579046c09ee5cd8745fbeed4f566848`. SHA final communiqué après ce commit/push puis arrêt des éditions. UI-1 exact `bbc4e1f09ddb72a8fb4f9d42d08fa712ceb56022` et UI-2A exact `9e9e196c63f18e482d9768a20a4dce2e4306ea0c` ont leurs APPROVE ciblés ; ce ne sont pas des verdicts pour ce candidat final. Checkpoint UI-2B `e1f06dcbc39ee38ef9ed4d3fcabc45814f29d396` : CI43733669390 development SUCCESS293backend217,22s/116frontend, Ruff82/contrats/build/gardes SHA. Acceptation COMPLÈTE PR14 et CI **integrated** exact restent obligatoires avant fusion, puis mainCI.
 
-Livré : téléchargement ICS200 exact, MIME et stream réel≤2Mio, garde complète avant création URL/click et révocation ; contrôles sensibles204 exact,403 conserve acteur, réponses2xx inattendues/réseau inconnues sans retry. Dialog sécurité, confirmation suppression, nouveaux mots de passe Unicode exacts et purge des champs à fin/abandon. Aucun backend/migration/dépendance modifié.
+## Changements UI-2B
 
-Ciblés observés : `vitest run src/privateAccount.test.js src/calendarDownload.test.js --environment=node --pool=threads --maxWorkers=1`19PASS1,68s ; `accountSensitive.test.js calendarDownload.test.js season.test.js`26PASS3,81s ; composants AccountSecurityPanel/SeasonPanel/AccountPanel10PASS18,19s ; ESLint PASS, build9,01s PASS (avertissement taille bundle existant). Incident initial6PASS/2FAIL causé par mock confondant GETme et DELETEme, corrigé sans assouplissement. Les chemins UI-2A inchangés réutilisent preuves gate9e9e ; limite jsdom Reviewer NONPASS distincte deCI97/4browsers.
+- `privateAccount.js` : préflight CSRF→GETme portant ce proof et acteur attendu→opération même proof ; sensibles204 EXACT, ICS200 EXACT.403 réauth conserve le compte.2xx inattendue ou réseau interrompu = résultat inconnu, ni succès ni rollback supposé, aucun retry. Ancienne réponse ne publie pas après switch/ABA.
+- `calendarDownload.js` / SeasonPanel : MIME text/calendar, lecture réelle par chunks≤2Mio (Content-Length indicatif), cancel sur refus/contexte périmé ; lease après await puis immédiatement avant BlobURL/click, révocation différée ou cleanup idempotent. Fichier personnel statique Prévues+Inscrit, sans filtres publics ni abonnement.
+- AccountSecurityPanel/AccountPanel/CSS : logout courant/global, nouveau mot de passe exact Unicode+confirmation et suppression explicite. Current password legacy conservé sans normalisation, champs effacés à fin/abandon sans promesse de zeroisation. Dialog/focus mobile conservés.
+- Trois scénarios navigateur ajoutés ; whitelist CI ajoute uniquement `calendar-export-desktop` et `security-mobile` aux PNG synthétiques réguliers/non-symlinks, rétention1jour. Aucun backend/migration/contrat/dépendance modifié depuis UI-2A.
 
-RESTE : vrais browsers compilés→Flask→PG_test pour export/parser, multi-appareils/révocations/purge et390px, puis gel final/acceptation COMPLÈTE PR14/integrated. PG arrêté au contrôle : cluster existant à redémarrer, pas initdb. Aucun processus de test restant. Aucun mail réel/DNS/service/remoteDB/deploy.
+## Commandes et résultats observés
 
-## Handoff précédent conservé
-# UI-2A — Handoff ciblé PR14
+Depuis `frontend/` :
+- `node node_modules/vitest/vitest.mjs run src/accountSensitive.test.js src/calendarDownload.test.js src/privateAccount.test.js src/season.test.js --environment=node --pool=threads --maxWorkers=1` : **41PASS3,17s**.
+- `node node_modules/vitest/vitest.mjs run src/AccountSecurityPanel.test.jsx src/SeasonPanel.test.jsx src/AccountPanel.test.jsx --pool=threads --maxWorkers=1` : **10PASS18,19s**, composants inchangés depuis.
+- ESLint PASS ; Vite build **9,01s PASS**, avertissement taille bundle MapLibre existant. Pas de dist commité.
 
-Branche `feature/accounts-ui`, [Draft PR14](https://github.com/TheoxProject/RaceAtlas/pull/14), baseb55f4c66e579046c09ee5cd8745fbeed4f566848. Candidat à figer après ce commit ; SHA exact communiqué au push. Gate UI-1 **bbc4e1f09ddb72a8fb4f9d42d08fa712ceb56022 APPROVE**, CI43625467407 development290/85. Checkpoint WIP **e80c0a6e953ea2f23281e4b8de8f230d49fb982f**, CI43627955030 development290backend278,41s/96frontend/gardes exactes ; ne valide pas les nouvelles preuves locales/catch corrigé.
+Python natif réutilisé, `_test` opt-in seulement, Chromium/DateProxy/offline :
+- `pytest tests/backend/test_accounts_ui_e2e.py -k 'mobile_security_reauth or mobile_password_and_delete' -q --tb=short --junitxml=.local-tools/ui2b-security-split.xml` : **2PASS24,17s**. Deux appareils : logout courant préserve autre session, global/change révoquent réellement ;403 garde acteur, nouveau PW permet login, suppression purge A/sauvegardes/cache sans toucher B ni epoch/révision publics.
+- `pytest tests/backend/test_accounts_ui_e2e.py -k calendar_download_uses -q --tb=short --junitxml=.local-tools/ui2b-download-public-context.xml` : **1PASS13,68s**. Janvier/Route affiche0course publique mais export contient les2scopes planned/registered parmi4sauvegardes ; parser indépendant icalendar,2UID/dates exclusives.202 inattendue refusée ; vrai logout204 committé puis réponse réseau perdue reste inconnu, pas retry, GETme explicite constate révocation. Carte/caméra/filtres/période/focus conservés. Seules captures d'échec ajoutées ensuite, attentes métier inchangées.
+- Ruff check + format --check `raceatlas migrations tests/backend ops/ci_selection.py` : **PASS82fichiers** ; `node --test tests/contracts/contracts.test.mjs` : **26PASS** ; diff --check PASS final.
 
-## Livré UI-2A
+Incidents conservés : nouveaux mocks GETme confondaient DELETEme (6PASS/2FAIL puis corrigés) ; premier browser2FAIL30,42s (SUMMARY attendu erroné + ancien acteur correctement refusé), puis1PASS/1FAIL27,16s (enchaînement artificiel dépassait vrai quota de lectures). Scénarios séparés selon opérations indépendantes avec quotas inchangés ; aucun timeout relevé. PG sandbox semblait absent, contrôle natif a confirmé PID38028/55434 actif ; tentative start a refusé lock existant sans effet, aucun PID/data supprimé ni initdb.
 
-- Store propriétaire des sauvegardes, ticket d'opération distinct de contextEpoch/acteur, nettoyage immédiat à revalidation/switch ; publication normale ET erreur sous lease complète, contrôlée après await. Pas de listeA sousB ni retry implicite, résultat réseau inconnu impose une lecture explicite.
-- ScopeSaveActions : création/modification/retrait sur scope exact/IDopaque encodé, quatre statuts serveur, Inscrit déclaré/nonFFC. Anonyme ouvre connexion puis doit agir à nouveau, aucune sauvegarde différée. Focus revient à Compte si le déclencheur a disparu après login.
-- SeasonPanel dans dialog existant : toutes sauvegardes hors filtres publics, détail DTO du seulscope/règles/incertitudes/source/centrecommune, sans témoins inventés. Carte/calendrier/Summit/caméra/période/filtres conservés. **UI-2B export et contrôles sensibles restent TODO/non attribués.**
-- Whitelist CI ajoute seulement season-desktop/mobile avec accord Coordinator, contrôles PNG régulier/non-symlink/rétention1jour inchangés. Aucun backend/migration/dépendance modifié.
+Captures synthétiques **vues** : `.local-tools/accounts-ui-screenshots/calendar-export-desktop.png` et `security-mobile.png`. UI-1/UI-2A chemins inchangés réutilisent explicitement leurs preuves (dont carte Summit60°/DEM réel et calendrier390) ; limite Reviewer jsdom NONPASS distincte de CI97 et4browsers UI-2A. Pas de campagne backend complète locale répétée. Les nouveaux flows ne prouvent pas une délivrabilité externe.
 
-## Preuves réelles
-
-- Frontend actuel : **30PASS13,01s**, `vitest run src/season.test.js src/privateAccount.test.js src/SeasonPanel.test.jsx src/AccountPanel.test.jsx --pool=threads --maxWorkers=1` ; lint PASS, build5,64s PASS. Réutilisation App9/e80 CI96 pour chemins publics inchangés, pas verdict copié.
-- Browser carte/scopes/deuxacteurs/horsfiltres/Summit60°/DEM>100/caméra : **1PASS40,94s**, `.local-tools/ui2a-desktop-complete.xml`.
-- Browser calendrier/mobile390/scopes/détailprivé/focus/moisconservé : **1PASS** dans `.local-tools/ui2a-browser-first.xml` (run1FAILdesktop/1PASSmobile59,28s) ; chemin normal inchangé par correction catch tardif, preuve réutilisée explicitement.
-- Browser deuxcontextes cookies : **1PASS14,26s**, `.local-tools/ui2a-devices.xml` ; mêmeA voit mêmes sauvegardes, switchB sur device2 ne change pas identité/saisonA sur device1.
-- Ruff lint/format82, Node26contrats/diff PASS ; API/modèles/migrations/pins/MapView/Calendar/Filters/source inchangés par diff. Pas fullbackend local. Fixtures_test opt-in vérifient schemaa74, runtimes fermés avant Engines.
-
-Incidents conservés : première attente sélection défaut5s avant finAPI≈6s puis test15s cohérent calendrier (strictcaméra10s inchangé) ; toggleExplorer du test refermait panneau déjàouvert, corrigé conditionnellement sans forceclick. Catch ancienTypeError mêmeepoch reproduit8PASS/1FAIL puis garde ticket+epoch+acteur corrigée. Fork Vitest n'avait démarré aucun test ; exécution threads ciblée sans configuration changée. Ce ne sont pas des passes réétiquetées.
-
-Captures synthétiques **vues** : `.local-tools/accounts-ui-screenshots/season-desktop.png` et `season-mobile.png`. Deuxflows réels depuis carte ET calendrier,2scopes d'une race,2acteurs/statuts distincts et2devices ; aucune email/network réel. Handoff/commandes environnement : [local](accounts-ui-local-development.md). Initiale copie202 corrigée UI1-F1, formulation retenue par le Coordinateur ; rapport initial préservé en Git/PR, pas attribution mot-pour-mot propriétaire.
-
-Prochaineaction : publier/geler ce SHA pour revue ciblée UI-2A et CIdevelopment courante ; STOP éditions ensuite. UI-2B uniquement après nouveau gate. Avant fusion finale PR14 : acceptation complète et **integrated** exact obligatoire puis mainCI. Ni délivrabilité/service/DNS/remoteDB/deploy/collecte ni lot7 complet déclarés. Aucun test/browser/serveur retenu, PG38028 conservé, _review réservé au Tester.
-
+Prochaine action : revue indépendante COMPLÈTE UI-1+2A+2B au SHA final + label `ci:full`/integrated par Coordinator. Aucun autre lot avant fusion/mainCI. Aucun email réel/Resend/DNS/service/remoteDB/achat/déploiement/collecte. Runtimes/serveurs/browsers de test fermés avant Engine.dispose ; PG local conservé.

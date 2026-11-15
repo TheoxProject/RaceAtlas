@@ -48,6 +48,20 @@ test('late resolved operation from A cannot clear B even if abort ignored', asyn
   expect(await action).toBe(false);
   expect(c.getSnapshot()).toMatchObject({ account: B, message: null, error: null });
 });
+test('current401 invalidates only this context; an old401 cannot invalidate ABA', async () => {
+  const { controller: current } = setup(401, 'authentication_failed'); await current.refresh();
+  expect(await current.sensitive('logout')).toBe(false);
+  expect(current.getSnapshot().account).toBeNull();
+  let resolve;
+  const pending = new Promise(done => { resolve = done; });
+  const { controller: c, switchActor } = setup(204, null, () => pending); await c.refresh();
+  const action = c.sensitive('logout');
+  for (let i = 0; i < 20; i++) await Promise.resolve();
+  c.cancel(); switchActor(B); await c.refresh(); switchActor(A); await c.refresh();
+  resolve(new Response(JSON.stringify({ code: 'authentication_failed' }), { status: 401 }));
+  expect(await action).toBe(false);
+  expect(c.getSnapshot()).toMatchObject({ account: A, message: null, error: null });
+});
 test('calendar uses the bound proof and loses its lease after any refresh', async () => {
   const { controller: c, fetcher } = setup(200, null, () => new Response('BEGIN:VCALENDAR\r\nEND:VCALENDAR\r\n', { headers: { 'Content-Type': 'text/calendar; charset=utf-8' } }));
   await c.refresh();

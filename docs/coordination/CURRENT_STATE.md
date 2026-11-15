@@ -1,16 +1,19 @@
 # Point de reprise RaceAtlas
 
-**UI-2B IN_PROGRESS — transfert après gate UI-2A exact9e9e196c63f18e482d9768a20a4dce2e4306ea0c APPROVE ciblé.** CI43692304078 development293backend223,05s/97frontend, gardes exacts. HEAD=origin9e9e196, branche feature/accounts-ui/baseb55/PR14. Developer seul writer suivi, Root PR/notes, Tester STOP ; aucun Python/Chrome, PG38028/55434 vérifié, _test uniquement. _review réservé.
-
-Prochaine action : client/UI export200exact/stream2MiB/leaseclick/revoke et sensibles204EXACT/403conservecompte/réseauinconnu, puis ciblés/browser réel. Pas backend/migration/deps attendu, aucun mailréel/DNS/remoteDB/service/deploy/collecte. UI2Apreuves réutilisées après diff ; limites Reviewer jsdom NONPASS distinctes deCI97 et4browsersPASS. Derniercandidatfinal demandera acceptation COMPLÈTE PR14+ci:full/integratedexact puismainCI, pas de merge surdevelopment.
+**15 novembre 2026,16:16UTC — PR14 candidat final UI-1+UI-2A+UI-2B, à publier puis GEL.** Branche `feature/accounts-ui`, base `b55f4c66e579046c09ee5cd8745fbeed4f566848`, local/origin avant commit `e1f06dcbc39ee38ef9ed4d3fcabc45814f29d396`, PR https://github.com/TheoxProject/RaceAtlas/pull/14. SHA exact final communiqué au push, sans modifier ensuite ce checkpoint gelé. CI e1f06dc43733669390 development SUCCESS293backend217,22s/116frontend/gardes exactes ; pas gatefusion.
 
 | Tâche | État |
 |---|---|
-| UI-1 | DONE ciblébbc APPROVE/CI290+85 |
-| UI-2A | DONE ciblé9e9e APPROVE/CI293+97 |
-| UI-2B export/sensibles | IN_PROGRESS |
-| PR14/lot7local final | TODO revue complète/integrated/fusion/mainCI |
+| UI-1 | APPROVE ciblé exactbbc4e1f09ddb72a8fb4f9d42d08fa712ceb56022/CI290+85 |
+| UI-2A | APPROVE ciblé exact9e9e196c63f18e482d9768a20a4dce2e4306ea0c/CI293+97 |
+| UI-2B | Implémenté et ciblés acquis, revue finale TODO |
+| PR14/lot7local final | TODO acceptation COMPLÈTE/integrated/fusion/mainCI |
 
+UI-2B : export ICS200/MIME/stream réel2Mio/lease jusqu'au click/revoke ; sensibles204 EXACT,403 garde acteur, issue réseau/2xx inattendue honnête. Aucun backend/modèle/migration/dépendance modifié. Frontend41pure PASS3,17s+10composants PASS18,19s/lint/build9,01s ; nouveaux browsers2PASS24,17s sécurité et1PASS13,68s export hors filtres/parser/commit inconnu/contexte carte ; Ruff82/26contrats/diff PASS. [Handoff court](../lot-7/accounts-ui-handoff.md) conserve commandes/échecs de fixtures/quota/proofs réutilisés. Limite jsdom Reviewer NONPASS distinguée de CI97/4browsers UI-2A, aucun ancien verdict copié au nouveau SHA.
+
+Aucune commande/test restant ; runtimes/browsers/serveurs fermés, PG38028/55434 actif conservé, `_test` seulement et `_review` réservé. Ne pas relancer aveuglément les ciblés verts ou une campagne backend complète locale. Developer STOP après push ; Root PR/CI et Tester au SHA exact, aucun autre writer suivi.
+
+**Prochaine action sûre : Coordinator demande acceptation indépendante COMPLÈTE PR14 et integrated exact via ci:full ; development seul interdit fusion.** Aucun lot suivant avant merge/mainCI. Aucun email réel/DNS/service/remoteDB/achat/déploiement/collecte.
 ## Historique conservé (états antérieurs, non réattribués au candidat actuel)
 
 ## Correction UI1-F1 cycle1

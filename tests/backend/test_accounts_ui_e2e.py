@@ -642,3 +642,235 @@ def test_season_two_cookie_devices_do_not_share_private_identity(account_server,
             first.close()
             second.close()
             browser.close()
+
+
+@pytest.mark.e2e
+def test_calendar_download_uses_whole_private_season_and_unknown_response_is_honest(
+    account_server, database, tmp_path
+):
+    from icalendar import Calendar
+    from sqlalchemy.orm import Session
+
+    from raceatlas.models import Account
+    from raceatlas.planning import put_saved_entry
+
+    origin, _, _ = account_server
+    alice = identity(database, "alice@example.test")
+    with Session(database) as session, session.begin():
+        actor = session.get(Account, alice)
+        for scope, status in (
+            ("scope-split-one", "planned"),
+            ("scope-split-two", "registered"),
+            ("scope-road-combined", "completed"),
+            ("scope-gravel", "interested"),
+        ):
+            put_saved_entry(session, actor, scope, status)
+    with sync_playwright() as playwright:
+        browser = launch(playwright)
+        page = browser.new_page(timezone_id="Europe/Paris", accept_downloads=True)
+        prepare(page)
+        try:
+            page.goto(origin)
+            expect(page.locator(".map-canvas")).to_have_attribute(
+                "data-ready", "true", timeout=20000
+            )
+            page.get_by_role("button", name="Mois", exact=True).click()
+            page.get_by_label("Mois", exact=True).select_option("1")
+            page.get_by_label("Route", exact=True).check()
+            expect(page.locator(".result-count strong")).to_have_text("0", timeout=15000)
+            node = page.locator(".map-canvas").element_handle()
+            before = camera(page)
+            account(page)
+            sign_in(page, "alice@example.test", PASSWORD)
+            page.get_by_role("button", name="Ma saison", exact=True).click()
+            expect(page.locator(".season-row")).to_have_count(4)
+            screenshot(page, "calendar-export-desktop.png")
+            with page.expect_download() as downloaded:
+                page.get_by_role(
+                    "button", name="Exporter les Prévues et Inscrit (.ics)", exact=True
+                ).click()
+            download = downloaded.value
+            assert download.suggested_filename == "raceatlas-planning.ics"
+            destination = tmp_path / "planning.ics"
+            download.save_as(destination)
+            events = Calendar.from_ical(destination.read_bytes()).walk("VEVENT")
+            assert len(events) == 2
+            assert len({str(event["UID"]) for event in events}) == 2
+            assert all("race-road-split" in str(event["SUMMARY"]) for event in events)
+            assert all(event["DTEND"].dt > event["DTSTART"].dt for event in events)
+            page.get_by_role("button", name="Sécurité du compte", exact=True).click()
+            # A synthetically unexpected2xx must never fabricate logout success.
+            calls = []
+
+            def unexpected(route):
+                calls.append(1)
+                route.fulfill(status=202, content_type="application/json", body="{}")
+
+            page.route("**/api/v1/auth/logout", unexpected)
+            page.get_by_role("button", name="Se déconnecter", exact=True).click()
+            expect(page.get_by_role("alert")).to_contain_text("n’est pas confirmé")
+            expect(page.locator(".account-context")).to_contain_text("alice@example.test")
+            assert len(calls) == 1
+            page.unroute("**/api/v1/auth/logout", unexpected)
+            committed = []
+
+            def lose_committed_response(route):
+                result = route.fetch()
+                committed.append(result.status)
+                route.abort("failed")
+
+            page.route("**/api/v1/auth/logout", lose_committed_response)
+            page.get_by_role("button", name="Se déconnecter", exact=True).click()
+            expect(page.get_by_role("alert")).to_contain_text("n’est pas confirmé")
+            expect(page.locator(".account-context")).to_contain_text("alice@example.test")
+            assert committed == [204]
+            page.unroute("**/api/v1/auth/logout", lose_committed_response)
+            page.get_by_role("button", name="Vérifier le compte", exact=True).click()
+            expect(page.locator(".account-context")).to_contain_text("n’êtes pas connecté")
+            expect(page.locator(".account-message")).to_have_count(0)
+            page.keyboard.press("Escape")
+            expect(page.get_by_role("button", name="Compte", exact=True)).to_be_focused()
+            expect(page.get_by_label("Mois", exact=True)).to_have_value("1")
+            expect(page.get_by_label("Route", exact=True)).to_be_checked()
+            assert node.evaluate("node=>node===document.querySelector('.map-canvas')")
+            assert_camera_unchanged(camera(page), before)
+        except Exception:
+            screenshot(page, "calendar-export-desktop.png")
+            raise
+        finally:
+            browser.close()
+
+
+@pytest.mark.e2e
+def test_mobile_security_reauth_devices_password_and_delete_isolate_private_data(
+    account_server, database
+):
+    origin, _, _ = account_server
+    identity(database, "alice@example.test")
+    with sync_playwright() as playwright:
+        browser = launch(playwright)
+        first, second = (
+            browser.new_context(timezone_id="Europe/Paris"),
+            browser.new_context(timezone_id="Europe/Paris"),
+        )
+        page, device = first.new_page(), second.new_page()
+        prepare(page, mobile=True)
+        prepare(device)
+        try:
+            for target in (page, device):
+                target.goto(origin)
+                account(target)
+                sign_in(target, "alice@example.test", PASSWORD)
+            page.get_by_role("button", name="Sécurité du compte", exact=True).click()
+            page.get_by_role("button", name="Se déconnecter", exact=True).click()
+            expect(page.locator(".account-message")).to_have_text(
+                "Déconnexion effectuée sur cet appareil."
+            )
+            assert second.request.get(origin + "/api/v1/me").status == 200
+            sign_in(page, "alice@example.test", PASSWORD)
+            page.get_by_role("button", name="Sécurité du compte", exact=True).click()
+            page.get_by_role("button", name="Déconnecter tous les appareils", exact=True).click()
+            page.get_by_label("Mot de passe actuel", exact=True).fill("wrong synthetic")
+            page.get_by_role("button", name="Déconnecter tous les appareils", exact=True).click()
+            expect(page.get_by_role("alert")).to_contain_text("actuel est incorrect")
+            expect(page.locator(".account-context")).to_contain_text("alice@example.test")
+            expect(page.get_by_label("Mot de passe actuel", exact=True)).to_have_value("")
+            page.get_by_label("Mot de passe actuel", exact=True).fill(PASSWORD)
+            page.get_by_role("button", name="Déconnecter tous les appareils", exact=True).click()
+            expect(page.locator(".account-message")).to_have_text(
+                "Déconnexion de tous vos appareils effectuée."
+            )
+            assert second.request.get(origin + "/api/v1/me").status == 401
+        except Exception:
+            screenshot(page, "security-mobile.png")
+            raise
+        finally:
+            first.close()
+            second.close()
+            browser.close()
+
+
+@pytest.mark.e2e
+def test_mobile_password_and_delete_purge_only_owner(account_server, database):
+    from datetime import datetime, timezone
+
+    from sqlalchemy import select
+    from sqlalchemy.orm import Session
+
+    from raceatlas.models import Account, CatalogState, PersonalCalendarEventStore, SavedEntry
+    from raceatlas.planning import put_saved_entry
+
+    origin, _, _ = account_server
+    alice = identity(database, "alice@example.test")
+    bob = identity(database, "bob@example.test")
+    with Session(database) as session, session.begin():
+        for user in (alice, bob):
+            put_saved_entry(session, session.get(Account, user), "scope-split-one", "planned")
+            session.add(
+                PersonalCalendarEventStore(
+                    account_id=user,
+                    scope_id="scope-split-one",
+                    fingerprint="a" * 64,
+                    stamp=datetime.now(timezone.utc),
+                    sequence=0,
+                )
+            )
+        public = session.execute(select(CatalogState.epoch, CatalogState.revision)).one()
+    with sync_playwright() as playwright:
+        browser = launch(playwright)
+        first, second = (
+            browser.new_context(timezone_id="Europe/Paris"),
+            browser.new_context(timezone_id="Europe/Paris"),
+        )
+        page, device = first.new_page(), second.new_page()
+        prepare(page, mobile=True)
+        prepare(device)
+        try:
+            new_password = " Replacement Exact Passphrase 2027 "
+            for target in (page, device):
+                target.goto(origin)
+                account(target)
+                sign_in(target, "alice@example.test", PASSWORD)
+            page.get_by_role("button", name="Sécurité du compte", exact=True).click()
+            page.get_by_role("button", name="Changer le mot de passe", exact=True).click()
+            screenshot(page, "security-mobile.png")
+            page.get_by_label("Mot de passe actuel", exact=True).fill(PASSWORD)
+            page.get_by_label("Nouveau mot de passe", exact=True).fill(new_password)
+            page.get_by_label("Confirmer le nouveau mot de passe", exact=True).fill(new_password)
+            page.get_by_role("button", name="Changer le mot de passe", exact=True).click()
+            expect(page.locator(".account-message")).to_contain_text("Mot de passe modifié")
+            assert second.request.get(origin + "/api/v1/me").status == 401
+            sign_in(page, "alice@example.test", new_password)
+            page.get_by_role("button", name="Sécurité du compte", exact=True).click()
+            page.get_by_role("button", name="Supprimer mon compte", exact=True).click()
+            page.get_by_label("Mot de passe actuel", exact=True).fill(new_password)
+            page.get_by_role("checkbox").check()
+            page.get_by_role("button", name="Supprimer mon compte", exact=True).click()
+            expect(page.locator(".account-message")).to_have_text(
+                "Votre compte et ses données personnelles ont été supprimés."
+            )
+            page.keyboard.press("Escape")
+            expect(page.get_by_role("button", name="Compte", exact=True)).to_be_focused()
+            with Session(database) as session:
+                assert session.get(Account, alice) is None
+                assert session.get(Account, bob) is not None
+                assert (
+                    session.scalar(select(SavedEntry).where(SavedEntry.account_id == alice)) is None
+                )
+                assert session.get(PersonalCalendarEventStore, (alice, "scope-split-one")) is None
+                assert session.get(PersonalCalendarEventStore, (bob, "scope-split-one")) is not None
+                assert (
+                    session.scalar(select(SavedEntry).where(SavedEntry.account_id == bob))
+                    is not None
+                )
+                assert (
+                    session.execute(select(CatalogState.epoch, CatalogState.revision)).one()
+                    == public
+                )
+        except Exception:
+            screenshot(page, "security-mobile.png")
+            raise
+        finally:
+            first.close()
+            second.close()
+            browser.close()

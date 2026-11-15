@@ -21,6 +21,12 @@ test('context rejected after awaited chunk cancels stream', async () => {
   await expect(readCalendar(source.response, () => { throw new Error('stale'); })).rejects.toThrow('stale');
   expect(source.cancel).toHaveBeenCalledOnce();
 });
+test('oversized announcement and empty stream cannot produce a download', async () => {
+  const announced = response(1, { announced: String(MAX_CALENDAR_BYTES + 1) });
+  await expect(readCalendar(announced.response, () => {})).rejects.toMatchObject({ code: 'calendar_size' });
+  expect(announced.cancel).toHaveBeenCalledOnce();
+  await expect(readCalendar(response(0).response, () => {})).rejects.toMatchObject({ code: 'calendar_format' });
+});
 function browser() {
   const anchor = { click: vi.fn(), remove: vi.fn() }, urls = { createObjectURL: vi.fn(() => 'blob:synthetic'), revokeObjectURL: vi.fn() };
   return { anchor, urls, document: { createElement: () => anchor, body: { append: vi.fn() } }, schedule: vi.fn(() => 1), unschedule: vi.fn() };
