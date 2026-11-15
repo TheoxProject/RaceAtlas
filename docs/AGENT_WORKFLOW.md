@@ -50,6 +50,12 @@ Intermediate review is evidence for that feature at that SHA, never approval of 
 
 If a GitHub connector returns **403**, treat it as a permission restriction. A separately authorized Git CLI or GitHub UI path may be used if available, with the exact SHA rechecked before merging. Never bypass prompts, protections or missing permissions. Do not assert success without verifying the GitHub result.
 
+### CI modes and short reports (owner update, 14 November 2026)
+
+Draft development runs use the exact job name `development`: lint, formatting, contracts, frontend unit/build plus conservative backend seams. Unknown runtime, migration, dependency or shared-fixture changes fall back to full backend. Docs-only may explicitly select no backend; it still runs the static/frontend checks and reports that distinction. Never report a skipped backend as an integrated pass.
+
+Before the final frozen-head merge gate, Coordinator adds `ci:full` and requires the exact job name `integrated` at that SHA, with ALL existing backend/frontend/contracts/migrations/browser checks. Non-Draft PR events and post-merge `main` pushes also use complete integration. A green `development` run cannot satisfy this gate, even if backend selection fell back to full. Keep current-PR-head guards and one-day synthetic failure evidence. Report commands, counts, failures and material limits briefly; avoid replaying whole unchanged suites locally or long repetitive reports. [Implementation guide](readiness/ci-validation.md).
+
 ## 5. Mandatory merge gate
 
 **All** conditions must be satisfied:
@@ -57,7 +63,7 @@ If a GitHub connector returns **403**, treat it as a permission restriction. A s
 - The current lot or PR scope meets its observable acceptance criteria, including real integration paths with earlier lots where appropriate.
 - Developer handoff records changed files, executed commands, actual test results, exact SHA, and unresolved risks.
 - Tester independently returns **`APPROVE` for the exact current PR head SHA**, with reproducible evidence. An in-chat approval counts only when its report can be inspected; an official GitHub review is useful but not automatically required.
-- Required GitHub Actions checks are **green for the same SHA**. Pending, stale or unjustifiably skipped checks do not count.
+- Required GitHub Actions checks, including complete `integrated`, are **green for the same SHA**. Pending, stale or unjustifiably skipped checks do not count.
 - No unresolved critical/major regression, security/privacy issue, contractual mismatch, or source-rights violation.
 - The PR is mergeable against its current base. If the base changes in a way that could affect behavior, update and repeat necessary checks before merging.
 - No restricted action is bundled into the integration (e.g. production deployment, paid resource, live remote migration, unapproved FFC collection).

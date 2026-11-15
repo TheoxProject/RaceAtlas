@@ -69,8 +69,8 @@ def check_origin(settings, request, *, mutation):
         raise AuthRequestError()
 
 
-def verify_request(settings, request):
-    check_origin(settings, request, mutation=True)
+def verify_request(settings, request, *, mutation=True):
+    check_origin(settings, request, mutation=mutation)
     cookie = request.cookies.get(settings.csrf_cookie)
     token = request.headers.get("X-CSRF-Token", "")
     if (

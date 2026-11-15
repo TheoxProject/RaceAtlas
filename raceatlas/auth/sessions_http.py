@@ -148,7 +148,10 @@ def register_session_routes(app, blueprint, runtime, boundary, error_handler):
 
     @members.get("/api/v1/me")
     def me():
-        check_origin(runtime.settings, request, mutation=False)
+        if "X-CSRF-Token" in request.headers:
+            verify_request(runtime.settings, request, mutation=False)
+        else:
+            check_origin(runtime.settings, request, mutation=False)
 
         def current(session):
             account = auth.resolve_session(session, token())

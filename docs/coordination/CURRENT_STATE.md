@@ -1,65 +1,97 @@
+# CI-F3 cycle3 — candidat DIAGNOSTIC à geler
+
+15nov2026. feature/accounts-ui/DraftPR14/baseb55, HEAD/origin avant commit4ec711c7132015ebfdbedde22f30f345c365cba0. **Full43742604527FAIL890PASS/1FAIL404,09s** : Janvierphasepublic-selection/events[] puis capturemasqueinitial ; events[] venait d'une collecte tardive, pas preuveabsenceréseau. AuthSummitPASSsanscausedémontrée. Anciennes full891/118/APPROVE historiques.
+
+Callbacks publics bornés encontinu AVANTselect (request/response/finished/failed), phase/IDs/status/tempshôte, aucunbody/header/token/PII ; cachecamérahôte installépréSummit+saisieinitiale, failure sansnouvelleinterrogationrenderer, captureouterpréserveinitial. Budgets15s/10s/60°/DEM>100/horloges/acteurs/scopes inchangés. **UNrun1PASS64,57s** `.local-tools/pr14-ci-f3-diagnostic.xml` ; phasesJanvalidation10156/UI10203ms,Nov11562/UI11594ms. Numsrequêtes/select-start-return/cacheavant ajoutés ensuite comme métadonnéesseules, lectureReader/CI exacte requise. [Handoffcourt](../lot-7/accounts-ui-handoff.md) détaille réutilisation explicite/limites, pas résolution causale/SLA.
+
+Ruff82/format/rangediffcheck à vérifier final ; nulldiff produit/backend/frontend/CI/contrats/deps/migrations vs4ec. Commande63168terminée, aucunrunpending/réessai, runtimes/browsers/serveursfermés, PG38028/55434conservé/_testseul/_reviewintact. DeveloperSTOPaprèspush/GEL exact. Prochaineaction : revueFINALECOMPLÈTE renouvelée+integratedexacte ; **si nouveléchec nonrésolu, rapportblocage/optionscycle3, pas quatrième patch/retryjusqu'auvert.** Pasmerge/lot8 sansgate, aucunmailréel/DNS/remoteDB/deploy/collecte.
+## Historique conservé
+# Point de reprise — CI-F2 PR14 (candidat à figer)
+
+15nov2026 17:43UTC, `feature/accounts-ui`, DraftPR14/baseb55, head/origin avant commit195dc2b5eaedf8ad74f13d189e611393b80a9ce7. **Ready43740601544FAIL889PASS/2FAIL393,78s** : authSummit60°/10s no-snapshot/capturetimeout ; desktopretourNovembrecount1 absent15s. JanvierbarrièrePASS ; anciennesfull891/118/APPROVE195 historiques. DuplicateDraft43742128752 annulé volontairement, aucunmerge.
+
+DeltaTESTSSEULEMENT : barrière3réponsespubliques généralisée Janvier/Novembre, versions/IDs validés avantUI15s ; observateurcaméra AVANTSummit auth et capturesfailure ne masquentpasdiagnostic. Caméra10s/60°/DEM>100/horloges/acteurs/scopes inchangés, aucun readinesssource/préchauffage/produit changé. **2PASS47,75s** local_test offline/DateProxy (auth19,309s/desktop27,482s), JUnit `.local-tools/pr14-ci-f2-targeted.xml`. Ruff82/rangediffcheckPASS, touscheminsproduit/backend/frontend/CI/contrats/pins/migrations identiques195. [Handoffcourt](../lot-7/accounts-ui-handoff.md) précise échecs/limites ; pas de causeGPU/transport ni résolutionSummit démontrée parPASSinstrumenté.
+
+Aucune commande/test restant ; serveurs/runtimes/browsers fermés, PG38028/55434 conservé, _test utilisé/_reviewréservé. DeveloperSTOPaprèscommitpush, nouveauSHAexactannoncé sansrééditergel. Prochaine action sûre : Coordinator renouvelle acceptation FINALECOMPLÈTE PR14 et integrated exacte via ci:full, puisReady/mainCI avantlot8. Pasderelanceaveugle desautrespreuvesvertes.
+
+Lot8owner acquis : Changementsrécents dansMaSaison + compteur + Marquerlues ; unsave scope supprimeSESnotifications et pas autreslistes. Aucune implémentation8 avantgate. Aucunemailréel/DNS/service/remoteDB/deploy/collecte.
+## Historique conservé
+# Point de reprise — CI-F1 PR14
+
+15nov2026 17:11UTC. `feature/accounts-ui`, DraftPR14/baseb55, local/origin avant commitc139a5d6a1685307cb16f7a2cac08fefe52603ec. **ReadyCI43736947900 FAIL890PASS/1FAIL392,58s**, countJanvier absent15s ; duplicateDraft43738714636 annulé volontairement. Anciennes full891/118/APPROVEc139 historiques. Source libérée, correction TESTS SEULEMENT.
+
+Écoutes avantselect pour3réponsespubliques finies races200/map200/témoin1, validationcorps/versions puis UI15s inchangée ; caméra10s/60°/DEM>100/acteurs/scopes/horsfiltres conservés. Ciblé1PASS26,77s (.local-tools/pr14-ci-f1-desktop-final.xml), validationAPI5000ms etUIprête même mesure ; Ruff82/rangediffcheck PASS, produit/backend/frontend/CI/contrats/pins inchangés. [Handoff](../lot-7/accounts-ui-handoff.md) conserve analyse/capture/incident tâches redondantes et limites. Pas de cause produit affirmée ni nouvelobjectifSLA.
+
+Commande finale terminée exit0/session7718, JUnit1/0/0 réconcilié après reprisequota sans rerun ; aucunePython/Chrome restante, runtime fermé/PG38028conservé, `_test` uniquement et `_review` intact. Aucun autre writer suivi. Ne pas répéter les autres preuves vertes ou campagne complète locale.
+
+**Prochaine action sûre : publier/geler nouveauSHA, STOP éditions puis Coordinator renouvelle acceptation FINALECOMPLÈTE et integrated exacte (ci:full présent), Ready/mainCI avant lot8.** Aucun emailréel/DNS/service/remoteDB/deploy/collecte.
+
+## Historique conservé — ne vaut pas verdict du prochain SHA
 # Point de reprise RaceAtlas
 
-**UTC2026-11-14T08:28Z — lot7, correction PLAN-F1 cycle1 test-only prête à publier/figer pour renouvellement acceptation complète.**
-
-## Branche et prochaine action
-
-Branche **feature/private-planning**, checkout isolé **C:/Users/theop/.codex/worktrees/add4/RaceAtlas**, Developer seul writer suivi ; Root PR/notes ignorées, Tester read-only au gel. [Draft PR13](https://github.com/TheoxProject/RaceAtlas/pull/13), base **87d7dd53efcdb144c38e2d3ef1f83c89e63654fc** inchangée. HEAD=origin avant correction **aa07746ae7af78000f40de910ccd67f36d1c229e** ; le commit contenant ce checkpoint est le candidat final A+B, son SHA exact est communiqué après push puis vérifié par Git.
-
-**Prochaine action sûre :** commit/push cohérent test+docs PLAN-F1, communiquer SHA exact et STOP éditions. Root suit nouvelle CI et demande acceptation indépendante **COMPLÈTE PR13 PLAN-A+B** ; pas une approbation B seule ni lot7 terminé. Aucun prochain push avant conclusion CI précédente, aucune UI/lot8/main direct. [Mission](../lot-7/planning-mission.md), [handoff final](../lot-7/planning-ics-handoff.md), [commandes](../lot-7/planning-local-development.md).
+**15 novembre 2026,16:16UTC — PR14 candidat final UI-1+UI-2A+UI-2B, à publier puis GEL.** Branche `feature/accounts-ui`, base `b55f4c66e579046c09ee5cd8745fbeed4f566848`, local/origin avant commit `e1f06dcbc39ee38ef9ed4d3fcabc45814f29d396`, PR https://github.com/TheoxProject/RaceAtlas/pull/14. SHA exact final communiqué au push, sans modifier ensuite ce checkpoint gelé. CI e1f06dc43733669390 development SUCCESS293backend217,22s/116frontend/gardes exactes ; pas gatefusion.
 
 | Tâche | État |
 |---|---|
-| Lots0–6/PRE-01 | DONE intégrés |
-| ACC-01 identité/sauvegardes internes | DONE PR11/main5e2c84, CI457/67 |
-| ACC-02 backend A+B1+B2+C0+C1+C2 | DONE PR12/merge87d7, APPROVE exactda5743, PR/mainCI791/67 |
-| PLAN-00 mission/Draft | DONE cb02/CI43518396894 SUCCESS791backend191,73s/67frontend |
-| PLAN-A API privée+snapshot | DONE ciblé ae446/APPROVE/CI810+67 ; preuves réutilisées après diff |
-| PLAN-B ICS/cache/codec/migration | IN_PROGRESS livraison et ciblés acquis, CI/revue candidat final TODO |
-| PLAN-FINAL | TODO SHA final/revue complète/CI/merge/mainCI |
-| ACC-UI/acceptation complète lot7 | TODO après intégrations |
-| Lot8/candidatV1/activation | TODO dépendances/owner gates ; aucun deploy autorisé |
+| UI-1 | APPROVE ciblé exactbbc4e1f09ddb72a8fb4f9d42d08fa712ceb56022/CI290+85 |
+| UI-2A | APPROVE ciblé exact9e9e196c63f18e482d9768a20a4dce2e4306ea0c/CI293+97 |
+| UI-2B | Implémenté et ciblés acquis, revue finale TODO |
+| PR14/lot7local final | TODO acceptation COMPLÈTE/integrated/fusion/mainCI |
 
-## PLAN-F1 cycle1 (réouverture du candidat final)
+UI-2B : export ICS200/MIME/stream réel2Mio/lease jusqu'au click/revoke ; sensibles204 EXACT,403 garde acteur, issue réseau/2xx inattendue honnête. Aucun backend/modèle/migration/dépendance modifié. Frontend41pure PASS3,17s+10composants PASS18,19s/lint/build9,01s ; nouveaux browsers2PASS24,17s sécurité et1PASS13,68s export hors filtres/parser/commit inconnu/contexte carte ; Ruff82/26contrats/diff PASS. [Handoff court](../lot-7/accounts-ui-handoff.md) conserve commandes/échecs de fixtures/quota/proofs réutilisés. Limite jsdom Reviewer NONPASS distinguée de CI97/4browsers UI-2A, aucun ancien verdict copié au nouveau SHA.
 
-Tester complet REQUEST CHANGES exactaa07746 :113PASS/1FAIL89,01s +16sondes indépendantesPASS16,31s, rapport initial `.local-tools/tester-report-planning.md` conservé. CI43575055846 Linux SUCCESS853backend170,07s/67frontend ne remplaçait pas validation native CP1252. Unique P2 harness : json.load(stdin texte) décodait les bytesUTF8 enCP1252 ; aucune anomalie runtime codec établie. Source libérée explicitement, Developer seul writer pour test/handoff/checkpoint.
+Aucune commande/test restant ; runtimes/browsers/serveurs fermés, PG38028/55434 actif conservé, `_test` seulement et `_review` réservé. Ne pas relancer aveuglément les ciblés verts ou une campagne backend complète locale. Developer STOP après push ; Root PR/CI et Tester au SHA exact, aucun autre writer suivi.
 
-Correctif local test uniquement : stdin.buffer/read/decodeUTF8, ensure_ascii=False/payloadnonASCII conservés, assertions bytes/UID/hosts/TZ/hashseeds fortes. Deux enfants encodage/mode explicitement vérifiés CP1252/mode0 et UTF8/mode1. Parent CP1252/mode0 : **22PASS3,50s**, `.local-tools/plan-f1-codec.xml`, Ruff lint/format78 PASS, Node26contrats/diff PASS. Aucun changement runtime/migrations/contrats/deps/frontend/ops/CI (git diff --exit-code aa07746 nul), versions identiques. Les113 succès produit et16sondes indépendantes sont réutilisés après diff ; aucun rerun113, DB ou navigateur. Les113+1 Developer initiaux restent historiques sous contexte d’encodage hérité, pas validation deCP1252. Nouveau SHA/CI/revue complète à acquérir, pas de clôture par la seule correction.
+**Prochaine action sûre : Coordinator demande acceptation indépendante COMPLÈTE PR14 et integrated exact via ci:full ; development seul interdit fusion.** Aucun lot suivant avant merge/mainCI. Aucun email réel/DNS/service/remoteDB/achat/déploiement/collecte.
+## Historique conservé (états antérieurs, non réattribués au candidat actuel)
 
-## Gate A et candidat B
+## Correction UI1-F1 cycle1
 
-Gate PLAN-A exacte **ae446a5f1ff266a1f4590930485469ce973dff5e** : Tester APPROVE ciblé139PASS126,22s+8sondes26,12s, `.local-tools/tester-report-planA.md` ; CI **43572962256 SUCCESS810backend162,74s/67frontend**, Ruff73/contrats/build/pip et gardes ae446 avant/après. Source explicitement libérée. Cette preuve ne vaut pas approbation finale A+B.
+CI baseline8f3 **43623571912 development SUCCESS288backend167,17s/85frontend**, source exacte avant/après. Tester ciblé REQUEST CHANGES F1seul (copie202 promesse d’envoi malgré providerfail), rapport initial `.local-tools/tester-report-ui1-initial-8f3.md` conservé/publié ; SOURCE RELEASED. Developer seul writer, UI2planvalidé mais non attribué.
 
-B livré : codec runtime stdlib pur DTO, GET/HEAD `/api/v1/me/calendar.ics`, serveur sélectionne strictement planned+registered sans filtre public. Snapshot source unique scoped/raiseload sous auth READ COMMITTED et Accountlock, ledger batch3 requêtes pour201événements, rien par événement. Nouveau PersonalCalendarEventStore/migration **a74d915e3c02** après f61, PK account+scope, CASCADE account/scope sans affaiblir SavedEntryRESTRICT. Fingerprint métier+incarnation, stampDB/SEQUENCE0..2147483647, UID namespace/tuple exacts, rétention même unsave jusqu'à purge account/scope sans TTL/LRU.
+Seule constante produit changée vers formulation retenue par le Coordinateur « Demande prise en compte. Vérifiez votre boîte de réception et vos courriers indésirables ; si un message vous parvient, suivez ses instructions. » Identique connu/inconnu/limité/providerfail.13testsclientPASS1,82s ; lint/build8,16s PASS ; browser ciblé2PASS16,04s (2deselected) sur_test, providerquota réellement déclenché1fois/cooldown/unknown/mise enpage390. Captures dialog-desktop/account-mobile vues, runtimes fermés. Premier run1PASS/1FAIL26,51s =fixtureadresse commune/cooldown conservé, corrigé par adresse synthétique par port, pas assouplissement produit. Ruff82/diff PASS.
 
-Caps1000saved/1000events/2MiB exact/16KiB texte émis composé/10000paires, refus explicite sans tronquer ; cap retenu permet update existant mais refuse nouvelle paire. Date all-day fin exclusive, UTF8/CRLF/fold75octets codepoints intacts, pas METHOD/invites/GEO/heure inventée. STATUS:CANCELLED seulement fait source. Rendu avant DML et commit/close avant Response ; rollback complet cap/codec/DML/commit. Fichier statique, aucune synchronisation automatique des imports précédents garantie. Aucun favori/statut/source/publicepoch changé par export.
+Diff nul autresproduits/backend/migrations/pins/CI/dialog/CSS ; preuves104backend/18frontend/App9/flows/sondes indépendantes réutilisées après diff, pas verdictcopié, pas replay104/full881. Prochaine action : commit/push test+copie+docs, annoncerexactSHA et STOP pour revue ciblée UI1 complète/CIdevelopmentnouvelle. UI-2/mergegateintegrated restent àfaire.
 
-Dev-only **icalendar7.3.0/python-dateutil4.0.0** résolus/dry-run/metadata puis installés via runtimepip --python venv. tzdata2026.6/typing_extensions4.16 existants réutilisés, pipcheckPASS. Runtime requirements inchangés, pas Django. Provenance/licences dans [notice](../third-party/planning-parser.md).
+## UI-1 livré et preuves
 
-## Résultats réels et incidents
+Bootstrap avantReact/scrub/preuveRAM enveloppe effaçable commune main/props (fermeture/succès/invalidité définitive), pas POST au montage/StrictMode ni token stockage/JSON/URLfinal/log. Dialog FR login/signup/renvoi/oubli/confirmation/reset ; Unicodeexact15–128points/512UTF8, emailASCII expliqué,202 uniforme et pas autologin. Contrôleur générations/abort/identité, login401 conserveA, late401 ignoréeaprèsB, resetB gardeA, feedback ancien nettoyé sur switch ; carte publique montée/conservée.
 
-Final ciblé **113 PASS97,59s**, exit0, `.local-tools/plan-b-final.xml` :21 codec/parser+21 PG/HTTP+19 API-A+29 authC1+20 fondation publique+3 options. Ajout ensuite d'une preuve processus/restart/APP_BASE_URL/TZ/PYTHONHASHSEED : **1 PASS3,47s**, `.local-tools/plan-b-process-formatted.xml`, produit inchangé. Donc114 cas exécutés sans échec au candidat final, pas une prétendue unique campagne114. Migration native `_test` upgrade/check/base/upgrade/check incluse au run113. Ruff lint/format78 PASS,26 contrats publics Node PASS, schéma planning/17refs locales PASS, pipcheck/diff PASS avant commit.
+Préflight corrigé **CSRF→GETme portant CEproof→op mêmeproof**, pas coalescence avec mepassif. Headeroptionnel GETme/liste/ICS vérifié avantSQL ; vide/invalide403, sansheadercompatible, Origin absent GET accepté ; cookie seulbearer. Repro B→A→B1FAIL5,90s avant correction conservée. Headers HTML XFO/CSPframe-ancestors/no-referrer ciblés, OPS02Resendchoisi/nonvérifié aligné sans rapport historique modifié.
 
-Développement B conservé : codec19PASS/2FAIL (encodage littéraux à la création), corrigé21PASS0,97s ; PG11PASS/3FAIL16,32s maxfail3 (hooks nouveaux mauvais Engine, fixture201 sans position, suppression brute bloquée par règles), tests corrigés17PASS21,27s puis113 final. Gardes produit/assertions métier préservés. A historique :10PASS19,271s,18PASS/1FAIL36,392s contratId manquant corrigé ; invocation deux chemins inexistants sans tests, puis139PASS118,877s avant interruption, réconcilié sans relance. JUnit ignorés conservés, pas cache pytest assimilé à un résultat.
+Preuves acquises :87PG/HTTP PASS40,02s (11readguard+29C1+47C0),18frontendisolés(13client+5dialog), App9 PASS12,02s initial ;17tests sélectionCI PASS0,10s ; browser Reactcompilé→Flask→PG2PASS26,09s desktop/mobile390. Desktop supplémentaire mois/filtre/recherche/détail noninitiaux1PASS31,27s (ui1-browser-context-fixed.xml), setup détails/caméra corrigé sans produit changé. Ruff82/lintfrontend/build3,50s/Node26contrats/diff PASS ; YAML existant js-yaml et4blocsBash syntaxe PASS. Captures dialog-desktop/reset-form-mobile/account-reset synthétiques vues, URLscrub ; provider Development RAM seulement. Pas full862local.
 
-Seams API-A et authC1 réexercés ; ACC01core68 inchangé et preuves auth intégrées réutilisées après diff. Aucun run810/backend complet ou navigateur/buildfrontend local redondant : frontend, moteur carte, source/sync, auth core et hosting inchangés. CI complète du nouveau candidat et revue exactes restent exigées.
+Focus : premierbrowser1PASS/1FAIL après changementidentitéremontantinput ; diagnostic simple1PASS timingvariable, puis barrièreinitialenondéclenchée1timeout. Maintenant meB retenu puis libéré sur inputA, focus recentré uniquement horsdialog,2PASS. Vitestgroupé2timeoutsrunner sans tests puisfichiersisolésverts, configinchangée. Erreurcallbacklocale captée4FAIL/lint puis corrigée5PASS. Rapports/JUnit ignorés conservés ; ne pas relabeller incidents ou cache enPASS.
 
-## Intégrations et limites conservées
+## Politique CI propriétaire14nov
 
-Auth PR12 merge **87d7dd53efcdb144c38e2d3ef1f83c89e63654fc**, arbre da5743 revu ; [intégration auth](../lot-7/auth-integration.md). Tester APPROVE complet239PASS et CI PR43514658079 SUCCESS791/67 ; mainCI **43515934267 SUCCESS791backend138,79s/67frontend**. Historique C0 CI35f710PASS/7FAIL fixtureURL masquée corrigée,401 passive sansSet-Cookie conservée. Queue auth16+1/channels16/probePGclos avant fournisseur ; limites crash/inflight/stop documentées, mails simulés seulement.
+Draft sansci:full : job APIdevelopment, touslint/format/pip/contrats/frontend/build et backendciblé conservateur. Inconnu runtime/deps/migration/conftest=>fallbackfull, docs-only backendabsent explicitement. NonDraft/ci:full/main : job APIintegrated complet, seul nom accepté gatefusion. Unjob YAML IDintegrated avecnomdynamique, guardssourceavant/après/contentsread/persistcredentialsfalse/artefactsPNGwhitelist+JUnit1jour conservés. Rootposeci:full auheadfinal, vérifieintegratedsuccess exact puismainCIcomplète. Tests sélection17PASS ; vraieCI nouvelleàexercer. AGENTS/workflow alignés, rapports courts commandes/comptes/échecs/risques, pas skipci.
 
-Altitude2,5D initial/Summit3D à la demande ; carte/calendrier gardent période/filtres/caméra. Email+PW et confirmation avant connexion ; ICS planned+registered, statuts par scope et Inscrit déclaratif. AND même scope ; centres commune seulement ; absence→to_verify sans annulation inventée. Aucun nouveau profil produit/feed/UI.
+## Intégration acquise, pas à rejouer
 
-Resend Free choisi ; club déclaré propriétaire **ucthonon.fr/Webador**, **raceatlas.ucthonon.fr email seulement**, From futur **RaceAtlas <notifications@raceatlas.ucthonon.fr>** non vérifiés. APP_BASE_URL réelle Render inconnue, indépendante du domaine email. Auth production fermée par défaut, Development local, clés/From/URL vides et gardes false. Premier deploy privé après lot8/candidatV1 avec autorisation distincte ; droits FFC/terrain/délivrabilité/capacité non acquis.
+[PR13](https://github.com/TheoxProject/RaceAtlas/pull/13) confirmée merged, head revu **679ec3e0dd53669d445a254f2b840c503a087bbb**, merge **b55f4c66e579046c09ee5cd8745fbeed4f566848**, arbre identique **dbda4b2fc2a1a7e75939e4cec74b29f8531c78c3** (fetch/diff vérifiés). Tester APPROVE complet A+B : 27 PASS courants6,27s + preuves produit113PASS/16sondes réutilisées après diff nul. CI PR43576022192 SUCCESS853backend238,36s/67frontend ; main43576573783 SUCCESS853backend156,11s/67frontend, gardes source avant/après. [Intégration durable](../lot-7/planning-integration.md). PLAN-F1 initialaa077 113PASS/1FAIL Windows CP1252 corrigé test-only, jamais relabellisé PASS. Rapports complets publiés PR13, canonical ignoré .local-tools/tester-report-planning.md.
 
-## Environnement à réutiliser
+[PR12](https://github.com/TheoxProject/RaceAtlas/pull/12) backend auth intégré87d7, head da5743, APPROVE complet239PASS, CI791/67 ; [preuve](../lot-7/auth-integration.md). Cookies opaques, email/hashonly/confirmation24h/reset30m, CSRF/Origin/admission/dispatcher borné déjà livrés. Defaults fermés, Development local/tests. Ne pas confondre backend terminé et lot7 complet.
 
-Python3.12.14 **C:/Users/theop/.codex/worktrees/1a1e/RaceAtlas/.venv/Scripts/python.exe**, pip via runtimePython `-m pip --python <venv>` (venv sanspipmodule). Argon2/Resend+transitifs installés proprement ; pas réinstallaveugle. Node24.22.1/pnpm10.20.0/node_modules/browsers existants. Pas wrapperpnpm11 ni fauxClockPlaywrightglobal (carteDateProxyseulement).
+## Environnement et interdictions de reprise aveugle
 
-PG17.11 existant127.0.0.1:55434, cluster `.local-tools/pgdata-lot2-native`, user **raceatlas_local**, dernierPID38028. Vérifierpg_ctlstatus, jamaisinitdb/reseed/killglobal. DeveloperDB **raceatlas_lot2_test**, TesterDB **raceatlas_lot2_review** distinctes, **RACEATLAS_DISPOSABLE_DB=1**, preview **raceatlas_map_demo** préservée. Schéma base auth **f61d338ab204**, schéma Developer `_test` désormais **a74d915e3c02** ; nepaslancerancienworktreecontreDBdéjàmigréePLAN. Source Reviewer libérée avant B ; runtime/fixtures fermés après les ciblés.
+Python3.12.14 : C:/Users/theop/.codex/worktrees/1a1e/RaceAtlas/.venv/Scripts/python.exe. Venv sans pip module ; runtimePython -m pip --python si besoin prouvé, pas réinstallation. Node24.22.1/pnpm10.20.0/node_modules et browsers existants (pas pnpm11). Playwright DateProxy seulement pour date fixe, pas page.clock.set_fixed_time qui casse RAF/Summit.
 
-Copie personnelle main2e03cd8 et autresworktreesintacts ; feature/account-authentication conservéeauSHArevu, pasreset/forcepush. Helpers/rapports/profils/probes ignorés `.local-tools`, jamaisgitaddglobal/.env/secrets. Canoniqueauth `.local-tools/tester-report-auth.md` publiéintégralPR12. Ne pasrejouer138/225testsverts pouruneinterruption sansnouveaurisque/source. Le dépôt et Git/CI font foi sur ce checkpoint.
+PG17.11 loopback127.0.0.1:55434, cluster .local-tools/pgdata-lot2-native, user raceatlas_local, dernierPID38028 ; vérifier statut avant réutilisation, jamais initdb/reseed/killglobal. DeveloperDB raceatlas_lot2_test, TesterDB raceatlas_lot2_review, preview raceatlas_map_demo préservée ; RACEATLAS_DISPOSABLE_DB=1. Les DB test/review sont à **a74d915e3c02**, ne pas utiliser un ancien checkout contre ce schéma. Aucun test/serveur/browser conservé après acceptation PLAN ; processus Node externes non revendiqués intacts. Fermer runtime/workers avant dispose Engine. Aucun autre writer actif attribué.
+
+Copie personnelle main2e03cd8 et autres worktrees intacts. Branches historiques conservées, pas reset/clean/forcepush. .local-tools ignoré jamais gitaddglobal. Git/CI priment les notes ; source figée pendant revue, changements suivis imposent nouveau verdict/CI.
+
+## Limites externes
+
+Resend Free retenu ; club déclare posséder ucthonon.fr/Webador, raceatlas.ucthonon.fr email seulement, futur From RaceAtlas <notifications@raceatlas.ucthonon.fr> non vérifié. APP_BASE_URL Render réelle inconnue. Aucun compte/service/DNS/email réel/achat/remoteDB/déploiement/collecte autorisé. Premier déploiement privé après lot8/candidatV1 et autorisation distincte. Droits FFC/terrain, délivrabilité, capacité Free/physicalGPU restent à qualifier ; aucune activation automatisée. Owner silence jamais approbation. Quotas non mesurables, pas de promesse de reprise automatique.
 
 
+Pas de test/serveur/browser retenu au gel ; fermer runtimes avant Engines, PG38028 conservé. Reprise explicite après quota a conservé le même WIP/agent ; anciennecommande rejetée n'avait rien exécuté. Node externes non revendiqués laissés intacts. Pas réexécution87/18/2 pour statut documentaire, pas UI-2 ni activation externe.
 
-Pas de processus test/serveur retenu après113+1 ; PG38028/55434 conservé, `_review` réservé Tester. Node externes non revendiqués intacts. Ne pas exécuter ancien worktree contre `_test` migrée a74. Aucune réexécution113/139 pour checkpoint documentaire. Après gel, toute modification suivie impose renouvellement revue/CI.
+TRANSFERT UI-2A : gate UI-1 exactbbc4e1f09ddb72a8fb4f9d42d08fa712ceb56022 APPROVE ciblé complet (PR14comment6882116984), CI43625467407 developmentSUCCESS290backend266,47s/85frontend, gardes exacts. Source libérée, Developer seul writer suivi ; HEAD=originbbc4e1f au départ, PG38028/55434 vérifié, aucun Python/Chrome. UI-2A scopes+saison attribué, UI-2Bexport/sensibles TODO. Prochaineaction sûre : séparer ticket/contextEpoch et publication privée atomique puis composants/ciblés ; pas backend/migration/deps ni full881local.
+
+Checkpoint UI-2A WIP : store ticket/contextEpoch/purge/publication atomique et lectures/écritures scoped, composants ScopeSaveActions/SeasonPanel +détails scoped raccordés.8tests store PASS1,90s,3composants PASS2,07s, UI1client13PASS1,89s/dialog5PASS2,01s/App9PASS9,62s ; lint/build3,51s PASS. Un assert fixture d'index après réordonnancement remplacé par recherche scopeID,8PASS. Browser2A deuxcas créés localement mais NON exécutés et non inclus dans cet incrément, restent prochaine action ; pas gel UI-2A. Whitelist PNG étendue uniquement season-desktop/season-mobile autorisée Root, mêmes gardes1jour. Aucun backend/migration/deps/UI2B modifié. Prochaine action : publier store/composants testé WIP puis exécuter browser2A sur_test, Root suit CI du checkpoint.
+
+UI-2A ciblés reprise : mobilebrowser PASS, desktop initial5sreadiness puis seconde panne scénario toggleExplorer qui refermait panneau existant ; ouverture conditionnelle test corrigée, strictcaméra10s inchangé. CatchloadEntries mêmeepoch TypeError tardif reproduit :8PASS/1FAIL2,37s sous threads/maxWorkers1 (forkrunner précédentNONPASS0test) ; correction minimale garde leasecomplet ticket+epoch+acteur dans catch comme succès. Reprise ciblés puis desktop à faire, pas UI2B.
+
+Checkpoint UI-2B client/UI :26tests Node (11sensibles/6download/9store) PASS3,81s,10composants PASS18,19s,13client PASS dans run19/1,68s, lint/build9,01s PASS. Browsers UI-2B non exécutés ; PG arrêté, redémarrer cluster existant avant_test. Prochaine action sûre : publier ce WIP puis construire browsers. Aucun verdict final nouveau.
