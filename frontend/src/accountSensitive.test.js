@@ -79,4 +79,3 @@ test.each([206, 202])('calendar rejects HTTP%s without returning any file', asyn
   expect(await c.prepareCalendar()).toBeNull();
   expect(c.getSnapshot()).toMatchObject({ account: A, error: { code: 'unconfirmed_response' } });
 });
-
