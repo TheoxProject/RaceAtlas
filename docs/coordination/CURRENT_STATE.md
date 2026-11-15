@@ -1,3 +1,11 @@
+# CI-F3 cycle3 — candidat DIAGNOSTIC à geler
+
+15nov2026. feature/accounts-ui/DraftPR14/baseb55, HEAD/origin avant commit4ec711c7132015ebfdbedde22f30f345c365cba0. **Full43742604527FAIL890PASS/1FAIL404,09s** : Janvierphasepublic-selection/events[] puis capturemasqueinitial ; events[] venait d'une collecte tardive, pas preuveabsenceréseau. AuthSummitPASSsanscausedémontrée. Anciennes full891/118/APPROVE historiques.
+
+Callbacks publics bornés encontinu AVANTselect (request/response/finished/failed), phase/IDs/status/tempshôte, aucunbody/header/token/PII ; cachecamérahôte installépréSummit+saisieinitiale, failure sansnouvelleinterrogationrenderer, captureouterpréserveinitial. Budgets15s/10s/60°/DEM>100/horloges/acteurs/scopes inchangés. **UNrun1PASS64,57s** `.local-tools/pr14-ci-f3-diagnostic.xml` ; phasesJanvalidation10156/UI10203ms,Nov11562/UI11594ms. Numsrequêtes/select-start-return/cacheavant ajoutés ensuite comme métadonnéesseules, lectureReader/CI exacte requise. [Handoffcourt](../lot-7/accounts-ui-handoff.md) détaille réutilisation explicite/limites, pas résolution causale/SLA.
+
+Ruff82/format/rangediffcheck à vérifier final ; nulldiff produit/backend/frontend/CI/contrats/deps/migrations vs4ec. Commande63168terminée, aucunrunpending/réessai, runtimes/browsers/serveursfermés, PG38028/55434conservé/_testseul/_reviewintact. DeveloperSTOPaprèspush/GEL exact. Prochaineaction : revueFINALECOMPLÈTE renouvelée+integratedexacte ; **si nouveléchec nonrésolu, rapportblocage/optionscycle3, pas quatrième patch/retryjusqu'auvert.** Pasmerge/lot8 sansgate, aucunmailréel/DNS/remoteDB/deploy/collecte.
+## Historique conservé
 # Point de reprise — CI-F2 PR14 (candidat à figer)
 
 15nov2026 17:43UTC, `feature/accounts-ui`, DraftPR14/baseb55, head/origin avant commit195dc2b5eaedf8ad74f13d189e611393b80a9ce7. **Ready43740601544FAIL889PASS/2FAIL393,78s** : authSummit60°/10s no-snapshot/capturetimeout ; desktopretourNovembrecount1 absent15s. JanvierbarrièrePASS ; anciennesfull891/118/APPROVE195 historiques. DuplicateDraft43742128752 annulé volontairement, aucunmerge.

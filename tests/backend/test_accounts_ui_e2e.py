@@ -10,7 +10,14 @@ from urllib.parse import parse_qs, urlsplit
 
 import pytest
 import requests
-from map_support import camera, install_camera_diagnostic, intercept_map, launch, set_civil_date
+from map_support import (
+    camera,
+    camera_diagnostic,
+    install_camera_diagnostic,
+    intercept_map,
+    launch,
+    set_civil_date,
+)
 from playwright.sync_api import expect, sync_playwright
 from test_auth_http_sessions import PASSWORD, identity
 from test_e2e import assert_camera_unchanged, wait_camera_pitch
@@ -124,7 +131,13 @@ def select_public_month(page, month, expected_ids):
     """Separate public selection transport from presentation; no private traffic retained."""
     started = time.monotonic()
     trace = {"phase": "public-selection", "month": month, "events": []}
+    initial_camera = camera_diagnostic(page)
+    trace["camera_before_selection"] = {
+        "age_ms": initial_camera.get("host_snapshot_age_ms"),
+        "snapshot": initial_camera.get("snapshot"),
+    }
     first, last = {"1": ("2026-01-01", "2026-01-31"), "11": ("2026-11-01", "2026-11-30")}[month]
+    observed = {}
 
     def matches(request, kind):
         parsed = urlsplit(request.url)
@@ -147,6 +160,36 @@ def select_public_month(page, month, expected_ids):
             and selection.get("query") == "race-road-split"
         )
 
+    def record(request, phase, status=None):
+        entry = observed.get(request)
+        if entry is None:
+            kind = next(
+                (kind for kind in ("races", "map", "witness") if matches(request, kind)), None
+            )
+            if kind is None or len(observed) >= 12:
+                return
+            entry = observed[request] = (kind, len(observed) + 1)
+        kind, number = entry
+        if len(trace["events"]) < 48:
+            trace["events"].append(
+                {
+                    "request_id": number,
+                    "kind": kind,
+                    "phase": phase,
+                    "status": status,
+                    "host_ms": round((time.monotonic() - started) * 1000, 2),
+                }
+            )
+
+    callbacks = {
+        "request": lambda request: record(request, "request"),
+        "response": lambda response: record(response.request, "response", response.status),
+        "requestfinished": lambda request: record(request, "finished"),
+        "requestfailed": lambda request: record(request, "failed"),
+    }
+    for event, callback in callbacks.items():
+        page.on(event, callback)
+
     try:
         # List/map are parallel; their version witness is a subsequent mandatory fetch.
         # All listeners are armed before selection and each transport budget is explicit.
@@ -161,7 +204,10 @@ def select_public_month(page, month, expected_ids):
                 "requestfinished", predicate=lambda r: matches(r, "witness"), timeout=15000
             ) as witness,
         ):
+            trace["phase"] = "select-start"
             page.get_by_label("Mois", exact=True).select_option(month)
+            trace["select_return_ms"] = round((time.monotonic() - started) * 1000, 2)
+            trace["phase"] = "public-selection"
         documents = {}
         for kind, completed in (("races", races), ("map", markers), ("witness", witness)):
             response = completed.value.response()
@@ -178,14 +224,7 @@ def select_public_month(page, month, expected_ids):
             if not isinstance(document, dict):
                 raise AssertionError("Public selection document shape invalid; body withheld")
             documents[kind] = document
-            trace["events"].append(
-                {
-                    "kind": kind,
-                    "status": response.status,
-                    "finished": True,
-                    "validated_ms": round((time.monotonic() - started) * 1000, 2),
-                }
-            )
+            record(completed.value, "validated", response.status)
         version = documents["races"].get("catalog_version")
         if (
             not isinstance(version, str)
@@ -204,10 +243,15 @@ def select_public_month(page, month, expected_ids):
             str(len(expected_ids)), timeout=15000
         )
         trace["phase"] = "ready"
-    except Exception:
-        trace["strong_nodes"] = page.locator(".result-count strong").count()
-        raise AssertionError("Public month selection failed: " + json.dumps(trace)) from None
+    except Exception as error:
+        trace["error_type"] = type(error).__name__
+        trace["elapsed_ms"] = round((time.monotonic() - started) * 1000, 2)
+        # Host cache only: a blocked renderer must not block or replace this evidence.
+        trace["camera"] = camera_diagnostic(page)
+        raise AssertionError("Public month selection failed: " + json.dumps(trace)) from error
     finally:
+        for event, callback in callbacks.items():
+            page.remove_listener(event, callback)
         trace["elapsed_ms"] = round((time.monotonic() - started) * 1000, 2)
         print("PUBLIC_MONTH_SELECTION_TIMING " + json.dumps(trace))
 
@@ -544,6 +588,8 @@ def test_season_scope_actions_map_two_accounts_outside_public_filters(account_se
             page.get_by_label("Route", exact=True).check()
             page.get_by_placeholder("Course, commune ou club…").fill("race-road-split")
             expect(page.locator(".result-count strong")).to_have_text("1", timeout=15000)
+            assert install_camera_diagnostic(page)
+            assert "snapshot" in camera_diagnostic(page)
             page.get_by_role("button", name=re.compile("Summit")).click()
             wait_camera_pitch(page, 60)
             page.wait_for_function(
@@ -627,7 +673,11 @@ def test_season_scope_actions_map_two_accounts_outside_public_filters(account_se
             expect(page.get_by_label("Mois", exact=True)).to_have_value("11")
             expect(page.get_by_label("Route", exact=True)).to_be_checked()
         except Exception:
-            screenshot(page, "season-desktop.png")
+            try:
+                screenshot(page, "season-desktop.png")
+            except Exception:
+                # Never replace the original transport/camera evidence with capture failure.
+                pass
             raise
         finally:
             browser.close()
