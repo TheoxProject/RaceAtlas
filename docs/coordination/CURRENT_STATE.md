@@ -1,3 +1,13 @@
+# Point de reprise — CI-F2 PR14 (candidat à figer)
+
+15nov2026 17:43UTC, `feature/accounts-ui`, DraftPR14/baseb55, head/origin avant commit195dc2b5eaedf8ad74f13d189e611393b80a9ce7. **Ready43740601544FAIL889PASS/2FAIL393,78s** : authSummit60°/10s no-snapshot/capturetimeout ; desktopretourNovembrecount1 absent15s. JanvierbarrièrePASS ; anciennesfull891/118/APPROVE195 historiques. DuplicateDraft43742128752 annulé volontairement, aucunmerge.
+
+DeltaTESTSSEULEMENT : barrière3réponsespubliques généralisée Janvier/Novembre, versions/IDs validés avantUI15s ; observateurcaméra AVANTSummit auth et capturesfailure ne masquentpasdiagnostic. Caméra10s/60°/DEM>100/horloges/acteurs/scopes inchangés, aucun readinesssource/préchauffage/produit changé. **2PASS47,75s** local_test offline/DateProxy (auth19,309s/desktop27,482s), JUnit `.local-tools/pr14-ci-f2-targeted.xml`. Ruff82/rangediffcheckPASS, touscheminsproduit/backend/frontend/CI/contrats/pins/migrations identiques195. [Handoffcourt](../lot-7/accounts-ui-handoff.md) précise échecs/limites ; pas de causeGPU/transport ni résolutionSummit démontrée parPASSinstrumenté.
+
+Aucune commande/test restant ; serveurs/runtimes/browsers fermés, PG38028/55434 conservé, _test utilisé/_reviewréservé. DeveloperSTOPaprèscommitpush, nouveauSHAexactannoncé sansrééditergel. Prochaine action sûre : Coordinator renouvelle acceptation FINALECOMPLÈTE PR14 et integrated exacte via ci:full, puisReady/mainCI avantlot8. Pasderelanceaveugle desautrespreuvesvertes.
+
+Lot8owner acquis : Changementsrécents dansMaSaison + compteur + Marquerlues ; unsave scope supprimeSESnotifications et pas autreslistes. Aucune implémentation8 avantgate. Aucunemailréel/DNS/service/remoteDB/deploy/collecte.
+## Historique conservé
 # Point de reprise — CI-F1 PR14
 
 15nov2026 17:11UTC. `feature/accounts-ui`, DraftPR14/baseb55, local/origin avant commitc139a5d6a1685307cb16f7a2cac08fefe52603ec. **ReadyCI43736947900 FAIL890PASS/1FAIL392,58s**, countJanvier absent15s ; duplicateDraft43738714636 annulé volontairement. Anciennes full891/118/APPROVEc139 historiques. Source libérée, correction TESTS SEULEMENT.

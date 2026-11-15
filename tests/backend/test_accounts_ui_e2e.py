@@ -10,7 +10,7 @@ from urllib.parse import parse_qs, urlsplit
 
 import pytest
 import requests
-from map_support import camera, intercept_map, launch, set_civil_date
+from map_support import camera, install_camera_diagnostic, intercept_map, launch, set_civil_date
 from playwright.sync_api import expect, sync_playwright
 from test_auth_http_sessions import PASSWORD, identity
 from test_e2e import assert_camera_unchanged, wait_camera_pitch
@@ -120,10 +120,11 @@ def screenshot(page, name):
     page.screenshot(path=str(SHOTS / name), timeout=5000)
 
 
-def select_empty_january(page):
+def select_public_month(page, month, expected_ids):
     """Separate public selection transport from presentation; no private traffic retained."""
     started = time.monotonic()
-    trace = {"phase": "public-selection", "events": []}
+    trace = {"phase": "public-selection", "month": month, "events": []}
+    first, last = {"1": ("2026-01-01", "2026-01-31"), "11": ("2026-11-01", "2026-11-30")}[month]
 
     def matches(request, kind):
         parsed = urlsplit(request.url)
@@ -141,8 +142,8 @@ def select_empty_january(page):
             return False
         return (
             parameters.get("limit") == [limit]
-            and selection.get("from") == "2026-01-01"
-            and selection.get("to") == "2026-01-31"
+            and selection.get("from") == first
+            and selection.get("to") == last
             and selection.get("query") == "race-road-split"
         )
 
@@ -160,7 +161,7 @@ def select_empty_january(page):
                 "requestfinished", predicate=lambda r: matches(r, "witness"), timeout=15000
             ) as witness,
         ):
-            page.get_by_label("Mois", exact=True).select_option("1")
+            page.get_by_label("Mois", exact=True).select_option(month)
         documents = {}
         for kind, completed in (("races", races), ("map", markers), ("witness", witness)):
             response = completed.value.response()
@@ -189,23 +190,26 @@ def select_empty_january(page):
         if (
             not isinstance(version, str)
             or any(doc.get("catalog_version") != version for doc in documents.values())
-            or documents["races"].get("total") != 0
-            or documents["races"].get("items") != []
-            or documents["map"].get("features") != []
-            or documents["witness"].get("items") != []
+            or documents["races"].get("total") != len(expected_ids)
+            or [item["race"]["id"] for item in documents["races"].get("items", [])] != expected_ids
+            or [item["id"] for item in documents["map"].get("features", [])] != expected_ids
+            or [item["race"]["id"] for item in documents["witness"].get("items", [])]
+            != expected_ids[:1]
         ):
-            raise AssertionError("Public empty selection/version mismatch; bodies withheld")
+            raise AssertionError("Public selection IDs/version mismatch; bodies withheld")
         trace["versions_equal"] = True
         trace["api_finished_ms"] = round((time.monotonic() - started) * 1000, 2)
         trace["phase"] = "presentation"
-        expect(page.locator(".result-count strong")).to_have_text("0", timeout=15000)
+        expect(page.locator(".result-count strong")).to_have_text(
+            str(len(expected_ids)), timeout=15000
+        )
         trace["phase"] = "ready"
     except Exception:
         trace["strong_nodes"] = page.locator(".result-count strong").count()
-        raise AssertionError("January selection failed: " + json.dumps(trace)) from None
+        raise AssertionError("Public month selection failed: " + json.dumps(trace)) from None
     finally:
         trace["elapsed_ms"] = round((time.monotonic() - started) * 1000, 2)
-        print("JANUARY_SELECTION_TIMING " + json.dumps(trace))
+        print("PUBLIC_MONTH_SELECTION_TIMING " + json.dumps(trace))
 
 
 @pytest.mark.e2e
@@ -247,6 +251,7 @@ def test_compiled_signup_explicit_confirmation_login_and_late_401_keep_discovery
             page.get_by_label("Route", exact=True).check()
             page.get_by_placeholder("Course, commune ou club…").fill("race-road-split")
             expect(page.locator(".result-count strong")).to_have_text("1")
+            assert install_camera_diagnostic(page)
             page.get_by_role("button", name=re.compile("Summit")).click()
             wait_camera_pitch(page, 60)
             page.wait_for_function(
@@ -345,7 +350,11 @@ def test_compiled_signup_explicit_confirmation_login_and_late_401_keep_discovery
             assert len(public) == public_before and errors == [] and leaks == []
             assert page.evaluate("localStorage.length===0 && sessionStorage.length===0")
         except Exception:
-            screenshot(page, "dialog-desktop.png")
+            try:
+                screenshot(page, "dialog-desktop.png")
+            except Exception:
+                # Preserve the original bounded camera diagnostic if capture also stalls.
+                pass
             raise
         finally:
             context.close()
@@ -572,7 +581,7 @@ def test_season_scope_actions_map_two_accounts_outside_public_filters(account_se
             page.get_by_role("button", name="Ma saison", exact=True).click()
             expect(page.locator(".season-row")).to_have_count(2)
             page.keyboard.press("Escape")
-            select_empty_january(page)
+            select_public_month(page, "1", [])
             account(page)
             page.get_by_role("button", name="Ma saison", exact=True).click()
             expect(page.locator(".season-row")).to_have_count(2)
@@ -594,8 +603,7 @@ def test_season_scope_actions_map_two_accounts_outside_public_filters(account_se
             page.get_by_role("button", name="Ma saison", exact=True).click()
             expect(page.get_by_text("Votre saison est vide.", exact=False)).to_be_visible()
             page.keyboard.press("Escape")
-            page.get_by_label("Mois", exact=True).select_option("11")
-            expect(page.locator(".result-count strong")).to_have_text("1", timeout=15000)
+            select_public_month(page, "11", ["race-road-split"])
             if not page.locator(".results-panel").is_visible():
                 page.get_by_role("button", name="Explorer les communes", exact=True).click()
             page.locator(".race-row").filter(has_text="race-road-split").click()
