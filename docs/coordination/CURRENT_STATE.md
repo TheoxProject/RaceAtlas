@@ -1,3 +1,15 @@
+# OPS-N2A backend — WIP services/routes/contrats
+
+16 novembre 2026, 18:45 UTC. Checkout isolé add4/feature/notifications-interface, DraftPR16, HEAD/origin avant WIP7fc5d43068ec87092e2df3644b16a7a2cfd1cffc, base/main014bda3480d0f8c0233f8e6f68d0ae82886b83db. Main N1CI43928375559 SUCCESS967/118 ; cadrageCI43930258402 development SUCCESS118front/statiques, backendnone docs-only. Aucun verdict N2A ni gatefusion.
+
+Livré : lecture virtuelle CTE légère/count/page puis graphe DTO scope exact DANS le même SELECT, cursor HMAC domaine distinct lié acteur, ACK entier INSERTSELECT sous Account lock au cutoff MVCC. N1A project_notifications inchangé ; pas besoin de matérialiser pour rendre count exact. Routes GET/POST additives et JSON/OpenAPI dédiés ; nouveau boundary disponibilité valide seulement limit/cursor, car boundary auth/planning interdit toutes les querystrings. Origin/CSRF/admission/AccountFlowSession réutilisés, aucun assouplissement global. Détails [handoff](../lot-8/notifications-handoff.md).
+
+Preuves `_test` b806/PG9780 vérifié natif : services4FAIL5,48s (unique JSON non hashable), corrigé identité composite puis4PASS4,50s ; HTTP8PASS6,24s, Ruff initial import/fixtureF811 corrigé par délégation à fixture existante puis1smokePASS3,60s. Ruff lint/format97 et26contrats publics PASS ; contrat notifications validé par HTTP/jsonschema sans réseau. Aucune passe relabellisée.
+
+Developer seul writer, Root PR/CI, Tester STOP/_review réservée. Aucun test/processus pending. N2A IN_PROGRESS : **restent >1000 éligibles/pending256, snapshot MVCC/barrières, rollback/timeout/unsave-cursor/limites et coutures auth**, puis gel/revue ciblée. N2B UI TODO non attribué. Prochain geste sûr : publier WIP cohérent puis ces groupes ciblés ; pas de second push avant conclusion CI du précédent. Modèles/b806/source/ICS/frontend/deps/CI inchangés ; auth raccord enregistrement et action admission notifications seulement. Aucun email/live/DNS/service/DB distante/deploy/achat/tag.
+
+## Historique cadrage
+
 # RaceAtlas — lot8 OPS-N2 en cadrage
 
 16nov2026 18:33UTC. Branche isolée feature/notifications-interface, checkout add4. Base/local avant cadrage014bda3480d0f8c0233f8e6f68d0ae82886b83db, origin/main identique validé. PR N2 à ouvrir après commit de cadrage. Aucun code N2 encore implémenté. Root écrit mission/checkpoint ; transfert Developer seul writer après Draft.

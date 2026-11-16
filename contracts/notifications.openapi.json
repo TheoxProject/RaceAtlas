@@ -1,0 +1,249 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "RaceAtlas private notifications",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/api/v1/me/notifications": {
+      "get": {
+        "operationId": "getPrivateNotifications",
+        "description": "Virtual eligible notifications include unmaterialized changes. Count ignores cursor and shares page/DTO SELECT snapshot. New source changes can be fetched from head; pagination is live. No-store, close Session before Response.",
+        "security": [
+          {
+            "SiteSession": []
+          },
+          {
+            "LoopbackSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": false,
+            "description": "Optional read-intent proof bound to HttpOnly nonce and current session cookie. If present, it must be valid, including on HEAD; empty/malformed/expired/mismatched proof returns403 before private data/ledger. Without this header existing GET clients are unchanged. Origin may be absent on reads, but a supplied Origin must be canonical. Cookie is the only bearer.",
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 50
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "maxLength": 1024
+            },
+            "description": "Opaque signed actor-bound keyset cursor; not a bearer."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Scope-exact page and global unread count. Text16KiB/JSON2MiB limits.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./notifications.schema.json"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Generic bounded private error; 401 is passive without Set-Cookie.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./planning.schema.json#/$defs/PlanningError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Generic bounded private error; 401 is passive without Set-Cookie.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./planning.schema.json#/$defs/PlanningError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Generic bounded private error; 401 is passive without Set-Cookie.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./planning.schema.json#/$defs/PlanningError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Generic bounded private error; 401 is passive without Set-Cookie.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./planning.schema.json#/$defs/PlanningError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Generic bounded private error; 401 is passive without Set-Cookie.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./planning.schema.json#/$defs/PlanningError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Generic bounded private error; 401 is passive without Set-Cookie.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./planning.schema.json#/$defs/PlanningError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/notifications/read-all": {
+      "post": {
+        "operationId": "acknowledgeAllPrivateNotifications",
+        "description": "Account lock then one INSERT SELECT/ON CONFLICT at its MVCC snapshot, all eligible including not displayed/unmaterialized. Post-snapshot source commits remain unread. Existing read_at preserved. No replay. 204 only after commit/close; connection/commit failure is not success.",
+        "security": [
+          {
+            "SiteSession": []
+          },
+          {
+            "LoopbackSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "maxProperties": 0
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "All eligible pre-snapshot notifications read; no body."
+          },
+          "400": {
+            "description": "Generic bounded private error; 401 is passive without Set-Cookie.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./planning.schema.json#/$defs/PlanningError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Generic bounded private error; 401 is passive without Set-Cookie.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./planning.schema.json#/$defs/PlanningError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Generic bounded private error; 401 is passive without Set-Cookie.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./planning.schema.json#/$defs/PlanningError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Generic bounded private error; 401 is passive without Set-Cookie.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./planning.schema.json#/$defs/PlanningError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Generic bounded private error; 401 is passive without Set-Cookie.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./planning.schema.json#/$defs/PlanningError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Generic bounded private error; 401 is passive without Set-Cookie.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./planning.schema.json#/$defs/PlanningError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "SiteSession": {
+        "$ref": "auth.openapi.json#/components/securitySchemes/SiteSession"
+      },
+      "LoopbackSession": {
+        "$ref": "auth.openapi.json#/components/securitySchemes/LoopbackSession"
+      },
+      "CsrfProof": {
+        "$ref": "auth.openapi.json#/components/securitySchemes/CsrfProof"
+      }
+    }
+  }
+}

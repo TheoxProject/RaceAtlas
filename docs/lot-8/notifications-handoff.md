@@ -1,0 +1,17 @@
+# OPS-N2A — handoff WIP
+
+16 novembre 2026, 18:45 UTC. feature/notifications-interface / DraftPR16, base014bda3480d0f8c0233f8e6f68d0ae82886b83db. SHA WIP communiqué au push, pas gel ni verdict final.
+
+Services `notifications_api.py` : E = SavedEntry courant JOIN ScopeChange>baseline JOIN RaceChange LEFT PersonalNotification ; non matérialisé non lu. CTE count/page partagent snapshot SELECT et DTO complet du SEUL scope (graphes joints dans CETTE instruction, page limit+1 AVANT multiplication règles/catégories). Raiseload/populate_existing comme planning ; déduplication identité change/scope, pas hachage JSON/corrélation perdue. Count global hors curseur ; keyset live, aucune promesse de snapshot durable interrequêtes. Cursor≤1024, limit50/max100 ; HMAC-SHA256 AUTH_CSRF_KEY, domaine notifications-cursor:v1 et acteur serveur, pas bearer/nouveau secret. Validation syntaxe/taille pure avant SQL, signature après résolution acteur avant lecture source.
+
+ACK = un INSERTSELECT de toutes E, ONCONFLICT UPDATE seulement read_at NULL ; aucun RETURNING massif/Python/batch256. Account lock puis snapshot de CETTE instruction ; commits source ultérieurs restent non lus, même timestamp antérieur. Préserve read_at ancien, unsave exact et réajout baseline par jointure SavedEntry courante ; aucun Account côté sync ni scopeguard ACK. Caller commit/rollback, pas retry.
+
+`notifications_http.py` : GET /api/v1/me/notifications ; POST /read-all JSON{}→204 après commit/close. Availability boundary dédié puisque celui d’auth/planning interdit toute querystring ; whitelist limit/cursor stricts, Origin/CSRF/settings/runtime existants et nouvelle action admission notifications uniquement. Cookie seul acteur, preuve lecture optionnelle liée si présente, 401 passive/no-store, budgets SQL3s/lock1s et PlanningLimits JSON2MiB/texte16KiB. Dépassement explicite413, aucun drop. Raccord minimal auth.http/admission. Contrats notifications.schema.json/openapi.json additifs, référence au DTO planning.
+
+## Exécuté (venv existante, _test opt-in seulement)
+
+- `pytest tests/backend/test_notifications_api.py -q --tb=short --junitxml=.local-tools/ops-n2a-initial.xml` : **4FAIL5,48s**, JSON non hashable par unique par défaut. Corrigé clé composite, même groupe `ops-n2a-initial-corrected.xml` : **4PASS4,50s**, quatre statuts/deux acteurs/scopes, page/count/cursor/ACK/read_at stable.
+- `pytest tests/backend/test_notifications_http.py -q --tb=short --junitxml=.local-tools/ops-n2a-http-initial.xml` : **8PASS6,24s** (contrat JSON, guards lectures/mutation, mauvais paramètres avant SQL). Ruff simultané a échoué import/F811fixture ; imports/délégation fixture corrigés et seul `-k http_contract --junitxml=.local-tools/ops-n2a-http-fixture.xml` : **1PASS3,60s**.
+- Ruff check et format --check raceatlas migrations tests/backend ops/ci_selection.py : **PASS97**. node --test tests/contracts/contracts.test.mjs : **26PASS**, couvre contrats publics inchangés ; JSON notifications validé séparément dans HTTP via jsonschema+registry locale sans réseau.
+
+PG9780/55434b806 vérifié, _review réservée, tous tests/listeners/runtimes/engines clos. Aucun967local/build/browser inchangé répété. Restent grosses preuves >1000/pending256, barrières du snapshot SQL, rollback/timeout, curseurs/autrui/ABA/limites/purge et coutures auth pertinentes. N2A n’est ni N2 complet ni lot8 terminé. Aucun modèle/migration/source/ICS/frontend/CI/deps modifié ; zéro email réel/live/DNS/service/remoteDB/deploy/achat/tag.

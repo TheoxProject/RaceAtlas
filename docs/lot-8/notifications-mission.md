@@ -40,3 +40,9 @@ Section dans Ma saison, liste avec état lu, compteur exact, ACK toutes explicit
 Ciblés pendant développement et rapports courts ; CI integrated complète obligatoire au SHA final puis main. _test Developer/_review Tester b806, PG9780/55434 existant à vérifier, venv/Node/browsers réutilisés ; runtime.close avant Engines. Pas ancien checkout contre schéma nouveau, initdb/reseed aveugle, dump privé ou modification des autres worktrees.
 
 Après N2 : erreurs/quotas simulés, sauvegarde/restauration sur NOUVELLE DB locale synthétique, matrice candidat V1. Aucun achat, DNS, email réel, service, DB distante, déploiement, collecte live ou tag final sans autorisation distincte.
+
+## Interfaces N2A retenues avant code
+
+`notifications_api.py` : validation pure limit1..100/défaut50 et curseur≤1024octets, lecture virtuelle par SELECT CTE éligible légère/count/page puis graphes joints bornés (raiseload/populate_existing comme planning), ACK INSERTSELECT/ONCONFLICT sans retour massif. Item : change_id/scope_id/kind/created_at/read_at/delta/provenance et entry DTO planning du SEUL scope. Count non filtré par curseur, aucune projection obligatoire. Signature HMAC-SHA256 liée acteur et domaine `notifications-cursor:v1` sur AUTH_CSRF_KEY existante ; pas bearer, nouveau secret ou snapshot durable. Budgets PlanningLimits2MiB/texte16KiB réutilisés.
+
+`notifications_http.py` : boundary/Origin/CSRF/AccountFlowSession/resolve_session comme planning, admission action notifications (ajout whitelist minimal), commit+close avant Response. Raccord minimal auth.http, aucun changement sémantique auth/planning/ICS. N2A seul ne livre pas l’UI.
