@@ -1,30 +1,32 @@
-# Point de reprise RaceAtlas — lot8 OPS-N1
+# RaceAtlas — OPS-N1A candidat à figer
 
-15 novembre2026 18:22UTC. Branche feature/operations-readiness, checkout isolé C:/Users/theop/.codex/worktrees/add4/RaceAtlas. Base/local avant cadrage c74086365df62bf1c71623e080bb1f649c9981f5 ; origin/main identique vérifié. PR lot8 à créer après commit de cadrage. Aucun lot8 produit encore implémenté.
+**16nov2026 07:46UTC.** Branche isolée add4/feature/operations-readiness, [DraftPR15](https://github.com/TheoxProject/RaceAtlas/pull/15). Base `c74086365df62bf1c71623e080bb1f649c9981f5`, mainCI43745685937SUCCESS891/118 ; local/origin avant publication `fb86117fc5408fc22ed5b5fce3ced8af2d6fce03`. CadrageCI43746572542 developmentSUCCESS118frontend/statiques/backendnone docs-only, pas validation du nouveau produit. SHA final communiqué au push puis aucune édition pendant revue.
 
-## Gates acquis
-
-[PR14](https://github.com/TheoxProject/RaceAtlas/pull/14) merged : head revu de4e7c449a0e6f6124d9238381ad9a263a066787, APPROVE complet [rapport](https://github.com/TheoxProject/RaceAtlas/pull/14#issuecomment-6898826817), merge c74086365df62bf1c71623e080bb1f649c9981f5, arbre identique1663a7d19bf3610696156156291f5abeb5693154. Ready43744817098 SUCCESS891backend357,92s/118frontend ; main43745685937 SUCCESS891backend262,96s/118frontend, gardes source avant/après. [Intégration durable](../lot-7/accounts-ui-integration.md). Trois corrections ciblées CI historiques conservées, aucune cause générale du renderer affirmée.
-
-## Mission et tâches
-
-[Mission lot8](../lot-8/mission.md) fait foi. Root termine cadrage puis Developer sera seul writer suivi après transfert explicite ; Tester lecture/test exact sans édition.
-
-| ID | État |
+| Tâche | État |
 |---|---|
-| OPS-N0 cadrage/branche/Draft | IN_PROGRESS |
-| OPS-N1 journal/scopes/baseline/projection/cascades/concurrence | TODO |
-| OPS-N2 API et Changements récents Ma saison | TODO |
-| OPS-E erreurs/couverture/quotas simulés | TODO |
-| OPS-B backup/restore nouvelle DB locale synthétique | TODO |
-| OPS-V validation V1/candidat | TODO |
+| OPS-N0 branche/Draft/cadrage | DONE |
+| OPS-N1A modèles/migration/helpers/planning/baseline/projection | Implémenté, ciblés acquis ; revue ciblée TODO |
+| OPS-N1B raccord sync/deltas/presence réels | TODO, non attribué |
+| OPS-N2 API/UI Changements récents | TODO |
+| OPS-E/B/V exploitation/backup-restauration/candidat V1 | TODO |
 
-Décisions propriétaire acquises : Changements récents dans Ma saison, compteur nouveautés et Marquer comme lues ; unsave scope retire SES notifications, autres scopes/comptes préservés, réajout baseline fraîche. Pas question en attente. N1 : aucun verdict ni test encore, pas fin lot8 au seul N1.
+[Mission](../lot-8/mission.md), [handoff/interfaces/limites](../lot-8/developer-handoff.md), [commandes Windows](../lot-8/local-development.md). Developer seul writer jusqu'au push/GEL, Root PR/notes, Tester au SHA exact ensuite. Aucun APPROVE N1A, aucune fin N1/lot8 déclarée.
 
-## Environnement et prochaine action
+## Livré et décisions
 
-PG17.11 existant loopback55434/dernierPID38028, cluster .local-tools/pgdata-lot2-native ; vérifier nativement avant réemploi, pas initdb/reseed aveugle. DeveloperDB raceatlas_lot2_test, TesterDB raceatlas_lot2_review, aperçu raceatlas_map_demo préservé ; tous schéma initial a74. Python3.12.14/venv et browsers réutilisables dans worktree1a1e, Node24/pnpm10 cache existant. Fermer runtimes avant Engines. Aucun test/serveur/browser restant au transfert, agents PR14 STOP/sourceRELEASED, Nodes externes intacts. Autres worktrees/copie personnelle main inchangés.
+RaceChange/ScopeChange/PersonalNotification + migration b806e44f7901 aprèsa74 ; FKcomposées exactes et cascade de SES notifications lors unsave/Accountdelete, ScopeRESTRICT et ICSledger préservés. Baseline anciennes0 sans default durable ; nouveau save prend maxsequence sous garde, statut/no-op préservent incarnation. Guards triés transactionnels avant DML, suivent Session ET Connection effective root/nested, hors contexte/rollback invalides ; multibind/AUTOCOMMIT/RR refusés. Privé Accountfirst aussi horsHTTP, validations pures avant SQL. Record idempotent par clé de mutation réelle, projection batch courante inserted/pending bornée sans drop/N+1/fanout Account. Aucun raccord sync, API, UI, auth sémantique, CI, dépendance ou collecte.
 
-Prochaine action sûre : commit/push cadrage N0, Draft PR précoce+suivi CI du SHA, puis attribuer OPS-N1 borné au Developer. Ciblés locaux, checkpoints cohérents ; gel exact pour revue indépendante et integrated complète avant fusion/mainCI. Ne pas répéter toute auth/ICS locale si immuable. Pas écriture concurrente ni edit du SHA sous revue.
+## Résultats réconciliés
 
-Resend Free choisi, raceatlas.ucthonon.fr email uniquement/From notifications non vérifié, APP_BASE_URL Render inconnue. Activation réelle/droits FFC/terrain/capacitéFree encore à qualifier ; aucun mail réel/DNS/service/remoteDB/deploy/collecte/tagfinal autorisé. Ne pas confondre merge et déploiement. Quotas non mesurables, aucune reprise automatique ni background promis.
+- Initial12PASS14,053s, migration roundtrip fixture compris.
+- Étendu97PASS/10FAIL73,175s conservé : lock trop tôt pour9IDs invalides ; fixture duplicate sans baseline pour1test. Corrigés sans assouplir assertions. Les97 verts couvrent backfill réel, ABA/deuxconnexions/barrières, cascades/FK/scopes/4statuts/epoch/ICS.
+- Corrections23PASS17,186s :10défauts + nouveaux batch210/limites/séquence et modes effectifs Connection/RC/AUTOCOMMIT/RR. Aucun replay97 à reprise ; fichiers source/tests antérieurs au JUnit23, preuve explicitement réutilisée pour chemins inchangés.
+-16nov Ruff lint/format86 et contrats26PASS ; diffcheck complet base..HEAD à vérifier après commit également. Nouvelle CI et verdict exact restent requis, jamais ancien verdict copié.
+
+## Environnement et prochain geste sûr
+
+Aucune commande/test pending, runtimes/browsers fermés. PG17 existant redémarré après interruption : incident port défaut corrigé par stop/start du SEUL serveur lancé, chemin absolu vérifié, options explicites -h127.0.0.1 -p55434. PID courant9780 ; lectures schéma `_test`=b806e44f7901 et `_review`=a74d915e3c02 (Reviewer aucune mutation). Pas initdb/reseed/réinstallation/ancienne copie utilisée.
+
+**Prochaine action sûre : publier ce jalon, geler SHA et STOP ; Coordinator suit CI et demande revue indépendante ciblée N1A.** Ne pas reprendre N1B avant attribution/gate, ne pas relancer aveuglément les ciblés verts/full891. L'intégration N1 complète demandera N1B+acceptation finale/integrated/mainCI.
+
+Décisions owner : Changements récents dans Ma saison/compteur/Marquer lues ; retrait scope retire ses messages sans toucher autres listes/comptes, re-add sans historique. Aucun choix produit restant ici. Aucun email réel/DNS/Resend/service/remoteDB/déploiement/collecte/tag final autorisé.

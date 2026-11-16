@@ -321,7 +321,11 @@ def test_valid_unicode_and_synthetic_targets_are_not_restricted_to_uuids(seeded)
     seeded.add(scope)
     seeded.flush()
     entry = SavedEntry(
-        id="saved-synthétique-🚲", account_id=alice.id, scope_id=scope.id, status="interested"
+        id="saved-synthétique-🚲",
+        account_id=alice.id,
+        scope_id=scope.id,
+        status="interested",
+        notifications_after_sequence=0,
     )
     seeded.add(entry)
     seeded.flush()
@@ -399,8 +403,8 @@ def test_database_restricts_scope_deletion_and_invalid_private_rows(seeded):
             "23514",
         ),
         (
-            "INSERT INTO saved_entry(id,account_id,scope_id,status) "
-            "VALUES ('duplicate',:account,:scope,'interested')",
+            "INSERT INTO saved_entry(id,account_id,scope_id,status,notifications_after_sequence) "
+            "VALUES ('duplicate',:account,:scope,'interested',0)",
             "23505",
         ),
         ("UPDATE saved_entry SET status='confirmed' WHERE scope_id=:scope", "23514"),
