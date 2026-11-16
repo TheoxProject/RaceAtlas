@@ -4,14 +4,17 @@ Independent windows/items can succeed without authorizing absence inference. Onl
 entirely successful run may mark absent races to_verify, after global key deduplication.
 """
 
+import hashlib
 import re
+from contextlib import nullcontext
 from dataclasses import dataclass, replace
 from datetime import datetime, timezone
 
 from sqlalchemy import select, text
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.exc import OperationalError, SQLAlchemyError
 from sqlalchemy.orm import Session
 
+from raceatlas.changes import ChangeError, record_change, scope_guards, transaction_connection
 from raceatlas.ffc import project_race
 from raceatlas.ffc.types import DEPARTMENTS, NORMALIZATION_VERSION, AdapterError, SourceKey
 from raceatlas.models import (
@@ -27,6 +30,7 @@ from raceatlas.models import (
 )
 from raceatlas.serialization import race_document
 
+from .change_facts import deltas, snapshot
 from .fingerprint import fingerprint, observation_facts
 from .fingerprint import text as clean_text
 from .geocoding import Resolution, resolve_commune
@@ -187,10 +191,17 @@ def _apply(
     commune=None,
     approved_alias=None,
     baseline=None,
+    guard=None,
 ):
     existing, new_alias = _alias_target(
         session, observation, alias, now, approved_target=approved_alias
     )
+    before = None
+    if existing is not None:
+        if guard is None:
+            _error("change_guard_missing")
+        guard.check(session, [scope.id for scope in existing.scopes])
+        before = snapshot(existing)
     previous_revision = existing.revision if existing else 0
     baseline = baseline or (_presence_baseline(existing) if existing else None)
     freshness_error = _freshness_error(observation, now, baseline)
@@ -316,20 +327,58 @@ def _apply(
             observation.source_url,
         )
         model.source_presence = "present"
+    revision = None
     if action != "unchanged":
-        session.add(
-            SourceRevision(
-                race_id=model.id,
-                run_id=run_id,
-                revision=model.revision,
-                business_hash=fingerprint(facts),
-                facts=facts,
-                normalization_version=observation.normalization_version,
-                source_url=observation.source_url,
-                checked_at=observation.checked_at,
-            )
+        revision = SourceRevision(
+            race_id=model.id,
+            run_id=run_id,
+            revision=model.revision,
+            business_hash=fingerprint(facts),
+            facts=facts,
+            normalization_version=observation.normalization_version,
+            source_url=observation.source_url,
+            checked_at=observation.checked_at,
         )
+        session.add(revision)
     session.flush()
+    if before is not None:
+        after = snapshot(model)
+        if action == "updated":
+            record_change(
+                session,
+                guard,
+                race_id=model.id,
+                event_key="revision:" + revision.id,
+                kind="business",
+                targets=deltas(before, after),
+                provenance={
+                    "source_url": revision.source_url,
+                    "checked_at": revision.checked_at.isoformat(),
+                    "normalization_version": revision.normalization_version,
+                },
+            )
+        if before.presence != "present" and after.presence == "present":
+            identity = f"{run_id}:{model.id}:restore:{before.presence}:present"
+            record_change(
+                session,
+                guard,
+                race_id=model.id,
+                event_key="presence:" + hashlib.sha256(identity.encode("utf-8")).hexdigest(),
+                kind="presence",
+                targets={
+                    scope_id: {
+                        "before": {"source_presence": before.presence},
+                        "after": {"source_presence": "present"},
+                    }
+                    for scope_id, _ in after.scopes
+                },
+                provenance={
+                    "source_url": observation.source_url,
+                    "checked_at": observation.checked_at.isoformat(),
+                    "normalization_version": observation.normalization_version,
+                    "evidence_id": "run:" + run_id,
+                },
+            )
     return model.id, action
 
 
@@ -439,7 +488,9 @@ def _preflight(session, batches, now):
     return _Preflight(conflicts, errors, targets, approved, baselines)
 
 
-def _import_window(session, batch, run_id, now, provider, preflight):
+def _import_window(
+    session, batch, run_id, now, provider, preflight, *, guard=None, guard_error=False
+):
     calendar = batch.calendar
     window = ImportWindow(
         run_id=run_id,
@@ -458,6 +509,9 @@ def _import_window(session, batch, run_id, now, provider, preflight):
     )
     session.add(window)
     session.flush()
+    if guard_error:
+        window.status, window.diagnostics = "failed", ["change_guard_unavailable"]
+        return "failed", set()
     if not _window_valid(calendar, now):
         window.status, window.diagnostics = (
             "incomplete",
@@ -540,6 +594,7 @@ def _import_window(session, batch, run_id, now, provider, preflight):
                         commune=resolution.commune,
                         approved_alias=preflight.approved_aliases.get(key),
                         baseline=preflight.baselines.get(preflight.targets.get(key)),
+                        guard=guard,
                     )
                 present.add(race_id)
             except AdapterError as error:
@@ -551,6 +606,8 @@ def _import_window(session, batch, run_id, now, provider, preflight):
                 )
             except SQLAlchemyError:
                 code, action = "storage_error", "error"
+            except ChangeError:
+                code, action = "change_record_error", "error"
         if code:
             codes.append(code)
         observed = observation_facts(observation) if observation else None
@@ -638,6 +695,23 @@ def _finalize_historical_duplicates(session, windows, accepted):
             window.diagnostics = sorted(unresolved)
 
 
+def _window_scope_ids(session, batch, preflight):
+    """Current inventory, including races created by an earlier committed window."""
+    scope_ids = set()
+    with session.no_autoflush:
+        for key in batch.calendar.keys:
+            try:
+                existing, _ = _lookup(session, key)
+            except AdapterError:
+                continue  # The existing preflight/item audit retains this identity error.
+            if existing is None:
+                target = preflight.approved_aliases.get(key) or preflight.targets.get(key)
+                existing = session.get(Race, target) if target else None
+            if existing is not None:
+                scope_ids.update(scope.id for scope in existing.scopes)
+    return scope_ids
+
+
 def synchronize(engine, batches, *, checked_at=None, provider=None, synthetic=True):
     """Own all transactions. No caller Session is accepted or implicitly committed.
 
@@ -657,6 +731,10 @@ def synchronize(engine, batches, *, checked_at=None, provider=None, synthetic=Tr
             _error("import_busy")
         try:
             with Session(connection) as session:
+                try:
+                    transaction_connection(session)
+                except ChangeError:
+                    _error("invalid_source_transaction")
                 preflight = _preflight(session, batches, now)
                 run = ImportRun(
                     started_at=now,
@@ -669,7 +747,25 @@ def synchronize(engine, batches, *, checked_at=None, provider=None, synthetic=Tr
                 session.commit()
                 run_id, present = run.id, set()
                 for batch in batches:
-                    _, seen = _import_window(session, batch, run_id, now, provider, preflight)
+                    scope_ids = _window_scope_ids(session, batch, preflight)
+                    session.execute(text("SET LOCAL lock_timeout='3000ms'"))
+                    try:
+                        with (
+                            scope_guards(session, scope_ids)
+                            if scope_ids
+                            else nullcontext(None) as guard
+                        ):
+                            # Inventory/preflight may have populated the identity map before
+                            # waiting. Reload under the lock before taking immutable facts.
+                            session.expire_all()
+                            _, seen = _import_window(
+                                session, batch, run_id, now, provider, preflight, guard=guard
+                            )
+                    except (ChangeError, OperationalError):
+                        session.rollback()
+                        _, seen = _import_window(
+                            session, batch, run_id, now, provider, preflight, guard_error=True
+                        )
                     present.update(seen)
                     session.commit()
                 run = session.get(ImportRun, run_id)

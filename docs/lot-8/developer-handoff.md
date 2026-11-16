@@ -1,3 +1,25 @@
+# OPS-N1B-1 — checkpoint WIP nominal (pas gel final)
+
+Nouveau raccord service.py + helperimmutable sync/change_facts.py et test_sync_notifications.py. Gardes avant fenêtre, reloadORM après attente, RC vérifiée mêmeunionvide, lock_timeout transactionnel3s ; erreurs acquisition ChangeError/OperationalError rollbackent AVANT audit fenêtrefailed, recordError rollback nesteditem seulement. Snapshot commune identité exclutcentre/cache, scopes/règles corrélées horsordre ; SourceRevision.id clé et provenance UTC immuable, présence restore distincte mêmeunchanged.
+
+Commandes : `pytest tests/backend/test_sync_notifications.py -q --tb=short --junitxml=.local-tools/ops-n1b1-initial.xml`4PASS/5FAIL5,79s, fixturesUTCsameinstant+JOINaudit corrigées ; runnominal8PASS/1FAIL6,20s importImportWindowoublié ; `-k record_failure --junitxml=.local-tools/ops-n1b1-rollback-corrected.xml`1PASS7,16s après seulimport. Les8verts réutilisés explicitement source inchangée ;9cas nominaux acquis mais pas9PASSunique ni acceptance. Ruff cibléPASS, aucun testpending.
+
+RESTE : barrières2connexions saveavant/aprèscommit, refusgarde3saudit réel, alias/cancelled/cache et testsSync coutures utiles. Publication WIP précoce pourCI, gel final plus tard ; N1B2/API/UI nonattribués. CadrageRoot mission/checkpoint inclus sansrévocation. Aucun modèle/migrationb806/N1A/auth/CI/deps modifié.
+
+## Interfaces avant code et historique
+# OPS-N1B-1 — interfaces avant code (WIP)
+
+Base travail a76e35a5e11ad86362c4716e344c3f6c0037eabe, PR15. N1A APPROVE exact/CI43829642340developmentfull927/118 acquis ; pas verdict copié au prochain SHA. Mission nouvelle sync-notifications-mission.md et checkpoint non committés du Coordinator préservés/inclus au prochain jalon. N1B-2final absence reste hors périmètre.
+
+Raccord proposé : `_window_scope_ids(session,batch,preflight)` fait inventaire COURANT no_autoflush par clés/alias attestés ; guards numériques N1A avant `_import_window`/son premier flush/nested géocodage. Recharger ensuite ORM sous garde (expire_all sans dirty antérieur). Union vide=newraces, nullcontext ; race existing sans guard refuse avant DML. Echec acquisition borne/contention : rollback unité fenêtre avant mutation, persister fenêtre audit failed/diagnostic borné, garder commits des fenêtres précédentes.
+
+Petit helper sync/change_facts.py : snapshot frozen de tuples(scopeID,JSONcanoniquebytes) + présence, aucun objet ORM conservé. Snapshot race-wide name/dates/status/discipline/types/organizer/communeidentity/competition ; commune sans coordonnées/provenance/timestamp cache. Scope raw_label/eligibility/rules corrélées canonicalisées indépendamment de positions/IDs de règles/ensembles. Deltas par ID commun stable, pas union frères ; source/règles brutes restent dans graphe et provenance existants, notification ne fabrique aucune admissibilité.
+
+`_apply(...,guard=None)` garde retour(race_id,action) ; capture avant mutation et après flush dans nested existant. SourceRevision créée gardée en variable : updated→record_change(event_key='revision:'+id, provenance immuablechecked_at/source_url/version, deltas). Created et revision technique sans delta→rien. Restauration missing/to_verify→present, même otherwiseunchanged, crée événement presence distinct ; clé stable bornée SHA du run/race/phase/avant/après, evidence_idrun ; pas nouvelle preuve d'annulation. Source/event/cibles rollbacks joints sirecordError, diagnostic change_record_error sans payload, pas fanout/Account côté source.
+
+Tests prévus : imports synthétiques réels +projection privée, report/règles scoped/cancelled, replay/fraîcheur/reorder/alias/deuxfenêtres création-identique, runs A→B→A→B, restaurationpresent, rollbackinjectionrecord etbarrières saveavant-aprèscommit. Groupes ciblés uniquement_testb806 aprèsstatutPG ; aucun résultat B1 encore, pas full927local. Clés/provenance replay restent celles mutation, paschecked_at nouveau injecté dans ancienneclé. API/UI/absencefinale nonimplémentées ici.
+
+## Handoff N1A historique
 # OPS-N1A-F1 cycle1 + CI-R1 — candidat à figer
 
 16nov2026, feature/operations-readiness/DraftPR15/basec740, head avant publication5d8bf28d80ba06eb00586a669fe97588b3b7001b. Tester REQUEST CHANGES P2 remplace son APPROVE initial :114PASS historiques mais sonde2connexions révèle40P01 en1,156s entre putB/batchA,B/putA. CI43826354099 a échoué AVANTbackend : ubuntu-latest devenu26.04 non supporté par l'installateur Chromium ;118frontend/statiques avaient passé. Aucun verdict réutilisé pour le futur SHA.
