@@ -1,10 +1,31 @@
-# OPS-N1B-2 IN_PROGRESS — interfaces fixées avant code
+# OPS-N1 — candidat final A + B1 + B2, GEL après publication
 
-16 novembre 2026, 13:22 UTC. feature/operations-readiness/DraftPR15/basec740, HEAD/origin3ed83ed902a9bd16357bd5297450687f35e04fd4. B1 APPROVE ciblé exact3ed, CI43870248750developmentfullSUCCESS942backend424,88s/118frontend, sourceguards ; jamais verdict copié au nouveauSHA. Developer seulwriter, TesterSTOP/_reviewréservé.
+**16 novembre 2026, 13:32 UTC.** Checkout isolé `add4/feature/operations-readiness`, [Draft PR15](https://github.com/TheoxProject/RaceAtlas/pull/15), base/main `c74086365df62bf1c71623e080bb1f649c9981f5`. HEAD/origin WIP `dbe9c07eeb49c1a586e6fd27934057421c5391cd` ; compléments tests/docs locaux non publiés. CI [43875151220](https://github.com/TheoxProject/RaceAtlas/actions/runs/43875151220) **FAIL : 949 PASS / 1 FAIL, 283,71 s ; 118 frontend PASS**, mode development/fullfallback. Unique échec : ancien attendu B1 restauration `RaceChange1 == 0`, corrigé et reciblé localement ci-dessous ; aucune autre failure. Ne vaut pas preuve verte du candidat final. Developer seul writer ; Tester STOP, `_review` réservé. Aucun processus de test en attente.
 
-PlanFinalfrozen/pur de primitifs/tuples/bytes ; snapshots no_autoflush/promotionsaudit/stamps/transitionsreelles/guardunion, applyuniquecommitfinalaprèsguard+revalidation. ProvenanceabsenceWindowcalendar réelle/sourceURL/checkedAt/versionRun/evidencewindow ; aucuneficheRaceprétendumentcontrôlée. Refuscap1001/guard/record/commit rollbacktoutfinal puis auditincomplete/missing0, fenêtresB1préservées. [Mission](../lot-8/sync-notifications-mission.md)/[handoff](../lot-8/developer-handoff.md) actualisés AVANTcode.
+| Tâche | État |
+|---|---|
+| N1A modèles, guards globaux, baselines et projection | Preuves a76 réutilisées après diff nul, pas verdict final copié |
+| N1B-1 imports/deltas/restauration | Gate ciblé 3ed + CI development 942/118 ; runtime B1 inchangé hors couture finale explicite |
+| N1B-2 plan pur, absence atomique/provenance/capacité | Implémenté et ciblés acquis ; revue finale TODO |
+| N1 complet | TODO acceptation indépendante A+B1+B2 + integrated au SHA final, puis merge/main CI |
+| N2 API/UI, exploitation/backup/candidat V1 | TODO, non attribués |
 
-B2 initial : `pytest tests/backend/test_sync_finalization.py -q --tb=short --junitxml=.local-tools/ops-n1b2-initial.xml` : **8 PASS, 10,815 s**, JUnit 0 erreur/échec. Session74560 terminée ; aucun rerun. Plan pur sans SQL/ORM dirty, promotions historiques, quatre statuts, absence/replay/restauration et provenance calendrier sont exercés sur `_test` b806/PG9780. Prochaine action : publier le cœur WIP puis tester cap1000/1001, rollback intégral et barrières de sauvegarde. N1A/planning/auth/ICS/models/migrationb806/API/UI/deps/CI immuables. Pasfull942local, paslive/email/DNS/remoteDB/deploy/payant/tagfinal. FinalN1exigeraacceptationCOMPLÈTE+integrated/mainCI avantN2.
+Livré B2 : plan frozen sans ORM/SQL, promotions audit historiques et anciennes métriques conservées (`missing_marked` = races réellement passées à `to_verify`). Snapshot chargé sous `no_autoflush`, revalidé après guards numériques N1A avant DML ; seul l'ensemble des scopes des vraies transitions consomme la borne1000. Métadonnées seules et catalogue>1000 sans grands deltas ne sont pas refusés. Événements/stamps/audit dans un commit final ; refus cap/guard/snapshot/record/commit : rollback final puis audit incomplete/partial/failed et missing0. Fenêtres business déjà committées conservées.
+
+Provenance absence = URL/checked_at du calendrier ImportWindow réellement contrôlé, version Run validée, evidence `window:UUID`, témoin maxchecked/tieID. Payload présence seul ; aucune annulation ni révision business inventée. Aucun Account côté source. [Handoff](../lot-8/developer-handoff.md) : commandes, fichiers, interfaces et limites.
+
+## Résultats B2 réels
+
+- `ops-n1b2-initial.xml` : **8 PASS, 10,815 s** (session74560 réconciliée, aucun rerun).
+- `ops-n1b2-edges.xml` : **6 PASS / 1 FAIL, 25,35 s**. Six nouvelles preuves cap1000/1001, catalogue volumineux/1delta, rollback2e record et deux barrières passent. Ancien attendu B1 de restauration comptait encore une seule transition ; corrigé explicitement pour absence puis retour, cibles/provenances exactes et business inchangé.
+- `ops-n1b2-final-seams.xml` : **28 PASS, 59,83 s**, source historique/alias/fraîcheur/absence/coverage et cas restauration corrigé.
+- `ops-n1b2-revalidation.xml` : **2 PASS, 12,25 s**, vraie attente PG puis revalidation du snapshot et cas restauration renforcé.
+- `ops-n1b2-unsave.xml` : **1 PASS, 9,38 s**, import→notification→retrait exact/réajout frais/autrui préservé.
+- Ruff lint et format **92 fichiers PASS** ; contrats **26 PASS** ; `git diff --check c740...` PASS avant commit, range final à revérifier après commit.
+
+Tests uniquement `_test` b806, PG9780 loopback55434/cluster add4 existant ; fixtures migrations upgrade/check/downgrade/upgrade/check, aucune nouvelle migration. Sessions74560/31793/46187/86427/61400 terminées ; barrières libérées, engines/threads fermés. Pas de campagne942 locale ; modèles/migration/N1A/planning/auth/ICS/frontend/API/CI/deps inchangés dans B2.
+
+**Prochain geste sûr : publier tests/docs cohérents, vérifier range final puis GEL exact communiqué au Coordinator. STOP sources ensuite pour acceptation COMPLÈTE N1 et integrated courant.** Limite technique1000 vraie union sans chunks/drop/retry ; pas SLA de latence ni rétention produit ajoutée. Aucune action réelle live/email/DNS/service/DB distante/deploy/achat/tag final.
 
 ## Historique B1 conservé
 # OPS-N1B-1 — candidat à figer

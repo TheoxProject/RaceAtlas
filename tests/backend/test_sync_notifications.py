@@ -202,7 +202,7 @@ def test_restoring_presence_records_even_when_business_unchanged(session, databa
     synchronize(database, [source.batch(keys=(), checked=missing)], checked_at=missing)
     session.expire_all()
     assert session.get(Race, race_id).source_presence == "to_verify"
-    assert count(session, RaceChange) == 0  # Final absence belongs to N1B-2.
+    assert count(session, RaceChange) == 1  # Final absence is now recorded by N1B-2.
     now = missing + timedelta(hours=1)
     restored = replace(observed, checked_at=now)
     assert (
@@ -212,8 +212,32 @@ def test_restoring_presence_records_even_when_business_unchanged(session, databa
     session.expire_all()
     assert session.get(Race, race_id).source_presence == "present"
     assert count(session, SourceRevision) == 1
-    assert session.scalar(select(RaceChange.kind)) == "presence"
-    assert project_notifications(session, session.get(Account, alice)).inserted == len(scopes)
+    assert count(session, RaceChange) == 2
+    assert set(session.scalars(select(RaceChange.kind))) == {"presence"}
+    for before, after, checked, evidence_prefix in (
+        ("present", "to_verify", missing, "window:"),
+        ("to_verify", "present", now, "run:"),
+    ):
+        change = next(
+            row
+            for row in session.scalars(select(RaceChange))
+            if row.provenance["checked_at"] == checked.isoformat()
+        )
+        targets = list(
+            session.scalars(select(ScopeChange).where(ScopeChange.change_id == change.id))
+        )
+        assert {row.scope_id for row in targets} == set(scopes)
+        assert all(
+            row.payload
+            == {"before": {"source_presence": before}, "after": {"source_presence": after}}
+            for row in targets
+        )
+        assert change.provenance["evidence_id"].startswith(evidence_prefix)
+        assert change.provenance["source_url"] == (
+            source.batch().calendar.source_url if before == "present" else observed.source_url
+        )
+        assert change.provenance["normalization_version"] == observed.normalization_version
+    assert project_notifications(session, session.get(Account, alice)).inserted == 2 * len(scopes)
 
 
 def test_record_failure_rolls_back_source_revision_and_event_together(

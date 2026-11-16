@@ -23,7 +23,7 @@ Action updated : clé `revision:` + ID de la SourceRevision réellement créée,
 
 Mutation, révision, changement et cibles dans le même SAVEPOINT/commit : erreur record annule aussi la mutation correspondante et reste auditable avec diagnostic borné, sans payload/secret. Projection privée N1A après commit source, jamais fanout/lock Account ni envoi dans sync. Les abonnements antérieurs reçoivent le futur delta, ceux créés après commit prennent la nouvelle baseline sans rétroactivité ; retrait/réajout et autres comptes/scopes restent isolés.
 
-## N1B-2 — contrat prévu, pas encore attribué
+## N1B-2 — contrat attribué, implémentation en cours
 
 Prévoir sans affectation ORM/autoflush les promotions historical_duplicate, conditions success/couverture/stale et vraies transitions de présence. `_finalize_historical_duplicates` ne modifie que l'audit mais ses promotions peuvent autoriser l'inférence d'absence ; conserver cet effet. Seules les races qui changeront réellement de présence consomment des gardes/cibles, TOUS leurs scopes même sans abonné. Fraîcheur presence_checked_at, audit et catalogue volumineux sans delta ne deviennent pas un plafond produit.
 

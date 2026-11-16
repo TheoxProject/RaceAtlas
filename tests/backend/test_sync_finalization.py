@@ -13,12 +13,14 @@ from raceatlas.models import (
     ImportItem,
     ImportRun,
     ImportWindow,
+    PersonalNotification,
     Race,
     RaceChange,
     ScopeChange,
     SourceRevision,
 )
 from raceatlas.notifications import project_notifications
+from raceatlas.planning import delete_saved_entry, get_saved_entry, put_saved_entry
 from raceatlas.sync import service, synchronize
 from raceatlas.sync.final_plan import plan_finalization
 
@@ -156,3 +158,40 @@ def test_final_planner_is_pure_frozen_and_preserves_historical_promotions(sessio
     assert inputs.windows[0].status == session.get(ImportWindow, window.id).status == "partial"
     with pytest.raises(FrozenInstanceError):
         plan.run_status = "failed"
+
+
+def test_source_notifications_unsave_cascades_exact_subscription_and_readd_is_fresh(
+    session, database
+):
+    observed, _, scopes = initial(session, database)
+    alice_id, bob_id = subscribe(session, scopes)
+    now = source.NOW + timedelta(hours=1)
+    synchronize(database, [source.batch(keys=(), checked=now)], checked_at=now)
+    session.expire_all()
+    alice, bob = session.get(Account, alice_id), session.get(Account, bob_id)
+    assert project_notifications(session, alice).inserted == len(scopes)
+    assert project_notifications(session, bob).inserted == 1
+    entry = put_saved_entry(session, alice, scopes[-1])
+    old_id = entry.id
+    session.commit()
+    delete_saved_entry(session, alice, old_id)
+    session.commit()
+    remaining = list(session.scalars(select(PersonalNotification)))
+    assert {(row.account_id, row.scope_id) for row in remaining} == {
+        (alice_id, scopes[0]),
+        (bob_id, scopes[-1]),
+    }
+    replacement = put_saved_entry(session, alice, scopes[-1])
+    assert replacement.id != old_id and replacement.notifications_after_sequence == 1
+    assert get_saved_entry(session, alice, replacement.id).scope_id == scopes[-1]
+    assert project_notifications(session, alice).inserted == 0
+    session.commit()
+    later = now + timedelta(hours=1)
+    synchronize(
+        database,
+        [source.batch(replace(observed, checked_at=later), checked=later)],
+        checked_at=later,
+    )
+    session.expire_all()
+    assert project_notifications(session, session.get(Account, alice_id)).inserted == len(scopes)
+    assert project_notifications(session, session.get(Account, bob_id)).inserted == 1

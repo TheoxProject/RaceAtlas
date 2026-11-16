@@ -1,12 +1,35 @@
-# OPS-N1B-2 — interfaces avant code (WIP final N1)
+# OPS-N1 — handoff candidat final A + B1 + B2
 
-HEAD/origin3ed83ed902a9bd16357bd5297450687f35e04fd4, PR15/basec740. Gate B1 APPROVE ciblé exact3ed/rapport6917102768 et CI43870248750developmentfull942backend424,88s/118frontend ; pas gatefinalfusion ni approbation nouveauSHA. B2 transféré, Developerseulwriter.
+16 novembre 2026, 13:32 UTC. Branche `feature/operations-readiness`, [Draft PR15](https://github.com/TheoxProject/RaceAtlas/pull/15), basec740. HEAD/origin avant publication finale : `dbe9c07eeb49c1a586e6fd27934057421c5391cd`. CI [43875151220](https://github.com/TheoxProject/RaceAtlas/actions/runs/43875151220) **FAIL949PASS/1FAIL283,71s +118frontendPASS** : unique ancien attendu B1 restauration (1==0), déjà corrigé et reciblé ci-dessous. Aucun autre échec. SHA exact final communiqué au gel ; nouvelle CI et acceptation complète nécessaires, aucun verdict final présumé.
 
-Interface : `FinalInputs`/`FinalizationPlan` frozen (donnéesprimitives/tuples/bytes), `plan_finalization(inputs)` strictementpur ; service chargeDTO sousno_autoflush, sansanciennefinalisationmutante, puis guards seulestransitionsréelles. RevalidationSnapshot aprèsgarde etAVANTDML, applymutations/audit/record dansUNcommitfinal. Refuscap1001/contended/statechange/record/commit : rollbackfinal puis auditpartial/failed/missing0/windowincomplete, pasdroppartiel ou chunks.
+## Interfaces et fichiers B2
 
-AbsenceprovenancecalendarWindow réelle/checkedUTC/evidencewindowUUID etRunparserVersionvalidée, jamaisficheRace/now ; witnessmaxcheckedadmissible/tieID ; clépresenceSHA(run/race/phase/before/to_verify/window). PasSourceRevisionbusiness ni annulation fictive. Metadatafreshness/promotionaudit consomment0guard/event ; tousscopesvraimentaffectés, jamaisfiltreabonnés. SourceNoAccount, RC+budgetlocal3s/guardN1Aglobalnuminchangés.
+`sync/final_plan.py` : `FinalInputs` et `FinalizationPlan` frozen, tuples/primitifs/bytes seulement. `plan_finalization(inputs)` sans ORM/Session/SQL ni effet de bord : promotions historiques audit, états fenêtres, stamps metadata, transitions et union de scopes, statut et compteur de races. `_load_final_inputs` du service charge sous `no_autoflush` ; `_finish_run` acquiert les guards N1A uniquement pour les vraies transitions, recharge/revalide avant DML puis applique dans le commit final existant. Ce helper possède exclusivement la transaction finale de `synchronize`, jamais un commit par race/chunk.
 
-Tests àfaire pargroupes : pur0SQL/nodirty/promotions/stale ; importsabsence/provenance/replay/restore/4statuts/scopes ; cap1000/1001/plus1000catalogue1delta ; rollbackdeuxièmeRecord/toutfinal/WindowsB1préservées/Coverageincomplete ; barrièressaveavant/aprèsgardefinale. Premier groupe : `pytest tests/backend/test_sync_finalization.py -q --tb=short --junitxml=.local-tools/ops-n1b2-initial.xml` = **8 PASS, 10,815 s**, session74560 terminée. Aucun rerun ; cap/rollback/barrières restent TODO. pasfull942local ni modèles/migration/auth/planning/ICS/UI/API/deps/CI.
+Absence : clés `presence:` + SHA256(run/race/absence/from/to/window), witness maxchecked puis ID, provenance IMMUTABLE ImportWindow calendrier URL/checkedUTC/versionRun/evidence `window:UUID`. Aucun prétendu contrôle fiche Race, statut cancelled et SourceRevision business inchangés. Répéter `to_verify` rafraîchit seulement sa preuve, compteur et événement zéro. Restauration B1 reste événement distinct présent.
+
+Cap1001, garde, snapshot changé ou écriture refusée : rollback de toutes les mutations finales puis audit borné incomplete/partial/failed/missing0 ; commits business des fenêtres préservés. Dernier coverage incomplete, last_success précédent honnête. Pas de retry silencieux. Source jamais Account ; le save privé reste Account→guard→baseline. Barrières PG prouvent save avant/après finalcommit ; retrait scope cascade ses seules notifications et réajout reprend une baseline fraîche.
+
+Tests nouveaux `test_sync_finalization.py`, `test_sync_finalization_edges.py` ; couture restauration B1 actualisée avec directions, cibles et provenance exactes (absence + retour). Pas modèle/migrationb806, N1A, planning/auth/ICS, frontend/API, CI ou dépendance changé dans B2.
+
+## Commandes et résultats exécutés
+
+Venv existante, `TEST_DATABASE_URL=postgresql+psycopg://raceatlas_local@127.0.0.1:55434/raceatlas_lot2_test`, `RACEATLAS_DISPOSABLE_DB=1`. JUnit ignorés sous `.local-tools/`, `--tb=short` partout :
+
+1. `pytest tests/backend/test_sync_finalization.py -q --junitxml=.local-tools/ops-n1b2-initial.xml` : **8 PASS, 10,815 s**.
+2. `pytest tests/backend/test_sync_finalization_edges.py tests/backend/test_sync_notifications.py -k "capacity or large_catalogue or second_final or final_commit or restoring_presence" -q --junitxml=.local-tools/ops-n1b2-edges.xml` : **6 PASS / 1 FAIL, 25,35 s**. Ancien test B1 attendait une seule transition ; les six nouvelles preuves passent. Aucune passe relabellisée.
+3. `pytest tests/backend/test_sync.py tests/backend/test_catalog_sync.py tests/backend/test_sync_notifications.py -k "restoring_presence or only_complete_run or partial_independent_window or global_presence or old_empty_window or no_windows or failed_fresh_member or prebaseline_duplicate or repeated_controlled_absence or historical_or_equal or genuinely_fresh_alias or coverage_uses_execution or incoherent_success_window" -q --junitxml=.local-tools/ops-n1b2-final-seams.xml` : **28 PASS, 59,83 s**.
+4. `pytest tests/backend/test_sync_finalization_edges.py tests/backend/test_sync_notifications.py -k "revalidated or restoring_presence" -q --junitxml=.local-tools/ops-n1b2-revalidation.xml` : **2 PASS, 12,25 s**, après renforcement des directions/provenances de restauration.
+5. `pytest tests/backend/test_sync_finalization.py -k unsave -q --junitxml=.local-tools/ops-n1b2-unsave.xml` : **1 PASS, 9,38 s**.
+6. `python -m ruff check raceatlas migrations tests/backend ops/ci_selection.py` et `python -m ruff format --check raceatlas migrations tests/backend ops/ci_selection.py` : **PASS, 92 fichiers formatés**. `node --test tests/contracts/contracts.test.mjs` : **26 PASS**. Range `git diff --check c74086365df62bf1c71623e080bb1f649c9981f5..HEAD` à contrôler aussi après commit.
+
+PG9780/55434, `_test` b806 uniquement ; `_review` réservée. Fixtures migrations et toutes connexions/threads fermés, aucune commande pending. Aucun nouveau schéma. Preuves B1 réutilisées : 9 nominaux, 6 edges, 12 coutures et CI3ed942/118 ; finalisation/restauration impactées revérifiées ci-dessus. N1A a76 APPROVE/CI927/118 est historique et code inchangé, pas approbation du futur SHA.
+
+## Revue et limites
+
+Tester doit accepter **N1A+B1+B2 ensemble** au SHA final : contraintes/baselines/ordre global numérique et rollback/savepoints, imports/deltas/scopes/provenance, finalisation pure et atomicité1000/1001, absence distincte d'annulation, projection/unsave/readd, coverage et zéro Account dans source. Integrated exacte demandée par Root puis merge/main CI obligatoires avant N2. Aucune suite942 locale répétée ni ancien verdict copié.
+
+La borne technique1000 concerne tous les scopes réellement changés, pas les abonnés ni le catalogue entier ; refus explicite sans drop. Budget lock source3s local, pas objectif SLA. API/UI notifications, exploitation/backup et V1 restent TODO ; aucun mail réel, FFC live, DNS, service, DB distante, déploiement, achat ou tag final autorisé. Au gel : STOP éditions.
 
 ## Handoff B1 historique
 # OPS-N1B-1 — candidat à figer
