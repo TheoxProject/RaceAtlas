@@ -393,6 +393,7 @@ class SavedEntry(Base):
         ),
         CheckConstraint("revision >= 1", name="revision"),
         CheckConstraint("updated_at >= created_at", name="time_order"),
+        CheckConstraint("notifications_after_sequence >= 0", name="notification_baseline"),
     )
     id: Mapped[str] = mapped_column(String(64), primary_key=True, default=opaque_id)
     account_id: Mapped[str] = mapped_column(ForeignKey("account.id", ondelete="CASCADE"))
@@ -401,9 +402,67 @@ class SavedEntry(Base):
     )
     status: Mapped[str] = mapped_column(String)
     revision: Mapped[int] = mapped_column(default=1, server_default="1")
+    notifications_after_sequence: Mapped[int] = mapped_column(BigInteger)
     created_at: Mapped[datetime] = mapped_column(PrivateUTCDateTime(), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(PrivateUTCDateTime(), server_default=func.now())
     scope: Mapped[EntryScope] = relationship()
+
+
+class RaceChange(Base):
+    __tablename__ = "race_change"
+    __table_args__ = (
+        UniqueConstraint("race_id", "event_key"),
+        CheckConstraint("kind IN ('business','presence')", name="kind"),
+    )
+    id: Mapped[str] = mapped_column(String(64), primary_key=True, default=opaque_id)
+    race_id: Mapped[str] = mapped_column(ForeignKey("race.id", ondelete="RESTRICT"))
+    event_key: Mapped[str] = mapped_column(String(128))
+    kind: Mapped[str] = mapped_column(String(16))
+    signature: Mapped[str] = mapped_column(String(64))
+    provenance: Mapped[dict] = mapped_column(JSON)
+    created_at: Mapped[datetime] = mapped_column(
+        PrivateUTCDateTime(), server_default=func.clock_timestamp()
+    )
+
+
+class ScopeChange(Base):
+    __tablename__ = "scope_change"
+    __table_args__ = (
+        UniqueConstraint("scope_id", "sequence"),
+        CheckConstraint("sequence >= 1", name="sequence"),
+    )
+    change_id: Mapped[str] = mapped_column(
+        ForeignKey("race_change.id", ondelete="CASCADE"), primary_key=True
+    )
+    scope_id: Mapped[str] = mapped_column(
+        ForeignKey("entry_scope.id", ondelete="RESTRICT"), primary_key=True
+    )
+    sequence: Mapped[int] = mapped_column(BigInteger)
+    payload: Mapped[dict] = mapped_column(JSON)
+
+
+class PersonalNotification(Base):
+    __tablename__ = "personal_notification"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["account_id", "scope_id"],
+            ["saved_entry.account_id", "saved_entry.scope_id"],
+            ondelete="CASCADE",
+        ),
+        ForeignKeyConstraint(
+            ["change_id", "scope_id"],
+            ["scope_change.change_id", "scope_change.scope_id"],
+            ondelete="CASCADE",
+        ),
+        Index("ix_personal_notification_account_unread", "account_id", "read_at"),
+    )
+    account_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    change_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    scope_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    created_at: Mapped[datetime] = mapped_column(
+        PrivateUTCDateTime(), server_default=func.clock_timestamp()
+    )
+    read_at: Mapped[datetime | None] = mapped_column(PrivateUTCDateTime())
 
 
 class PersonalCalendarEventStore(Base):

@@ -1,97 +1,78 @@
-# CI-F3 cycle3 — candidat DIAGNOSTIC à geler
+# OPS-N1-F1 — candidat corrigé cycle1, GEL après publication
 
-15nov2026. feature/accounts-ui/DraftPR14/baseb55, HEAD/origin avant commit4ec711c7132015ebfdbedde22f30f345c365cba0. **Full43742604527FAIL890PASS/1FAIL404,09s** : Janvierphasepublic-selection/events[] puis capturemasqueinitial ; events[] venait d'une collecte tardive, pas preuveabsenceréseau. AuthSummitPASSsanscausedémontrée. Anciennes full891/118/APPROVE historiques.
+**16 novembre 2026, 18:05 UTC.** Checkout isolé `add4/feature/operations-readiness`, [Draft PR15](https://github.com/TheoxProject/RaceAtlas/pull/15), base `c74086365df62bf1c71623e080bb1f649c9981f5`. HEAD/origin avant publication : `b9f07e9640287aa791ad868a7ccdcb2d28704f77`. Tester b9f REQUEST CHANGES P2 (audit faux après commit durable) ; integrated43877837658 historique SUCCESS958/118 ne vaut ni verdict ni CI du nouveau candidat. Developer seul writer, Tester STOP, `_review` réservée.
 
-Callbacks publics bornés encontinu AVANTselect (request/response/finished/failed), phase/IDs/status/tempshôte, aucunbody/header/token/PII ; cachecamérahôte installépréSummit+saisieinitiale, failure sansnouvelleinterrogationrenderer, captureouterpréserveinitial. Budgets15s/10s/60°/DEM>100/horloges/acteurs/scopes inchangés. **UNrun1PASS64,57s** `.local-tools/pr14-ci-f3-diagnostic.xml` ; phasesJanvalidation10156/UI10203ms,Nov11562/UI11594ms. Numsrequêtes/select-start-return/cacheavant ajoutés ensuite comme métadonnéesseules, lectureReader/CI exacte requise. [Handoffcourt](../lot-7/accounts-ui-handoff.md) détaille réutilisation explicite/limites, pas résolution causale/SLA.
+Correction limitée service : flush terminal explicite avant COMMIT ; erreur commit => rollback local puis confirmation `ImportRun FOR UPDATE` via connexion fraîche READ COMMITTED et budgets locaux3s. Le verrou résout le backend précédent avant de conclure non-commit. Terminal success/partial/failed confirmé => bilan durable intact ; running/finishedNULL confirmé => audit de refus seulement. Confirmation indisponible/ambiguë => `FinalizationOutcomeUnknown` (`code=outcome_unknown`, run_id), aucun faux missing0/rollback ni audit réécrit. Invalidation de la connexion bindée si rollback défaillant ; cleanup global n’écrase pas l’issue inconnue. Aucun replay d’import ni Account côté source.
 
-Ruff82/format/rangediffcheck à vérifier final ; nulldiff produit/backend/frontend/CI/contrats/deps/migrations vs4ec. Commande63168terminée, aucunrunpending/réessai, runtimes/browsers/serveursfermés, PG38028/55434conservé/_testseul/_reviewintact. DeveloperSTOPaprèspush/GEL exact. Prochaineaction : revueFINALECOMPLÈTE renouvelée+integratedexacte ; **si nouveléchec nonrésolu, rapportblocage/optionscycle3, pas quatrième patch/retryjusqu'auvert.** Pasmerge/lot8 sansgate, aucunmailréel/DNS/remoteDB/deploy/collecte.
-## Historique conservé
-# Point de reprise — CI-F2 PR14 (candidat à figer)
+## Résultats correction réels
 
-15nov2026 17:43UTC, `feature/accounts-ui`, DraftPR14/baseb55, head/origin avant commit195dc2b5eaedf8ad74f13d189e611393b80a9ce7. **Ready43740601544FAIL889PASS/2FAIL393,78s** : authSummit60°/10s no-snapshot/capturetimeout ; desktopretourNovembrecount1 absent15s. JanvierbarrièrePASS ; anciennesfull891/118/APPROVE195 historiques. DuplicateDraft43742128752 annulé volontairement, aucunmerge.
+- `pytest tests/backend/test_sync_commit_outcome.py -q --tb=short --junitxml=.local-tools/ops-n1-f1-commit.xml` : **8 PASS, 6,84 s**. Commit PG réel puis erreur unique success/partial/failed, primaire invalidée ; préflush/précommit ; confirmation indisponible avant/après durabilité et unlock défaillant.
+- `pytest tests/backend/test_sync_finalization_edges.py -k "capacity or second_final or final_commit" -q --tb=short --junitxml=.local-tools/ops-n1-f1-seams.xml` : **5 PASS, 5,59 s**. Cap1000/1001, rollback2e record et deux barrières save/finalcommit.
+- `pytest tests/backend/test_sync_commit_outcome.py -k failed_local_rollback -q --tb=short --junitxml=.local-tools/ops-n1-f1-rollback-unavailable.xml` : **1 PASS, 3,45 s**, seule branche nouvelle : rollback local impossible puis invalidation/confirmation saine. Les8 verts n’ont pas été relancés.
+- Ruff lint/format **93 fichiers PASS**, contrats **26 PASS**, range diffcheck base avant/après commit à vérifier avant gel.
 
-DeltaTESTSSEULEMENT : barrière3réponsespubliques généralisée Janvier/Novembre, versions/IDs validés avantUI15s ; observateurcaméra AVANTSummit auth et capturesfailure ne masquentpasdiagnostic. Caméra10s/60°/DEM>100/horloges/acteurs/scopes inchangés, aucun readinesssource/préchauffage/produit changé. **2PASS47,75s** local_test offline/DateProxy (auth19,309s/desktop27,482s), JUnit `.local-tools/pr14-ci-f2-targeted.xml`. Ruff82/rangediffcheckPASS, touscheminsproduit/backend/frontend/CI/contrats/pins/migrations identiques195. [Handoffcourt](../lot-7/accounts-ui-handoff.md) précise échecs/limites ; pas de causeGPU/transport ni résolutionSummit démontrée parPASSinstrumenté.
+Toutes commandes terminées exit0 ; aucun test/session/worker pending, listeners/threads/engines fermés. `_test` b806 uniquement, PG9780/127.0.0.1:55434 vérifié nativement avant tests ; aucun reset/reseed/migration nouvelle. Préparation N2 ignorée reste lecture seule.
 
-Aucune commande/test restant ; serveurs/runtimes/browsers fermés, PG38028/55434 conservé, _test utilisé/_reviewréservé. DeveloperSTOPaprèscommitpush, nouveauSHAexactannoncé sansrééditergel. Prochaine action sûre : Coordinator renouvelle acceptation FINALECOMPLÈTE PR14 et integrated exacte via ci:full, puisReady/mainCI avantlot8. Pasderelanceaveugle desautrespreuvesvertes.
+**Prochain geste sûr : commit/push cohérent, communiquer SHA gelé puis STOP éditions.** Coordinator renouvelle acceptation COMPLÈTE N1A+B1+B2 et CI integrated exacte (`ci:full` déjà posé), merge/main CI avant N2. Runtime hors chemin final inchangé, preuves44 reviewer/958CI antérieures réutilisées explicitement après diff ; aucune ancienne approbation copiée. Si la confirmation est indisponible, issue inconnue exige inspection opérateur du run, pas retry automatique. Aucun email/live/DNS/service/DB distante/deploy/achat/tag.
 
-Lot8owner acquis : Changementsrécents dansMaSaison + compteur + Marquerlues ; unsave scope supprimeSESnotifications et pas autreslistes. Aucune implémentation8 avantgate. Aucunemailréel/DNS/service/remoteDB/deploy/collecte.
-## Historique conservé
-# Point de reprise — CI-F1 PR14
+## Historique candidat b9f (avant finding F1)
 
-15nov2026 17:11UTC. `feature/accounts-ui`, DraftPR14/baseb55, local/origin avant commitc139a5d6a1685307cb16f7a2cac08fefe52603ec. **ReadyCI43736947900 FAIL890PASS/1FAIL392,58s**, countJanvier absent15s ; duplicateDraft43738714636 annulé volontairement. Anciennes full891/118/APPROVEc139 historiques. Source libérée, correction TESTS SEULEMENT.
+# OPS-N1 — candidat final A + B1 + B2, GEL après publication
 
-Écoutes avantselect pour3réponsespubliques finies races200/map200/témoin1, validationcorps/versions puis UI15s inchangée ; caméra10s/60°/DEM>100/acteurs/scopes/horsfiltres conservés. Ciblé1PASS26,77s (.local-tools/pr14-ci-f1-desktop-final.xml), validationAPI5000ms etUIprête même mesure ; Ruff82/rangediffcheck PASS, produit/backend/frontend/CI/contrats/pins inchangés. [Handoff](../lot-7/accounts-ui-handoff.md) conserve analyse/capture/incident tâches redondantes et limites. Pas de cause produit affirmée ni nouvelobjectifSLA.
-
-Commande finale terminée exit0/session7718, JUnit1/0/0 réconcilié après reprisequota sans rerun ; aucunePython/Chrome restante, runtime fermé/PG38028conservé, `_test` uniquement et `_review` intact. Aucun autre writer suivi. Ne pas répéter les autres preuves vertes ou campagne complète locale.
-
-**Prochaine action sûre : publier/geler nouveauSHA, STOP éditions puis Coordinator renouvelle acceptation FINALECOMPLÈTE et integrated exacte (ci:full présent), Ready/mainCI avant lot8.** Aucun emailréel/DNS/service/remoteDB/deploy/collecte.
-
-## Historique conservé — ne vaut pas verdict du prochain SHA
-# Point de reprise RaceAtlas
-
-**15 novembre 2026,16:16UTC — PR14 candidat final UI-1+UI-2A+UI-2B, à publier puis GEL.** Branche `feature/accounts-ui`, base `b55f4c66e579046c09ee5cd8745fbeed4f566848`, local/origin avant commit `e1f06dcbc39ee38ef9ed4d3fcabc45814f29d396`, PR https://github.com/TheoxProject/RaceAtlas/pull/14. SHA exact final communiqué au push, sans modifier ensuite ce checkpoint gelé. CI e1f06dc43733669390 development SUCCESS293backend217,22s/116frontend/gardes exactes ; pas gatefusion.
+**16 novembre 2026, 13:32 UTC.** Checkout isolé `add4/feature/operations-readiness`, [Draft PR15](https://github.com/TheoxProject/RaceAtlas/pull/15), base/main `c74086365df62bf1c71623e080bb1f649c9981f5`. HEAD/origin WIP `dbe9c07eeb49c1a586e6fd27934057421c5391cd` ; compléments tests/docs locaux non publiés. CI [43875151220](https://github.com/TheoxProject/RaceAtlas/actions/runs/43875151220) **FAIL : 949 PASS / 1 FAIL, 283,71 s ; 118 frontend PASS**, mode development/fullfallback. Unique échec : ancien attendu B1 restauration `RaceChange1 == 0`, corrigé et reciblé localement ci-dessous ; aucune autre failure. Ne vaut pas preuve verte du candidat final. Developer seul writer ; Tester STOP, `_review` réservé. Aucun processus de test en attente.
 
 | Tâche | État |
 |---|---|
-| UI-1 | APPROVE ciblé exactbbc4e1f09ddb72a8fb4f9d42d08fa712ceb56022/CI290+85 |
-| UI-2A | APPROVE ciblé exact9e9e196c63f18e482d9768a20a4dce2e4306ea0c/CI293+97 |
-| UI-2B | Implémenté et ciblés acquis, revue finale TODO |
-| PR14/lot7local final | TODO acceptation COMPLÈTE/integrated/fusion/mainCI |
+| N1A modèles, guards globaux, baselines et projection | Preuves a76 réutilisées après diff nul, pas verdict final copié |
+| N1B-1 imports/deltas/restauration | Gate ciblé 3ed + CI development 942/118 ; runtime B1 inchangé hors couture finale explicite |
+| N1B-2 plan pur, absence atomique/provenance/capacité | Implémenté et ciblés acquis ; revue finale TODO |
+| N1 complet | TODO acceptation indépendante A+B1+B2 + integrated au SHA final, puis merge/main CI |
+| N2 API/UI, exploitation/backup/candidat V1 | TODO, non attribués |
 
-UI-2B : export ICS200/MIME/stream réel2Mio/lease jusqu'au click/revoke ; sensibles204 EXACT,403 garde acteur, issue réseau/2xx inattendue honnête. Aucun backend/modèle/migration/dépendance modifié. Frontend41pure PASS3,17s+10composants PASS18,19s/lint/build9,01s ; nouveaux browsers2PASS24,17s sécurité et1PASS13,68s export hors filtres/parser/commit inconnu/contexte carte ; Ruff82/26contrats/diff PASS. [Handoff court](../lot-7/accounts-ui-handoff.md) conserve commandes/échecs de fixtures/quota/proofs réutilisés. Limite jsdom Reviewer NONPASS distinguée de CI97/4browsers UI-2A, aucun ancien verdict copié au nouveau SHA.
+Livré B2 : plan frozen sans ORM/SQL, promotions audit historiques et anciennes métriques conservées (`missing_marked` = races réellement passées à `to_verify`). Snapshot chargé sous `no_autoflush`, revalidé après guards numériques N1A avant DML ; seul l'ensemble des scopes des vraies transitions consomme la borne1000. Métadonnées seules et catalogue>1000 sans grands deltas ne sont pas refusés. Événements/stamps/audit dans un commit final ; refus cap/guard/snapshot/record/commit : rollback final puis audit incomplete/partial/failed et missing0. Fenêtres business déjà committées conservées.
 
-Aucune commande/test restant ; runtimes/browsers/serveurs fermés, PG38028/55434 actif conservé, `_test` seulement et `_review` réservé. Ne pas relancer aveuglément les ciblés verts ou une campagne backend complète locale. Developer STOP après push ; Root PR/CI et Tester au SHA exact, aucun autre writer suivi.
+Provenance absence = URL/checked_at du calendrier ImportWindow réellement contrôlé, version Run validée, evidence `window:UUID`, témoin maxchecked/tieID. Payload présence seul ; aucune annulation ni révision business inventée. Aucun Account côté source. [Handoff](../lot-8/developer-handoff.md) : commandes, fichiers, interfaces et limites.
 
-**Prochaine action sûre : Coordinator demande acceptation indépendante COMPLÈTE PR14 et integrated exact via ci:full ; development seul interdit fusion.** Aucun lot suivant avant merge/mainCI. Aucun email réel/DNS/service/remoteDB/achat/déploiement/collecte.
-## Historique conservé (états antérieurs, non réattribués au candidat actuel)
+## Résultats B2 réels
 
-## Correction UI1-F1 cycle1
+- `ops-n1b2-initial.xml` : **8 PASS, 10,815 s** (session74560 réconciliée, aucun rerun).
+- `ops-n1b2-edges.xml` : **6 PASS / 1 FAIL, 25,35 s**. Six nouvelles preuves cap1000/1001, catalogue volumineux/1delta, rollback2e record et deux barrières passent. Ancien attendu B1 de restauration comptait encore une seule transition ; corrigé explicitement pour absence puis retour, cibles/provenances exactes et business inchangé.
+- `ops-n1b2-final-seams.xml` : **28 PASS, 59,83 s**, source historique/alias/fraîcheur/absence/coverage et cas restauration corrigé.
+- `ops-n1b2-revalidation.xml` : **2 PASS, 12,25 s**, vraie attente PG puis revalidation du snapshot et cas restauration renforcé.
+- `ops-n1b2-unsave.xml` : **1 PASS, 9,38 s**, import→notification→retrait exact/réajout frais/autrui préservé.
+- Ruff lint et format **92 fichiers PASS** ; contrats **26 PASS** ; `git diff --check c740...` PASS avant commit, range final à revérifier après commit.
 
-CI baseline8f3 **43623571912 development SUCCESS288backend167,17s/85frontend**, source exacte avant/après. Tester ciblé REQUEST CHANGES F1seul (copie202 promesse d’envoi malgré providerfail), rapport initial `.local-tools/tester-report-ui1-initial-8f3.md` conservé/publié ; SOURCE RELEASED. Developer seul writer, UI2planvalidé mais non attribué.
+Tests uniquement `_test` b806, PG9780 loopback55434/cluster add4 existant ; fixtures migrations upgrade/check/downgrade/upgrade/check, aucune nouvelle migration. Sessions74560/31793/46187/86427/61400 terminées ; barrières libérées, engines/threads fermés. Pas de campagne942 locale ; modèles/migration/N1A/planning/auth/ICS/frontend/API/CI/deps inchangés dans B2.
 
-Seule constante produit changée vers formulation retenue par le Coordinateur « Demande prise en compte. Vérifiez votre boîte de réception et vos courriers indésirables ; si un message vous parvient, suivez ses instructions. » Identique connu/inconnu/limité/providerfail.13testsclientPASS1,82s ; lint/build8,16s PASS ; browser ciblé2PASS16,04s (2deselected) sur_test, providerquota réellement déclenché1fois/cooldown/unknown/mise enpage390. Captures dialog-desktop/account-mobile vues, runtimes fermés. Premier run1PASS/1FAIL26,51s =fixtureadresse commune/cooldown conservé, corrigé par adresse synthétique par port, pas assouplissement produit. Ruff82/diff PASS.
+**Prochain geste sûr : publier tests/docs cohérents, vérifier range final puis GEL exact communiqué au Coordinator. STOP sources ensuite pour acceptation COMPLÈTE N1 et integrated courant.** Limite technique1000 vraie union sans chunks/drop/retry ; pas SLA de latence ni rétention produit ajoutée. Aucune action réelle live/email/DNS/service/DB distante/deploy/achat/tag final.
 
-Diff nul autresproduits/backend/migrations/pins/CI/dialog/CSS ; preuves104backend/18frontend/App9/flows/sondes indépendantes réutilisées après diff, pas verdictcopié, pas replay104/full881. Prochaine action : commit/push test+copie+docs, annoncerexactSHA et STOP pour revue ciblée UI1 complète/CIdevelopmentnouvelle. UI-2/mergegateintegrated restent àfaire.
+## Historique B1 conservé
+# OPS-N1B-1 — candidat à figer
 
-## UI-1 livré et preuves
+**16nov2026 12:49UTC.** Checkout isolé add4/feature/operations-readiness, DraftPR15 https://github.com/TheoxProject/RaceAtlas/pull/15. Base/mainc74086365df62bf1c71623e080bb1f649c9981f5 ; local/origin avant publication98147ac78cf6d1051a21f5e9ae97a64122a5eead. Source B1 du checkpoint981 inchangée, nouveau test edge+docs seulement. CI43836355310 development/fullfallback SUCCESS936backend272,01s/118frontend, sourceguards avant/après ; pas verdict ni gate integrated du prochain SHA.
 
-Bootstrap avantReact/scrub/preuveRAM enveloppe effaçable commune main/props (fermeture/succès/invalidité définitive), pas POST au montage/StrictMode ni token stockage/JSON/URLfinal/log. Dialog FR login/signup/renvoi/oubli/confirmation/reset ; Unicodeexact15–128points/512UTF8, emailASCII expliqué,202 uniforme et pas autologin. Contrôleur générations/abort/identité, login401 conserveA, late401 ignoréeaprèsB, resetB gardeA, feedback ancien nettoyé sur switch ; carte publique montée/conservée.
+| Tâche | État |
+|---|---|
+| OPS-N1A fondation/ordre global | APPROVE ciblé exacta76, P2CLOSED ; pas fusion N1 |
+| OPS-N1B-1 import/deltas/restauration present | Implémenté, ciblés acquis ; revue ciblée TODO |
+| OPS-N1B-2 absencefinale/auditpur/capacité1000/1001 | TODO, non attribué |
+| OPS-N2 API/UI Changements récents | TODO |
+| OPS-E/B/V exploitation/backup/V1 | TODO |
 
-Préflight corrigé **CSRF→GETme portant CEproof→op mêmeproof**, pas coalescence avec mepassif. Headeroptionnel GETme/liste/ICS vérifié avantSQL ; vide/invalide403, sansheadercompatible, Origin absent GET accepté ; cookie seulbearer. Repro B→A→B1FAIL5,90s avant correction conservée. Headers HTML XFO/CSPframe-ancestors/no-referrer ciblés, OPS02Resendchoisi/nonvérifié aligné sans rapport historique modifié.
+[Mission B](../lot-8/sync-notifications-mission.md) du Coordinator préservée/incluse981 ; [handoff](../lot-8/developer-handoff.md) décrit signatures/transactions/limites et toutes commandes. Developer STOP après push/GEL exact, Root PR/CI et Tester au SHA courant. Aucun verdict précédent copié, B1 n'est ni N1 complet ni lot8 terminé.
 
-Preuves acquises :87PG/HTTP PASS40,02s (11readguard+29C1+47C0),18frontendisolés(13client+5dialog), App9 PASS12,02s initial ;17tests sélectionCI PASS0,10s ; browser Reactcompilé→Flask→PG2PASS26,09s desktop/mobile390. Desktop supplémentaire mois/filtre/recherche/détail noninitiaux1PASS31,27s (ui1-browser-context-fixed.xml), setup détails/caméra corrigé sans produit changé. Ruff82/lintfrontend/build3,50s/Node26contrats/diff PASS ; YAML existant js-yaml et4blocsBash syntaxe PASS. Captures dialog-desktop/reset-form-mobile/account-reset synthétiques vues, URLscrub ; provider Development RAM seulement. Pas full862local.
+## Livré
 
-Focus : premierbrowser1PASS/1FAIL après changementidentitéremontantinput ; diagnostic simple1PASS timingvariable, puis barrièreinitialenondéclenchée1timeout. Maintenant meB retenu puis libéré sur inputA, focus recentré uniquement horsdialog,2PASS. Vitestgroupé2timeoutsrunner sans tests puisfichiersisolésverts, configinchangée. Erreurcallbacklocale captée4FAIL/lint puis corrigée5PASS. Rapports/JUnit ignorés conservés ; ne pas relabeller incidents ou cache enPASS.
+Inventaire frais chaque fenêtre, guards N1A numériques/rootDB avant premierflush/nested de fenêtre, reload sousgarde. Snapshot immutable parscopeID, wide vs règles/labels scoped, pas effet ordre/cache/centre seul. Evénements business parSourceRevision.id/provenanceimmuable ; replay/fraîcheur/reorder/création initiale sans alerte, reprise present distincte mêmeunchanged. Source/révision/event/cibles rollback jointdansSAVEPOINT. Budget source lock_timeout local3s, RCeffective ; timeout garde rollbackAVANTauditfailed et fenêtrescommittées préservées. Pas Account/fanout/mail source. Modèles/migrationb806/N1A/auth/ICS/frontend/API/CI/deps immuablesa76.
 
-## Politique CI propriétaire14nov
+## Preuves et incidents conservés
 
-Draft sansci:full : job APIdevelopment, touslint/format/pip/contrats/frontend/build et backendciblé conservateur. Inconnu runtime/deps/migration/conftest=>fallbackfull, docs-only backendabsent explicitement. NonDraft/ci:full/main : job APIintegrated complet, seul nom accepté gatefusion. Unjob YAML IDintegrated avecnomdynamique, guardssourceavant/après/contentsread/persistcredentialsfalse/artefactsPNGwhitelist+JUnit1jour conservés. Rootposeci:full auheadfinal, vérifieintegratedsuccess exact puismainCIcomplète. Tests sélection17PASS ; vraieCI nouvelleàexercer. AGENTS/workflow alignés, rapports courts commandes/comptes/échecs/risques, pas skipci.
+Nominal initial4PASS/5FAIL5,79s (fixtures UTCsameinstant/JOINDiagnostic), puis8PASS/1FAIL6,20s (importfixtureoublié) et derniercasrollback1PASS7,16s ;9cas acquis via8+1 et tousverts dansCI981936backend. Compléments **6PASS12,874s**, JUnitops-n1b1-edges.xml : alias/cancelled/cache+gardePG3s/audit+2barrières saveavant/aprèscommit. Source/helper/testedge inchangés depuis ces preuves, réutilisation explicite.
 
-## Intégration acquise, pas à rejouer
+Dernièrecommande12coutures avait été REJETÉEquota avantCreateProcess (aucuneexécution/session/JUnit), puis reprise explicite et ONErun réel session3636 terminéexit0 : **12PASS9,41s**,74deselected, .local-tools/ops-n1b1-sync-seams.xml. Aucun rerun6/8+1/927local. Ruff89 lint/format et contrats26 PASS ; range c740..HEAD àrevérifier aprèscommit également.
 
-[PR13](https://github.com/TheoxProject/RaceAtlas/pull/13) confirmée merged, head revu **679ec3e0dd53669d445a254f2b840c503a087bbb**, merge **b55f4c66e579046c09ee5cd8745fbeed4f566848**, arbre identique **dbda4b2fc2a1a7e75939e4cec74b29f8531c78c3** (fetch/diff vérifiés). Tester APPROVE complet A+B : 27 PASS courants6,27s + preuves produit113PASS/16sondes réutilisées après diff nul. CI PR43576022192 SUCCESS853backend238,36s/67frontend ; main43576573783 SUCCESS853backend156,11s/67frontend, gardes source avant/après. [Intégration durable](../lot-7/planning-integration.md). PLAN-F1 initialaa077 113PASS/1FAIL Windows CP1252 corrigé test-only, jamais relabellisé PASS. Rapports complets publiés PR13, canonical ignoré .local-tools/tester-report-planning.md.
+## Environnement et prochain geste sûr
 
-[PR12](https://github.com/TheoxProject/RaceAtlas/pull/12) backend auth intégré87d7, head da5743, APPROVE complet239PASS, CI791/67 ; [preuve](../lot-7/auth-integration.md). Cookies opaques, email/hashonly/confirmation24h/reset30m, CSRF/Origin/admission/dispatcher borné déjà livrés. Defaults fermés, Development local/tests. Ne pas confondre backend terminé et lot7 complet.
+Rootconciliation12:45UTC : aucunPython/Chrome/testPID, seulPG9780 clusterabsoluadd4/127.0.0.1:55434 ; `_test` et `_review` b806. Tous tests Developer sur_test uniquement, pas reset/reseed/oldcheckout/_review ni runtime retenu. Aucunecommandepending, barrières/workers fermés.
 
-## Environnement et interdictions de reprise aveugle
-
-Python3.12.14 : C:/Users/theop/.codex/worktrees/1a1e/RaceAtlas/.venv/Scripts/python.exe. Venv sans pip module ; runtimePython -m pip --python si besoin prouvé, pas réinstallation. Node24.22.1/pnpm10.20.0/node_modules et browsers existants (pas pnpm11). Playwright DateProxy seulement pour date fixe, pas page.clock.set_fixed_time qui casse RAF/Summit.
-
-PG17.11 loopback127.0.0.1:55434, cluster .local-tools/pgdata-lot2-native, user raceatlas_local, dernierPID38028 ; vérifier statut avant réutilisation, jamais initdb/reseed/killglobal. DeveloperDB raceatlas_lot2_test, TesterDB raceatlas_lot2_review, preview raceatlas_map_demo préservée ; RACEATLAS_DISPOSABLE_DB=1. Les DB test/review sont à **a74d915e3c02**, ne pas utiliser un ancien checkout contre ce schéma. Aucun test/serveur/browser conservé après acceptation PLAN ; processus Node externes non revendiqués intacts. Fermer runtime/workers avant dispose Engine. Aucun autre writer actif attribué.
-
-Copie personnelle main2e03cd8 et autres worktrees intacts. Branches historiques conservées, pas reset/clean/forcepush. .local-tools ignoré jamais gitaddglobal. Git/CI priment les notes ; source figée pendant revue, changements suivis imposent nouveau verdict/CI.
-
-## Limites externes
-
-Resend Free retenu ; club déclare posséder ucthonon.fr/Webador, raceatlas.ucthonon.fr email seulement, futur From RaceAtlas <notifications@raceatlas.ucthonon.fr> non vérifié. APP_BASE_URL Render réelle inconnue. Aucun compte/service/DNS/email réel/achat/remoteDB/déploiement/collecte autorisé. Premier déploiement privé après lot8/candidatV1 et autorisation distincte. Droits FFC/terrain, délivrabilité, capacité Free/physicalGPU restent à qualifier ; aucune activation automatisée. Owner silence jamais approbation. Quotas non mesurables, pas de promesse de reprise automatique.
-
-
-Pas de test/serveur/browser retenu au gel ; fermer runtimes avant Engines, PG38028 conservé. Reprise explicite après quota a conservé le même WIP/agent ; anciennecommande rejetée n'avait rien exécuté. Node externes non revendiqués laissés intacts. Pas réexécution87/18/2 pour statut documentaire, pas UI-2 ni activation externe.
-
-TRANSFERT UI-2A : gate UI-1 exactbbc4e1f09ddb72a8fb4f9d42d08fa712ceb56022 APPROVE ciblé complet (PR14comment6882116984), CI43625467407 developmentSUCCESS290backend266,47s/85frontend, gardes exacts. Source libérée, Developer seul writer suivi ; HEAD=originbbc4e1f au départ, PG38028/55434 vérifié, aucun Python/Chrome. UI-2A scopes+saison attribué, UI-2Bexport/sensibles TODO. Prochaineaction sûre : séparer ticket/contextEpoch et publication privée atomique puis composants/ciblés ; pas backend/migration/deps ni full881local.
-
-Checkpoint UI-2A WIP : store ticket/contextEpoch/purge/publication atomique et lectures/écritures scoped, composants ScopeSaveActions/SeasonPanel +détails scoped raccordés.8tests store PASS1,90s,3composants PASS2,07s, UI1client13PASS1,89s/dialog5PASS2,01s/App9PASS9,62s ; lint/build3,51s PASS. Un assert fixture d'index après réordonnancement remplacé par recherche scopeID,8PASS. Browser2A deuxcas créés localement mais NON exécutés et non inclus dans cet incrément, restent prochaine action ; pas gel UI-2A. Whitelist PNG étendue uniquement season-desktop/season-mobile autorisée Root, mêmes gardes1jour. Aucun backend/migration/deps/UI2B modifié. Prochaine action : publier store/composants testé WIP puis exécuter browser2A sur_test, Root suit CI du checkpoint.
-
-UI-2A ciblés reprise : mobilebrowser PASS, desktop initial5sreadiness puis seconde panne scénario toggleExplorer qui refermait panneau existant ; ouverture conditionnelle test corrigée, strictcaméra10s inchangé. CatchloadEntries mêmeepoch TypeError tardif reproduit :8PASS/1FAIL2,37s sous threads/maxWorkers1 (forkrunner précédentNONPASS0test) ; correction minimale garde leasecomplet ticket+epoch+acteur dans catch comme succès. Reprise ciblés puis desktop à faire, pas UI2B.
-
-Checkpoint UI-2B client/UI :26tests Node (11sensibles/6download/9store) PASS3,81s,10composants PASS18,19s,13client PASS dans run19/1,68s, lint/build9,01s PASS. Browsers UI-2B non exécutés ; PG arrêté, redémarrer cluster existant avant_test. Prochaine action sûre : publier ce WIP puis construire browsers. Aucun verdict final nouveau.
+**Prochaineaction sûre : publier/GEL exact B1, Coordinator suitCI et renouvelle revue ciblée ; STOPsource ensuite.** Ne pas lancer B2 avant attribution, ni afficher notification absence comme livrée. N1final exigera B2+acceptation COMPLÈTE/integrated/mainCI avant N2. Aucun action réelle email/DNS/Resend/service/DBremote/deploy/collecte/payant/tagfinal.

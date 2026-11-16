@@ -9,6 +9,7 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import object_session, selectinload
 
+from raceatlas.changes import scope_guards, subscription_baseline
 from raceatlas.models import Account, SavedEntry, opaque_id
 
 SAVED_STATUSES = frozenset({"interested", "planned", "registered", "completed"})
@@ -66,7 +67,19 @@ def _actor_id(session, actor):
         or not inspect(actor).persistent
     ):
         raise PlanningNotFound()
-    return actor.id
+    return inspect(actor).identity[0]
+
+
+def _lock_actor(session, actor):
+    """Also serialize internal callers; HTTP already owns this same reentrant lock."""
+    with session.no_autoflush:
+        account_id = _actor_id(session, actor)
+        current = session.scalar(
+            select(Account.id).where(Account.id == account_id).with_for_update()
+        )
+    if current is None:
+        raise PlanningNotFound()
+    return account_id
 
 
 def _status(value):
@@ -113,9 +126,22 @@ def list_saved_entries(session, actor):
 
 
 def put_saved_entry(session, actor, scope_id, status="interested"):
-    account_id = _actor_id(session, actor)
+    _actor_id(session, actor)
+    scope_id, status = _target_id(scope_id), _status(status)
+    account_id = _lock_actor(session, actor)
+    with scope_guards(session, [scope_id]) as guard:
+        return _put_saved_entry(
+            session, account_id, scope_id, status, subscription_baseline(session, guard, scope_id)
+        )
+
+
+def _put_saved_entry(session, account_id, scope_id, status, baseline):
     statement = insert(SavedEntry).values(
-        id=opaque_id(), account_id=account_id, scope_id=_target_id(scope_id), status=_status(status)
+        id=opaque_id(),
+        account_id=account_id,
+        scope_id=scope_id,
+        status=status,
+        notifications_after_sequence=baseline,
     )
     statement = statement.on_conflict_do_update(
         index_elements=[SavedEntry.account_id, SavedEntry.scope_id],
@@ -148,7 +174,9 @@ def put_saved_entry(session, actor, scope_id, status="interested"):
 
 
 def update_saved_entry(session, actor, entry_id, status):
-    account_id = _actor_id(session, actor)
+    _actor_id(session, actor)
+    entry_id = _target_id(entry_id)
+    account_id = _lock_actor(session, actor)
     # Check ownership before validating input: a foreign entry always stays not_found.
     get_saved_entry(session, actor, entry_id)
     value = _status(status)
@@ -166,10 +194,13 @@ def update_saved_entry(session, actor, entry_id, status):
 
 
 def delete_saved_entry(session, actor, entry_id):
+    _actor_id(session, actor)
+    entry_id = _target_id(entry_id)
+    account_id = _lock_actor(session, actor)
     deleted = session.scalar(
         delete(SavedEntry)
         .where(
-            SavedEntry.account_id == _actor_id(session, actor),
+            SavedEntry.account_id == account_id,
             SavedEntry.id == _target_id(entry_id),
         )
         .returning(SavedEntry.id)
@@ -180,5 +211,5 @@ def delete_saved_entry(session, actor, entry_id):
 
 def delete_account(session, actor):
     """Delete only this identity and its private rows; no source graph is changed."""
-    account_id = _actor_id(session, actor)
+    account_id = _lock_actor(session, actor)
     session.execute(delete(Account).where(Account.id == account_id))

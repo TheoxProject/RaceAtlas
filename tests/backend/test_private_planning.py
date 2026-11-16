@@ -209,7 +209,14 @@ def test_more_than_public_page_no_hidden_filters_or_truncation(app, database, se
             )
             session.add(scope)
             session.flush()
-            session.add(SavedEntry(account_id=alice, scope_id=scope.id, status="interested"))
+            session.add(
+                SavedEntry(
+                    account_id=alice,
+                    scope_id=scope.id,
+                    status="interested",
+                    notifications_after_sequence=0,
+                )
+            )
     response = client.get(BASE, base_url=ORIGIN)
     assert response.status_code == 200 and len(response.json["items"]) == 201
     assert {item["scope"]["raw_label"] for item in response.json["items"]} == {

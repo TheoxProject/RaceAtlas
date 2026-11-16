@@ -4,19 +4,30 @@ Independent windows/items can succeed without authorizing absence inference. Onl
 entirely successful run may mark absent races to_verify, after global key deduplication.
 """
 
+import hashlib
 import re
+from contextlib import nullcontext
 from dataclasses import dataclass, replace
 from datetime import datetime, timezone
 
 from sqlalchemy import select, text
-from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.orm import Session
+from sqlalchemy.exc import OperationalError, SQLAlchemyError
+from sqlalchemy.orm import Session, joinedload, selectinload
 
+from raceatlas.changes import (
+    ChangeError,
+    canonical,
+    record_change,
+    scope_guards,
+    transaction_connection,
+)
 from raceatlas.ffc import project_race
 from raceatlas.ffc.types import DEPARTMENTS, NORMALIZATION_VERSION, AdapterError, SourceKey
 from raceatlas.models import (
     Category,
     Competition,
+    EligibilityRule,
+    EntryScope,
     ImportItem,
     ImportRun,
     ImportWindow,
@@ -27,12 +38,31 @@ from raceatlas.models import (
 )
 from raceatlas.serialization import race_document
 
+from .change_facts import deltas, snapshot
+from .final_plan import (
+    BUSINESS_KEYS,
+    FinalInputs,
+    ItemState,
+    RaceState,
+    WindowState,
+    plan_finalization,
+)
 from .fingerprint import fingerprint, observation_facts
 from .fingerprint import text as clean_text
 from .geocoding import Resolution, resolve_commune
 from .types import RunResult
 
 LOCK_KEY = 0x5241434541544C
+
+
+class FinalizationOutcomeUnknown(RuntimeError):
+    """No claim about durability; the caller must inspect this run before acting."""
+
+    code = "outcome_unknown"
+
+    def __init__(self, run_id):
+        self.run_id = run_id
+        super().__init__("Source finalization outcome is unknown")
 
 
 def _error(code, field="import"):
@@ -187,10 +217,17 @@ def _apply(
     commune=None,
     approved_alias=None,
     baseline=None,
+    guard=None,
 ):
     existing, new_alias = _alias_target(
         session, observation, alias, now, approved_target=approved_alias
     )
+    before = None
+    if existing is not None:
+        if guard is None:
+            _error("change_guard_missing")
+        guard.check(session, [scope.id for scope in existing.scopes])
+        before = snapshot(existing)
     previous_revision = existing.revision if existing else 0
     baseline = baseline or (_presence_baseline(existing) if existing else None)
     freshness_error = _freshness_error(observation, now, baseline)
@@ -316,20 +353,58 @@ def _apply(
             observation.source_url,
         )
         model.source_presence = "present"
+    revision = None
     if action != "unchanged":
-        session.add(
-            SourceRevision(
-                race_id=model.id,
-                run_id=run_id,
-                revision=model.revision,
-                business_hash=fingerprint(facts),
-                facts=facts,
-                normalization_version=observation.normalization_version,
-                source_url=observation.source_url,
-                checked_at=observation.checked_at,
-            )
+        revision = SourceRevision(
+            race_id=model.id,
+            run_id=run_id,
+            revision=model.revision,
+            business_hash=fingerprint(facts),
+            facts=facts,
+            normalization_version=observation.normalization_version,
+            source_url=observation.source_url,
+            checked_at=observation.checked_at,
         )
+        session.add(revision)
     session.flush()
+    if before is not None:
+        after = snapshot(model)
+        if action == "updated":
+            record_change(
+                session,
+                guard,
+                race_id=model.id,
+                event_key="revision:" + revision.id,
+                kind="business",
+                targets=deltas(before, after),
+                provenance={
+                    "source_url": revision.source_url,
+                    "checked_at": revision.checked_at.isoformat(),
+                    "normalization_version": revision.normalization_version,
+                },
+            )
+        if before.presence != "present" and after.presence == "present":
+            identity = f"{run_id}:{model.id}:restore:{before.presence}:present"
+            record_change(
+                session,
+                guard,
+                race_id=model.id,
+                event_key="presence:" + hashlib.sha256(identity.encode("utf-8")).hexdigest(),
+                kind="presence",
+                targets={
+                    scope_id: {
+                        "before": {"source_presence": before.presence},
+                        "after": {"source_presence": "present"},
+                    }
+                    for scope_id, _ in after.scopes
+                },
+                provenance={
+                    "source_url": observation.source_url,
+                    "checked_at": observation.checked_at.isoformat(),
+                    "normalization_version": observation.normalization_version,
+                    "evidence_id": "run:" + run_id,
+                },
+            )
     return model.id, action
 
 
@@ -439,7 +514,9 @@ def _preflight(session, batches, now):
     return _Preflight(conflicts, errors, targets, approved, baselines)
 
 
-def _import_window(session, batch, run_id, now, provider, preflight):
+def _import_window(
+    session, batch, run_id, now, provider, preflight, *, guard=None, guard_error=False
+):
     calendar = batch.calendar
     window = ImportWindow(
         run_id=run_id,
@@ -458,6 +535,9 @@ def _import_window(session, batch, run_id, now, provider, preflight):
     )
     session.add(window)
     session.flush()
+    if guard_error:
+        window.status, window.diagnostics = "failed", ["change_guard_unavailable"]
+        return "failed", set()
     if not _window_valid(calendar, now):
         window.status, window.diagnostics = (
             "incomplete",
@@ -540,6 +620,7 @@ def _import_window(session, batch, run_id, now, provider, preflight):
                         commune=resolution.commune,
                         approved_alias=preflight.approved_aliases.get(key),
                         baseline=preflight.baselines.get(preflight.targets.get(key)),
+                        guard=guard,
                     )
                 present.add(race_id)
             except AdapterError as error:
@@ -551,6 +632,8 @@ def _import_window(session, batch, run_id, now, provider, preflight):
                 )
             except SQLAlchemyError:
                 code, action = "storage_error", "error"
+            except ChangeError:
+                code, action = "change_record_error", "error"
         if code:
             codes.append(code)
         observed = observation_facts(observation) if observation else None
@@ -591,51 +674,282 @@ def _import_window(session, batch, run_id, now, provider, preflight):
     return window.status, present
 
 
-def _finalize_historical_duplicates(session, windows, accepted):
-    """Historical records never mutate data; only an actual successful item of this run
-    can make an identical historical record an ignored duplicate instead of a failure.
-    """
-    business_keys = (
-        "name",
-        "discipline",
-        "types",
-        "organizer",
-        "start_date",
-        "end_date",
-        "department",
-        "status",
-        "scopes",
+def _utc(value):
+    return value.astimezone(timezone.utc) if value is not None else None
+
+
+def _load_final_inputs(session, run_id, now, accepted):
+    """Read-only hydration; the returned immutable values retain no ORM references."""
+    with session.no_autoflush:
+        run = session.get(ImportRun, run_id)
+        windows = list(
+            session.scalars(
+                select(ImportWindow).where(ImportWindow.run_id == run_id).order_by(ImportWindow.id)
+            )
+        )
+        items = list(
+            session.scalars(
+                select(ImportItem)
+                .join(ImportWindow)
+                .where(ImportWindow.run_id == run_id)
+                .order_by(ImportItem.id)
+            )
+        )
+        historical = {
+            item.race_id
+            for item in items
+            if item.diagnostic == "stale_observation" and item.race_id in accepted and item.observed
+        }
+        candidates = list(
+            session.scalars(
+                select(Race)
+                .join(SourceRecord)
+                .where(SourceRecord.provider == "ffc")
+                .options(
+                    joinedload(Race.source),
+                    joinedload(Race.commune),
+                    selectinload(Race.types),
+                    selectinload(Race.scopes)
+                    .selectinload(EntryScope.rules)
+                    .selectinload(EligibilityRule.categories),
+                )
+                .order_by(Race.id)
+            )
+        )
+        window_values = tuple(
+            WindowState(
+                window.id,
+                window.status,
+                tuple(window.diagnostics),
+                window.requested_from,
+                window.requested_to,
+                window.effective_from,
+                window.effective_to,
+                window.requested_department,
+                window.effective_department,
+                window.displayed_count,
+                window.distinct_keys,
+                window.source_url,
+                _utc(window.checked_at),
+            )
+            for window in windows
+        )
+        item_values = tuple(
+            ItemState(
+                item.id,
+                item.window_id,
+                item.race_id,
+                item.status,
+                item.diagnostic,
+                canonical(item.observed) if item.observed else None,
+            )
+            for item in items
+        )
+        race_values = []
+        for race in candidates:
+            facts = _model_facts(race) if race.id in historical else None
+            race_values.append(
+                RaceState(
+                    race.id,
+                    race.revision,
+                    race.department,
+                    race.start_date,
+                    race.end_date,
+                    race.source_presence,
+                    _utc(race.source.checked_at),
+                    _utc(race.source.presence_checked_at),
+                    tuple(sorted(scope.id for scope in race.scopes)),
+                    canonical({key: facts[key] for key in BUSINESS_KEYS}) if facts else b"{}",
+                )
+            )
+    return FinalInputs(
+        run_id,
+        run.parser_version,
+        NORMALIZATION_VERSION,
+        _utc(now),
+        tuple(sorted(accepted)),
+        window_values,
+        item_values,
+        tuple(race_values),
     )
+
+
+def _apply_finalization(session, run_id, now, plan, guard):
+    for item in plan.items:
+        model = session.get(ImportItem, item.id)
+        model.status, model.diagnostic = item.status, item.diagnostic
+    for window in plan.windows:
+        model = session.get(ImportWindow, window.id)
+        model.status, model.diagnostics = window.status, list(window.diagnostics)
+    for stamp in plan.stamps:
+        session.get(Race, stamp.race_id).source.presence_checked_at = stamp.at
+    for transition in plan.transitions:
+        session.get(Race, transition.race_id).source_presence = "to_verify"
+    for transition in plan.transitions:
+        identity = canonical(
+            (
+                run_id,
+                transition.race_id,
+                "absence",
+                transition.before,
+                "to_verify",
+                transition.witness_window_id,
+            )
+        )
+        record_change(
+            session,
+            guard,
+            race_id=transition.race_id,
+            event_key="presence:" + hashlib.sha256(identity).hexdigest(),
+            kind="presence",
+            targets={
+                scope: {
+                    "before": {"source_presence": transition.before},
+                    "after": {"source_presence": "to_verify"},
+                }
+                for scope in transition.scope_ids
+            },
+            provenance={
+                "source_url": transition.source_url,
+                "checked_at": transition.checked_at.isoformat(),
+                "normalization_version": transition.version,
+                "evidence_id": "window:" + transition.witness_window_id,
+            },
+        )
+    run = session.get(ImportRun, run_id)
+    run.status, run.finished_at, run.missing_marked = plan.run_status, now, plan.missing_marked
+
+
+def _audit_final_refusal(session, run_id, now, accepted, reason, affected):
+    run = session.get(ImportRun, run_id)
+    run.status, run.finished_at, run.missing_marked = "partial" if accepted else "failed", now, 0
+    windows = session.scalars(select(ImportWindow).where(ImportWindow.run_id == run_id)).all()
     for window in windows:
-        if window.status != "partial":
-            continue
-        items = list(session.scalars(select(ImportItem).where(ImportItem.window_id == window.id)))
-        changed = False
-        for item in items:
-            if (
-                item.diagnostic != "stale_observation"
-                or item.race_id not in accepted
-                or not item.observed
-            ):
-                continue
-            race = session.get(Race, item.race_id)
-            current = _model_facts(race)
-            observed = {key: item.observed.get(key) for key in business_keys}
-            if current["status"] == "cancelled" and observed["status"] == "unknown":
-                observed["status"] = "cancelled"
-            if race.source_presence == "present" and observed == {
-                key: current[key] for key in business_keys
-            }:
-                item.status, item.diagnostic = "unchanged", "historical_duplicate"
-                changed = True
-        if changed:
-            unresolved = {
-                item.diagnostic
-                for item in items
-                if item.diagnostic not in {None, "historical_duplicate"}
-            }
-            window.status = "partial" if unresolved else "success"
-            window.diagnostics = sorted(unresolved)
+        if not affected or window.id in affected:
+            if window.status != "failed":
+                window.status = "incomplete"
+            window.diagnostics = list(dict.fromkeys([*window.diagnostics, reason]))
+
+
+def _confirm_final_commit(engine, run_id, now, accepted, affected):
+    """Resolve the old row lock before concluding that a commit did not happen.
+
+    This is a new checkout/transaction, never the failed Session's identity map.
+    The terminal audit row was flushed atomically with all final facts/events.
+    """
+    try:
+        with engine.connect().execution_options(isolation_level="READ COMMITTED") as connection:
+            with Session(connection) as confirmation:
+                confirmation.execute(text("SET LOCAL statement_timeout='3000ms'"))
+                confirmation.execute(text("SET LOCAL lock_timeout='3000ms'"))
+                row = confirmation.execute(
+                    select(ImportRun.status, ImportRun.finished_at, ImportRun.missing_marked)
+                    .where(ImportRun.id == run_id)
+                    .with_for_update()
+                ).one_or_none()
+                if (
+                    row
+                    and row.finished_at is not None
+                    and row.status
+                    in {
+                        "success",
+                        "partial",
+                        "failed",
+                    }
+                ):
+                    return RunResult(run_id, row.status, row.missing_marked)
+                if (
+                    not row
+                    or row.status != "running"
+                    or row.finished_at is not None
+                    or row.missing_marked != 0
+                ):
+                    raise FinalizationOutcomeUnknown(run_id)
+                # FOR UPDATE has resolved any in-flight terminal write. No commit
+                # was durable; only now may a refusal audit replace running.
+                _audit_final_refusal(
+                    confirmation, run_id, now, accepted, "final_commit_error", affected
+                )
+                confirmation.flush()
+                run = confirmation.get(ImportRun, run_id)
+                result = RunResult(run_id, run.status, run.missing_marked)
+                confirmation.commit()
+                return result
+    except SQLAlchemyError:
+        # Includes a lost acknowledgement for this refusal audit: its outcome
+        # is unknown too. Never replay the source mutation or invent a result.
+        raise FinalizationOutcomeUnknown(run_id) from None
+
+
+def _commit_finalization(session, engine, run_id, now, accepted, affected):
+    run = session.get(ImportRun, run_id)
+    result = RunResult(run_id, run.status, run.missing_marked)
+    connection = session.get_bind()
+    try:
+        session.commit()
+        return result
+    except SQLAlchemyError:
+        try:
+            session.rollback()
+        except SQLAlchemyError:
+            # Public Connection API closes the unusable DBAPI connection. The
+            # confirmation row lock still protects against a server-side COMMIT
+            # completing after this local failure/disconnect.
+            connection.invalidate()
+        return _confirm_final_commit(engine, run_id, now, accepted, affected)
+
+
+def _finish_run(session, run_id, now, accepted, *, engine):
+    """Owned only by synchronize: one final commit, or rollback then refusal audit."""
+    plan, reason = None, "final_plan_invalid"
+    try:
+        transaction_connection(session)
+        inputs = _load_final_inputs(session, run_id, now, accepted)
+        plan = plan_finalization(inputs)
+        if plan.refusal:
+            reason = plan.refusal
+            raise ChangeError("Finalization refused")
+        reason = "change_guard_unavailable"
+        session.execute(text("SET LOCAL lock_timeout='3000ms'"))
+        with (
+            scope_guards(session, plan.scope_ids) if plan.scope_ids else nullcontext(None) as guard
+        ):
+            session.expire_all()
+            if _load_final_inputs(session, run_id, now, accepted) != inputs:
+                reason = "final_state_changed"
+                raise ChangeError("Finalization snapshot changed")
+            reason = "change_record_error"
+            _apply_finalization(session, run_id, now, plan, guard)
+            # Separate known precommit failures from ambiguous commit errors.
+            # The terminal ImportRun row lock must exist before attempting COMMIT.
+            reason = "final_flush_error"
+            session.flush()
+    except (ChangeError, SQLAlchemyError):
+        session.rollback()
+        _audit_final_refusal(
+            session, run_id, now, accepted, reason, plan.affected_windows if plan else ()
+        )
+        session.flush()
+    return _commit_finalization(
+        session, engine, run_id, now, accepted, plan.affected_windows if plan else ()
+    )
+
+
+def _window_scope_ids(session, batch, preflight):
+    """Current inventory, including races created by an earlier committed window."""
+    scope_ids = set()
+    with session.no_autoflush:
+        for key in batch.calendar.keys:
+            try:
+                existing, _ = _lookup(session, key)
+            except AdapterError:
+                continue  # The existing preflight/item audit retains this identity error.
+            if existing is None:
+                target = preflight.approved_aliases.get(key) or preflight.targets.get(key)
+                existing = session.get(Race, target) if target else None
+            if existing is not None:
+                scope_ids.update(scope.id for scope in existing.scopes)
+    return scope_ids
 
 
 def synchronize(engine, batches, *, checked_at=None, provider=None, synthetic=True):
@@ -657,6 +971,10 @@ def synchronize(engine, batches, *, checked_at=None, provider=None, synthetic=Tr
             _error("import_busy")
         try:
             with Session(connection) as session:
+                try:
+                    transaction_connection(session)
+                except ChangeError:
+                    _error("invalid_source_transaction")
                 preflight = _preflight(session, batches, now)
                 run = ImportRun(
                     started_at=now,
@@ -669,70 +987,37 @@ def synchronize(engine, batches, *, checked_at=None, provider=None, synthetic=Tr
                 session.commit()
                 run_id, present = run.id, set()
                 for batch in batches:
-                    _, seen = _import_window(session, batch, run_id, now, provider, preflight)
+                    scope_ids = _window_scope_ids(session, batch, preflight)
+                    session.execute(text("SET LOCAL lock_timeout='3000ms'"))
+                    try:
+                        with (
+                            scope_guards(session, scope_ids)
+                            if scope_ids
+                            else nullcontext(None) as guard
+                        ):
+                            # Inventory/preflight may have populated the identity map before
+                            # waiting. Reload under the lock before taking immutable facts.
+                            session.expire_all()
+                            _, seen = _import_window(
+                                session, batch, run_id, now, provider, preflight, guard=guard
+                            )
+                    except (ChangeError, OperationalError):
+                        session.rollback()
+                        _, seen = _import_window(
+                            session, batch, run_id, now, provider, preflight, guard_error=True
+                        )
                     present.update(seen)
                     session.commit()
-                run = session.get(ImportRun, run_id)
-                candidates = list(
-                    session.scalars(
-                        select(Race).join(SourceRecord).where(SourceRecord.provider == "ffc")
-                    )
-                )
-                windows = list(
-                    session.scalars(select(ImportWindow).where(ImportWindow.run_id == run_id))
-                )
-                _finalize_historical_duplicates(session, windows, present)
-                success = bool(windows) and all(window.status == "success" for window in windows)
-                # Old empty windows cannot override newer verified observations. Defer all
-                # absence inference for this run when any candidate has only stale coverage.
-                if success:
-                    for race in candidates:
-                        if race.id in present:
-                            continue
-                        covering = [
-                            window
-                            for window in windows
-                            if (
-                                window.effective_department == race.department
-                                and race.start_date <= window.effective_to
-                                and race.end_date >= window.effective_from
-                            )
-                        ]
-                        if covering and all(
-                            window.checked_at < _presence_baseline(race)[0] for window in covering
-                        ):
-                            success = False
-                            for window in covering:
-                                window.status = "incomplete"
-                                window.diagnostics = [*window.diagnostics, "stale_window"]
-                if success:
-                    for race in candidates:
-                        if race.id in present or _presence_baseline(race)[0] > now:
-                            continue
-                        covered = [
-                            window
-                            for window in windows
-                            if (
-                                race.department == window.effective_department
-                                and race.start_date <= window.effective_to
-                                and race.end_date >= window.effective_from
-                            )
-                        ]
-                        if covered:
-                            race.source.presence_checked_at = max(
-                                _presence_baseline(race)[0],
-                                *(window.checked_at for window in covered),
-                            )
-                            if race.source_presence != "to_verify":
-                                race.source_presence = "to_verify"
-                                run.missing_marked += 1
-                run.status = "success" if success else "partial" if present else "failed"
-                run.finished_at = now
-                result = RunResult(run_id, run.status, run.missing_marked)
-                session.commit()
-                return result
+                return _finish_run(session, run_id, now, present, engine=engine)
         finally:
-            if connection.in_transaction():
-                connection.rollback()
-            connection.execute(text("SELECT pg_advisory_unlock(:key)"), {"key": LOCK_KEY})
-            connection.commit()
+            try:
+                if connection.in_transaction():
+                    connection.rollback()
+                # An invalidated DBAPI connection has been closed: its session
+                # advisory lock is released by PostgreSQL. Do not reconnect just
+                # to unlock another physical connection, or mask outcome_unknown.
+                if not connection.invalidated and not connection.closed:
+                    connection.execute(text("SELECT pg_advisory_unlock(:key)"), {"key": LOCK_KEY})
+                    connection.commit()
+            except SQLAlchemyError:
+                connection.invalidate()
