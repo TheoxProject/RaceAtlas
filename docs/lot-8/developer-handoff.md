@@ -1,3 +1,22 @@
+# OPS-N1A-F1 cycle1 + CI-R1 — candidat à figer
+
+16nov2026, feature/operations-readiness/DraftPR15/basec740, head avant publication5d8bf28d80ba06eb00586a669fe97588b3b7001b. Tester REQUEST CHANGES P2 remplace son APPROVE initial :114PASS historiques mais sonde2connexions révèle40P01 en1,156s entre putB/batchA,B/putA. CI43826354099 a échoué AVANTbackend : ubuntu-latest devenu26.04 non supporté par l'installateur Chromium ;118frontend/statiques avaient passé. Aucun verdict réutilisé pour le futur SHA.
+
+## Correction transactionnelle
+
+`changes.py` garde maintenant watermark MAX des CLÉSadvisory numériques réelles (SHA64 signé, clés dédupliquées/triées), pas seulement ordre de chaque batch. `guard.scope_ids` reste lexical. Bookkeeping Connection.info privé lié à l'identité du ROOTDB effectif : partagé entre Sessions sur la même connexion, conservateur après rollbackchild, remplacé à nouveau root/rollback-autobegin/réutilisation pool. Pas de held-set présumant propriété après rollback. Nouvelle clé>MAX : acquisition bloquante ascendante ; clé≤MAX : pg_try_advisory_xact_lock immédiat, false→ChangeError générique avant attente/DML, aucun commit/rollback/retry/intent rejoué caché. Pré-acquérir l'union complète après Accountfirst reste recommandé pour plusieurs sauvegardes ; B→A libre et réentrance restent permis. Racine/nested effectifs et validité du jeton N1A sont conservés.
+
+Preuve ciblée : paire synthétique scope-order-b/c dont ordre lexical ET numérique coïncident. Même intercalation de cycle que l'ancien code ; S1 reçoit ChangeError avec transaction utilisable (pas40P01), son rollback explicite libère S2 qui écrit/commit, autrui/projection préservés. Autres cas : B→A sans contention/union pré-gardée, rollbackchild puis contention sur clé égale ou descendante, Sessions Connection partagée3join modes, rootrollback/autobegin et poolreuse. Les12 validations IDs non représentables gardent zéroSQL. Pas de lock Account ajouté à la source/sync.
+
+## CI-R1 et vérifications
+
+Seule ligne YAML modifiée : runs-on ubuntu-24.04. Tous steps/modes development/integrated, fallbackfull, permissions, guards, artefacts et timeout restent identiques ; aucune dépendance ou version Playwright changée. [GuideCI](../readiness/ci-validation.md) explique le rollover. La CI réelle au nouveau SHA doit encore valider l'installation et le backend.
+
+`pytest tests/backend/test_notifications.py tests/backend/test_planning.py -k 'global_order or guard_outer or effective_external or multi_bind or save_vs or nonrepresentable' -q --tb=short --junitxml=.local-tools/ops-n1a-f1-lock-order.xml` : **28PASS27,81s**,76deselected, aucun warning. Un groupe ciblé, pas replay114. Les preuves initiales97verts/23corrections et114Tester sont historiques/chemins inchangés explicitement réutilisables, pas nouvelle approbation. Ruff86 lint/format, contrats26 et diff complet base..HEAD PASS avant publication ; range revérifié après commit.
+
+Modèles/migrationb806/planning/notifications/auth/ICS/sync/frontend/contrats/pins restent identiques5d8. Aucun test/processus restant ; PG9780/55434, _test et _review b806 selon état de transfert, tests Developer UNIQUEMENT_test. Prochaine action : push SHA exact/GEL et STOP pour revue N1A renouvelée/CI courante, pas N1B ni N1 complet/lot8 terminé. Aucun mail réel/DNS/service/remoteDB/deploy/collecte.
+
+## Fondation N1A — interfaces et preuves antérieures (historiques)
 # OPS-N1A — fondation interne, candidat à figer
 
 16 novembre 2026. Branche `feature/operations-readiness`, [Draft PR15](https://github.com/TheoxProject/RaceAtlas/pull/15), base `c74086365df62bf1c71623e080bb1f649c9981f5`. HEAD/origin avant publication : `fb86117fc5408fc22ed5b5fce3ced8af2d6fce03`. Sa CI43746572542 development est verte (118 frontend/statiques, backend none explicite docs-only), pas une validation de N1A. SHA final communiqué au push puis STOP. N1B sync, N2 API/UI et fin du lot8 restent TODO.

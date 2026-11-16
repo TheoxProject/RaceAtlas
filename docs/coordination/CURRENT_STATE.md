@@ -1,3 +1,13 @@
+# OPS-N1A-F1 cycle1 + CI-R1 — candidat à figer
+
+16nov2026 08:12UTC. feature/operations-readiness/DraftPR15/basec740, HEAD/origin avant publication5d8bf28d80ba06eb00586a669fe97588b3b7001b. Tester REQUEST CHANGES P2 : globalorder manquantentreappels putB/batchA,B/putA,40P01 réel1,156s. Ancien114PASS/APPROVE remplacé par rapport complémentaire, pas verdict futur. CI43826354099 FAILinfraubuntu26.04 installateurPlaywright AVANTbackend,118frontend/statiquesPASS.
+
+Correctionchanges.py : MAXcléadvisory numérique parROOTDB effectif partagéConnection.info, ascendantbloquant/descendantouégalTRYimmédiat, jamais held-set ; rollbackchild conservateur/rootnouveau reset. IDsjetonlexicaux conservés, cléshashressourcestriées/dédupliquées. Contention→ChangeError générique, caller-owned sanscommit/rollback/retrycaché. ValidationpureavantSQL etAccountfirstavantDML inchangés. CI-R1 seuleligne runs-onubuntu-24.04, autresmodes/steps/guards/scopes/pins identiques.
+
+**28PASS27,81s** ciblés .local-tools/ops-n1a-f1-lock-order.xml : reproductionintercalation sans40P01, B→A libre/réentranceunion, nestedrollbackcontend,3joinmodesConnectionpartagée/rootreset/poolreuse et12IDs invalideszéroSQL. Pasreplay114/97 verts. [Handoff](../lot-8/developer-handoff.md) distinguepreuveshistoriquesetnouveauSHA. Ruff86 lint/format/26contrats/rangediffcheckPASSavantcommit, rangeàrevérifieraprèscommit ; modèles/migrationb806/notifications/planning/auth/ICS/sync/frontend/contrats/deps immuables5d8.
+
+Aucunecommandepending ; testsruntimes fermés, PG9780/127.0.0.1:55434 conservé, _test seul/_reviewréservé (deuxschémasb806 au transfert). Prochaineaction sûre : publier/GEL exactpuisSTOP, Coordinator suitCI etrenouvelle revue cibléeN1A. N1Bsource/UI/API nonattribués, pas N1/lot8 terminé. Aucunemailréel/DNS/service/remoteDB/deploy/collecte.
+## Historique N1A conservé
 # RaceAtlas — OPS-N1A candidat à figer
 
 **16nov2026 07:46UTC.** Branche isolée add4/feature/operations-readiness, [DraftPR15](https://github.com/TheoxProject/RaceAtlas/pull/15). Base `c74086365df62bf1c71623e080bb1f649c9981f5`, mainCI43745685937SUCCESS891/118 ; local/origin avant publication `fb86117fc5408fc22ed5b5fce3ced8af2d6fce03`. CadrageCI43746572542 developmentSUCCESS118frontend/statiques/backendnone docs-only, pas validation du nouveau produit. SHA final communiqué au push puis aucune édition pendant revue.

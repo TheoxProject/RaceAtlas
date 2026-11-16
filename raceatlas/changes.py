@@ -36,6 +36,12 @@ FIELDS = frozenset(
         "competition",
     }
 )
+_LOCK_ORDER_INFO = "raceatlas.scope-lock-order.v1"
+
+
+def _scope_lock_key(scope_id):
+    digest = hashlib.sha256(b"raceatlas:scope-change:v1:" + scope_id.encode("utf-8")).digest()
+    return int.from_bytes(digest[:8], "big", signed=True)
 
 
 class ChangeError(ValueError):
@@ -138,22 +144,31 @@ def transaction_connection(session):
 
 @contextmanager
 def scope_guards(session, scope_ids):
-    """Sorted transaction locks. Acquire before caller DML; never release early.
+    """Order actual lock resources across ALL calls in the effective DB root.
 
     The token tracks the actual SAVEPOINT when nested, not just the outer root.
     Rolling back that SAVEPOINT invalidates its token even if the root survives.
+    Lower/reentrant keys use TRY: child rollback may have released them. A
+    contention error never waits, commits, rolls back or replays caller intent.
     """
     ids = tuple(sorted({identifier(value) for value in scope_ids}))
     if not ids or len(ids) > 1000:
         raise ChangeError("Invalid scope batch")
     connection = transaction_connection(session)
+    root = connection.get_transaction()
+    if root is None or not root.is_active:
+        raise ChangeError("Active database transaction required")
+    order = connection.info.get(_LOCK_ORDER_INFO)
+    if order is None or order["root"] is not root:
+        order = {"root": root, "maximum": None}
+        connection.info[_LOCK_ORDER_INFO] = order
     with session.no_autoflush:
-        for scope_id in ids:
-            digest = hashlib.sha256(
-                b"raceatlas:scope-change:v1:" + scope_id.encode("utf-8")
-            ).digest()
-            key = int.from_bytes(digest[:8], "big", signed=True)
-            session.execute(select(func.pg_advisory_xact_lock(key)))
+        for key in sorted({_scope_lock_key(scope_id) for scope_id in ids}):
+            if order["maximum"] is None or key > order["maximum"]:
+                session.execute(select(func.pg_advisory_xact_lock(key)))
+                order["maximum"] = key
+            elif not session.scalar(select(func.pg_try_advisory_xact_lock(key))):
+                raise ChangeError("Scope lock contention; caller must end its transaction")
     guard = ScopeGuard(
         session,
         session.get_nested_transaction() or session.get_transaction(),

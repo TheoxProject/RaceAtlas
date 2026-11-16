@@ -6,14 +6,15 @@ from threading import Event
 import pytest
 from alembic import command
 from alembic.config import Config
-from sqlalchemy import event, func, insert, select, text
+from sqlalchemy import create_engine, event, func, insert, select, text
 from sqlalchemy.exc import IntegrityError, SAWarning
 from sqlalchemy.orm import Session
 
-from raceatlas.changes import ChangeError, record_change, scope_guards
+from raceatlas.changes import ChangeError, _scope_lock_key, record_change, scope_guards
 from raceatlas.models import (
     Account,
     CatalogState,
+    EntryScope,
     PersonalCalendarEventStore,
     PersonalNotification,
     RaceChange,
@@ -452,3 +453,171 @@ def test_invalid_or_oversized_delta_and_sequence_overflow_leave_no_partial_event
     with pytest.raises(ChangeError, match="exhausted"):
         change(seeded, "overflow", scopes=(ONE,))
     assert count(seeded, RaceChange) == 1
+
+
+def ordered_scopes(session):
+    # Lexical AND numeric resource orders coincide, reproducing the original cycle.
+    low, high = "scope-order-b", "scope-order-c"
+    assert low < high and _scope_lock_key(low) < _scope_lock_key(high)
+    session.add_all(
+        [
+            EntryScope(
+                id=value,
+                race_id="race-road-split",
+                position=90 + i,
+                kind="entry_list",
+                identity_status="unverified",
+                eligibility_status="unknown",
+                raw_label="Synthetic lock ordering",
+            )
+            for i, value in enumerate((low, high))
+        ]
+    )
+    session.flush()
+    return low, high
+
+
+def test_global_order_multiple_puts_reject_cycle_before_wait_and_preserve_others(seeded, database):
+    low, high = ordered_scopes(seeded)
+    alice, bob = users(seeded)
+    alice_id, bob_id = alice.id, bob.id
+    put_saved_entry(seeded, bob, low)
+    seeded.commit()
+    low_held, high_wait = Event(), Event()
+
+    def source_batch():
+        with Session(database) as second:
+            second.execute(text("SET LOCAL lock_timeout='5s'"))
+            calls = 0
+
+            def before(_conn, _cursor, statement, *_args):
+                nonlocal calls
+                if "pg_advisory_xact_lock" in statement:
+                    calls += 1
+                    if calls == 2:
+                        high_wait.set()
+
+            def after(_conn, _cursor, statement, *_args):
+                if "pg_advisory_xact_lock" in statement and calls == 1:
+                    low_held.set()
+
+            connection = second.connection()
+            event.listen(connection, "before_cursor_execute", before)
+            event.listen(connection, "after_cursor_execute", after)
+            with scope_guards(second, [low, high]) as guard:
+                value = change(second, scopes=(low, high), guard=guard)
+            second.commit()
+            return value
+
+    with Session(database) as first:
+        actor = first.get(Account, alice_id)
+        put_saved_entry(first, actor, high)
+        with ThreadPoolExecutor(max_workers=1) as pool:
+            future = pool.submit(source_batch)
+            try:
+                assert low_held.wait(3) and high_wait.wait(3)
+                with pytest.raises(ChangeError, match="contention"):
+                    put_saved_entry(first, actor, low)
+                assert count(first, SavedEntry) == 2  # Bob committed + Alice's own high only.
+                assert first.is_active
+            finally:
+                first.rollback()
+            assert future.result(timeout=8)
+    with Session(database) as verify:
+        assert verify.scalar(select(SavedEntry.account_id)) == bob_id
+        assert project_notifications(verify, verify.get(Account, alice_id)).inserted == 0
+        assert project_notifications(verify, verify.get(Account, bob_id)).inserted == 1
+
+
+@pytest.mark.parametrize("pre_guard", [False, True])
+def test_global_order_reverse_puts_without_contention_and_pre_guard_reentry(seeded, pre_guard):
+    low, high = ordered_scopes(seeded)
+    alice, _ = users(seeded)
+    # The caller owns Account first, also when pre-acquiring its full union.
+    seeded.scalar(select(Account.id).where(Account.id == alice.id).with_for_update())
+    if pre_guard:
+        with scope_guards(seeded, [high, low]):
+            pass
+    put_saved_entry(seeded, alice, high)
+    put_saved_entry(seeded, alice, low)
+    assert count(seeded, SavedEntry) == 2
+    assert project_notifications(seeded, alice).inserted == 0
+
+
+@pytest.mark.parametrize("contend_high", [False, True])
+def test_global_order_child_rollback_never_assumes_retained_lock(seeded, database, contend_high):
+    low, high = ordered_scopes(seeded)
+    seeded.commit()
+    with Session(database) as owner, Session(database) as competing:
+        with owner.begin_nested() as child:
+            with scope_guards(owner, [high]):
+                pass
+            child.rollback()
+        selected = high if contend_high else low
+        with scope_guards(competing, [selected]):
+            with pytest.raises(ChangeError, match="contention"):
+                with scope_guards(owner, [selected]):
+                    pytest.fail("Rolled-back lock was falsely assumed owned")
+        competing.rollback()
+        with scope_guards(owner, [selected]):
+            pass  # The same conservative watermark allows a free TRY, no stale held-set.
+
+
+@pytest.mark.parametrize("mode", ["conditional_savepoint", "create_savepoint", "rollback_only"])
+def test_global_order_shared_connection_sessions_keep_root_watermark(seeded, database, mode):
+    low, high = ordered_scopes(seeded)
+    seeded.commit()
+    with database.connect() as connection, Session(database) as competing:
+        root = connection.begin()
+        outer = connection.begin_nested() if mode == "conditional_savepoint" else None
+        try:
+            with Session(connection, join_transaction_mode=mode) as first:
+                with scope_guards(first, [high]):
+                    pass
+                first.commit()  # Session ends, effective DB root still holds its resource.
+            assert root.is_active
+            with scope_guards(competing, [low]):
+                with Session(connection, join_transaction_mode=mode) as second:
+                    with pytest.raises(ChangeError, match="contention"):
+                        with scope_guards(second, [low]):
+                            pytest.fail("Shared root ordering was lost between Sessions")
+        finally:
+            competing.rollback()
+            if outer is not None and outer.is_active:
+                outer.rollback()
+            if root.is_active:
+                root.rollback()
+
+
+def test_global_order_resets_after_root_rollback_and_pool_reuse(seeded, database):
+    low, high = ordered_scopes(seeded)
+    seeded.commit()
+    engine = create_engine(database.url, pool_size=1, max_overflow=0)
+    statements = []
+
+    def before(_conn, _cursor, statement, *_args):
+        if "advisory_xact_lock" in statement:
+            statements.append(statement)
+
+    event.listen(engine, "before_cursor_execute", before)
+    try:
+        with Session(engine) as first:
+            driver = first.connection().connection.driver_connection
+            with scope_guards(first, [high]):
+                pass
+            first.rollback()
+            statements.clear()
+            with scope_guards(first, [low]):
+                pass
+            assert len(statements) == 1 and "pg_try" not in statements[0]
+            first.rollback()
+            with scope_guards(first, [high]):
+                pass
+        with Session(engine) as next_session:
+            assert next_session.connection().connection.driver_connection is driver
+            statements.clear()
+            with scope_guards(next_session, [low]):
+                pass
+            assert len(statements) == 1 and "pg_try" not in statements[0]
+    finally:
+        engine.dispose()
