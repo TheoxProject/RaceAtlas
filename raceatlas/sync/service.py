@@ -55,6 +55,16 @@ from .types import RunResult
 LOCK_KEY = 0x5241434541544C
 
 
+class FinalizationOutcomeUnknown(RuntimeError):
+    """No claim about durability; the caller must inspect this run before acting."""
+
+    code = "outcome_unknown"
+
+    def __init__(self, run_id):
+        self.run_id = run_id
+        super().__init__("Source finalization outcome is unknown")
+
+
 def _error(code, field="import"):
     raise AdapterError(code, field, "Explicit review or valid complete input required")
 
@@ -821,7 +831,75 @@ def _audit_final_refusal(session, run_id, now, accepted, reason, affected):
             window.diagnostics = list(dict.fromkeys([*window.diagnostics, reason]))
 
 
-def _finish_run(session, run_id, now, accepted):
+def _confirm_final_commit(engine, run_id, now, accepted, affected):
+    """Resolve the old row lock before concluding that a commit did not happen.
+
+    This is a new checkout/transaction, never the failed Session's identity map.
+    The terminal audit row was flushed atomically with all final facts/events.
+    """
+    try:
+        with engine.connect().execution_options(isolation_level="READ COMMITTED") as connection:
+            with Session(connection) as confirmation:
+                confirmation.execute(text("SET LOCAL statement_timeout='3000ms'"))
+                confirmation.execute(text("SET LOCAL lock_timeout='3000ms'"))
+                row = confirmation.execute(
+                    select(ImportRun.status, ImportRun.finished_at, ImportRun.missing_marked)
+                    .where(ImportRun.id == run_id)
+                    .with_for_update()
+                ).one_or_none()
+                if (
+                    row
+                    and row.finished_at is not None
+                    and row.status
+                    in {
+                        "success",
+                        "partial",
+                        "failed",
+                    }
+                ):
+                    return RunResult(run_id, row.status, row.missing_marked)
+                if (
+                    not row
+                    or row.status != "running"
+                    or row.finished_at is not None
+                    or row.missing_marked != 0
+                ):
+                    raise FinalizationOutcomeUnknown(run_id)
+                # FOR UPDATE has resolved any in-flight terminal write. No commit
+                # was durable; only now may a refusal audit replace running.
+                _audit_final_refusal(
+                    confirmation, run_id, now, accepted, "final_commit_error", affected
+                )
+                confirmation.flush()
+                run = confirmation.get(ImportRun, run_id)
+                result = RunResult(run_id, run.status, run.missing_marked)
+                confirmation.commit()
+                return result
+    except SQLAlchemyError:
+        # Includes a lost acknowledgement for this refusal audit: its outcome
+        # is unknown too. Never replay the source mutation or invent a result.
+        raise FinalizationOutcomeUnknown(run_id) from None
+
+
+def _commit_finalization(session, engine, run_id, now, accepted, affected):
+    run = session.get(ImportRun, run_id)
+    result = RunResult(run_id, run.status, run.missing_marked)
+    connection = session.get_bind()
+    try:
+        session.commit()
+        return result
+    except SQLAlchemyError:
+        try:
+            session.rollback()
+        except SQLAlchemyError:
+            # Public Connection API closes the unusable DBAPI connection. The
+            # confirmation row lock still protects against a server-side COMMIT
+            # completing after this local failure/disconnect.
+            connection.invalidate()
+        return _confirm_final_commit(engine, run_id, now, accepted, affected)
+
+
+def _finish_run(session, run_id, now, accepted, *, engine):
     """Owned only by synchronize: one final commit, or rollback then refusal audit."""
     plan, reason = None, "final_plan_invalid"
     try:
@@ -842,16 +920,19 @@ def _finish_run(session, run_id, now, accepted):
                 raise ChangeError("Finalization snapshot changed")
             reason = "change_record_error"
             _apply_finalization(session, run_id, now, plan, guard)
-            reason = "final_commit_error"
-            session.commit()
+            # Separate known precommit failures from ambiguous commit errors.
+            # The terminal ImportRun row lock must exist before attempting COMMIT.
+            reason = "final_flush_error"
+            session.flush()
     except (ChangeError, SQLAlchemyError):
         session.rollback()
         _audit_final_refusal(
             session, run_id, now, accepted, reason, plan.affected_windows if plan else ()
         )
-        session.commit()
-    run = session.get(ImportRun, run_id)
-    return RunResult(run_id, run.status, run.missing_marked)
+        session.flush()
+    return _commit_finalization(
+        session, engine, run_id, now, accepted, plan.affected_windows if plan else ()
+    )
 
 
 def _window_scope_ids(session, batch, preflight):
@@ -927,9 +1008,16 @@ def synchronize(engine, batches, *, checked_at=None, provider=None, synthetic=Tr
                         )
                     present.update(seen)
                     session.commit()
-                return _finish_run(session, run_id, now, present)
+                return _finish_run(session, run_id, now, present, engine=engine)
         finally:
-            if connection.in_transaction():
-                connection.rollback()
-            connection.execute(text("SELECT pg_advisory_unlock(:key)"), {"key": LOCK_KEY})
-            connection.commit()
+            try:
+                if connection.in_transaction():
+                    connection.rollback()
+                # An invalidated DBAPI connection has been closed: its session
+                # advisory lock is released by PostgreSQL. Do not reconnect just
+                # to unlock another physical connection, or mask outcome_unknown.
+                if not connection.invalidated and not connection.closed:
+                    connection.execute(text("SELECT pg_advisory_unlock(:key)"), {"key": LOCK_KEY})
+                    connection.commit()
+            except SQLAlchemyError:
+                connection.invalidate()

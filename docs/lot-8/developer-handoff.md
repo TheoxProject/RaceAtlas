@@ -1,3 +1,28 @@
+# OPS-N1-F1 — handoff correctif cycle1
+
+16 novembre 2026, 18:05 UTC. PR15 / feature/operations-readiness / basec740 ; HEAD/origin avant publicationb9f07e9640287aa791ad868a7ccdcb2d28704f77, SHA final communiqué au gel. Verdict b9f REQUEST CHANGES P2 malgré integrated43877837658 SUCCESS958/118 historique : après commit réel, perte d’accusé réécrivait failed/missing0 alors que faits/événements/audit success étaient durables. Rapport `.local-tools/tester-report-operations-n1.md`, sonde indépendante conservés.
+
+## Changement borné et garanties
+
+`sync/service.py` : `_finish_run` flush le bilan terminal atomiquement avec les faits/événements avant tentative COMMIT. Erreur de flush = précommit connu, rollback puis audit refus. `_commit_finalization` distingue l’erreur de commit ; après rollback local (ou invalidation si ce rollback échoue), `_confirm_final_commit` lit sur connexion saine **READ COMMITTED**, budgets statement/lock locaux3s, `SELECT ImportRun FOR UPDATE`. Ce verrou attend résolution de l’écriture terminale du backend précédent ; pas de lecture d’un cache ORM ni d’un timestamp utilisé comme faux accusé.
+
+`finished_at` non NULL + statut terminal success/partial/failed donne le vrai `RunResult` durable, sans nouvelle réécriture. Running/finishedNULL/missing0 après verrou prouve le non-commit et permet le seul audit de refus ; source jamais rejouée. Preuve indisponible/ambiguë, y compris erreur de commit de cet audit de refus : exception `FinalizationOutcomeUnknown(code=outcome_unknown, run_id)` sans bilan inventé. Le caller doit inspecter le run, pas relancer aveuglément. Un rollback local n’annule JAMAIS un commit déjà durable.
+
+Cleanup du verrou import global : connexion invalidée ne se reconnecte pas pour unlock une autre session ; erreur unlock entraîne invalidation/fermeture physique sans remplacer l’issue inconnue. Aucun Account, modification de modèle/migrationb806, auth/planning/ICS, UI/API/contrat/dépendance/CI. Nouveau `test_sync_commit_outcome.py`, docs/checkpoint seulement. API interne privée `_finish_run(..., engine=engine)` limitée à synchronize ; exception non convertie en faux RunResult.
+
+## Commandes / résultats
+
+Même venv/DB `_test` opt-in b806, PG9780 loopback55434, `_review` non utilisée :
+
+1. `pytest tests/backend/test_sync_commit_outcome.py -q --tb=short --junitxml=.local-tools/ops-n1-f1-commit.xml` : **8 PASS6,84s**. Vrai commit puis OperationalError unique sur success/partial/failed et primaire invalidée ; erreur avant flush/commit et rollback réel ; confirmation impossible + unlock défaillant, issue inconnue préservée, global lock vérifié libre.
+2. `pytest tests/backend/test_sync_finalization_edges.py -k "capacity or second_final or final_commit" -q --tb=short --junitxml=.local-tools/ops-n1-f1-seams.xml` : **5 PASS5,59s**. Bornes et atomicité, ancien business-window commit conservé, deux barrières de sauvegarde.
+3. `pytest tests/backend/test_sync_commit_outcome.py -k failed_local_rollback -q --tb=short --junitxml=.local-tools/ops-n1-f1-rollback-unavailable.xml` : **1 PASS3,45s**, seule addition après groupe8 : rollback local lui-même défaillant, connexion bindée invalidée puis confirmation saine.
+4. `python -m ruff check raceatlas migrations tests/backend ops/ci_selection.py` et `python -m ruff format --check raceatlas migrations tests/backend ops/ci_selection.py` : **PASS93**. `node --test tests/contracts/contracts.test.mjs` : **26 PASS**. Range `git diff --check c74086365df62bf1c71623e080bb1f649c9981f5..HEAD` contrôlé après commit également.
+
+Aucun échec dans les groupes de correction. Aucun rerun44 reviewer/958 backend ni browser/build inchangé. Les preuves N1A/B1/B2 précédentes sont historiques explicitement réutilisées pour code non modifié ; nouvelle acceptation COMPLÈTE et integrated au SHA corrigé nécessaires. Tous tests/listeners/engines terminés, aucune commande pending. Au gel STOP sources ; N2 non attribué, aucune action externe autorisée.
+
+## Handoff historique b9f, avant finding F1
+
 # OPS-N1 — handoff candidat final A + B1 + B2
 
 16 novembre 2026, 13:32 UTC. Branche `feature/operations-readiness`, [Draft PR15](https://github.com/TheoxProject/RaceAtlas/pull/15), basec740. HEAD/origin avant publication finale : `dbe9c07eeb49c1a586e6fd27934057421c5391cd`. CI [43875151220](https://github.com/TheoxProject/RaceAtlas/actions/runs/43875151220) **FAIL949PASS/1FAIL283,71s +118frontendPASS** : unique ancien attendu B1 restauration (1==0), déjà corrigé et reciblé ci-dessous. Aucun autre échec. SHA exact final communiqué au gel ; nouvelle CI et acceptation complète nécessaires, aucun verdict final présumé.

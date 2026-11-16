@@ -1,3 +1,22 @@
+# OPS-N1-F1 — candidat corrigé cycle1, GEL après publication
+
+**16 novembre 2026, 18:05 UTC.** Checkout isolé `add4/feature/operations-readiness`, [Draft PR15](https://github.com/TheoxProject/RaceAtlas/pull/15), base `c74086365df62bf1c71623e080bb1f649c9981f5`. HEAD/origin avant publication : `b9f07e9640287aa791ad868a7ccdcb2d28704f77`. Tester b9f REQUEST CHANGES P2 (audit faux après commit durable) ; integrated43877837658 historique SUCCESS958/118 ne vaut ni verdict ni CI du nouveau candidat. Developer seul writer, Tester STOP, `_review` réservée.
+
+Correction limitée service : flush terminal explicite avant COMMIT ; erreur commit => rollback local puis confirmation `ImportRun FOR UPDATE` via connexion fraîche READ COMMITTED et budgets locaux3s. Le verrou résout le backend précédent avant de conclure non-commit. Terminal success/partial/failed confirmé => bilan durable intact ; running/finishedNULL confirmé => audit de refus seulement. Confirmation indisponible/ambiguë => `FinalizationOutcomeUnknown` (`code=outcome_unknown`, run_id), aucun faux missing0/rollback ni audit réécrit. Invalidation de la connexion bindée si rollback défaillant ; cleanup global n’écrase pas l’issue inconnue. Aucun replay d’import ni Account côté source.
+
+## Résultats correction réels
+
+- `pytest tests/backend/test_sync_commit_outcome.py -q --tb=short --junitxml=.local-tools/ops-n1-f1-commit.xml` : **8 PASS, 6,84 s**. Commit PG réel puis erreur unique success/partial/failed, primaire invalidée ; préflush/précommit ; confirmation indisponible avant/après durabilité et unlock défaillant.
+- `pytest tests/backend/test_sync_finalization_edges.py -k "capacity or second_final or final_commit" -q --tb=short --junitxml=.local-tools/ops-n1-f1-seams.xml` : **5 PASS, 5,59 s**. Cap1000/1001, rollback2e record et deux barrières save/finalcommit.
+- `pytest tests/backend/test_sync_commit_outcome.py -k failed_local_rollback -q --tb=short --junitxml=.local-tools/ops-n1-f1-rollback-unavailable.xml` : **1 PASS, 3,45 s**, seule branche nouvelle : rollback local impossible puis invalidation/confirmation saine. Les8 verts n’ont pas été relancés.
+- Ruff lint/format **93 fichiers PASS**, contrats **26 PASS**, range diffcheck base avant/après commit à vérifier avant gel.
+
+Toutes commandes terminées exit0 ; aucun test/session/worker pending, listeners/threads/engines fermés. `_test` b806 uniquement, PG9780/127.0.0.1:55434 vérifié nativement avant tests ; aucun reset/reseed/migration nouvelle. Préparation N2 ignorée reste lecture seule.
+
+**Prochain geste sûr : commit/push cohérent, communiquer SHA gelé puis STOP éditions.** Coordinator renouvelle acceptation COMPLÈTE N1A+B1+B2 et CI integrated exacte (`ci:full` déjà posé), merge/main CI avant N2. Runtime hors chemin final inchangé, preuves44 reviewer/958CI antérieures réutilisées explicitement après diff ; aucune ancienne approbation copiée. Si la confirmation est indisponible, issue inconnue exige inspection opérateur du run, pas retry automatique. Aucun email/live/DNS/service/DB distante/deploy/achat/tag.
+
+## Historique candidat b9f (avant finding F1)
+
 # OPS-N1 — candidat final A + B1 + B2, GEL après publication
 
 **16 novembre 2026, 13:32 UTC.** Checkout isolé `add4/feature/operations-readiness`, [Draft PR15](https://github.com/TheoxProject/RaceAtlas/pull/15), base/main `c74086365df62bf1c71623e080bb1f649c9981f5`. HEAD/origin WIP `dbe9c07eeb49c1a586e6fd27934057421c5391cd` ; compléments tests/docs locaux non publiés. CI [43875151220](https://github.com/TheoxProject/RaceAtlas/actions/runs/43875151220) **FAIL : 949 PASS / 1 FAIL, 283,71 s ; 118 frontend PASS**, mode development/fullfallback. Unique échec : ancien attendu B1 restauration `RaceChange1 == 0`, corrigé et reciblé localement ci-dessous ; aucune autre failure. Ne vaut pas preuve verte du candidat final. Developer seul writer ; Tester STOP, `_review` réservé. Aucun processus de test en attente.
