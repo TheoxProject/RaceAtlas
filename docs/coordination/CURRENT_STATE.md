@@ -1,3 +1,12 @@
+# OPS-N1B-2 IN_PROGRESS — interfaces fixées avant code
+
+16 novembre 2026, 13:22 UTC. feature/operations-readiness/DraftPR15/basec740, HEAD/origin3ed83ed902a9bd16357bd5297450687f35e04fd4. B1 APPROVE ciblé exact3ed, CI43870248750developmentfullSUCCESS942backend424,88s/118frontend, sourceguards ; jamais verdict copié au nouveauSHA. Developer seulwriter, TesterSTOP/_reviewréservé.
+
+PlanFinalfrozen/pur de primitifs/tuples/bytes ; snapshots no_autoflush/promotionsaudit/stamps/transitionsreelles/guardunion, applyuniquecommitfinalaprèsguard+revalidation. ProvenanceabsenceWindowcalendar réelle/sourceURL/checkedAt/versionRun/evidencewindow ; aucuneficheRaceprétendumentcontrôlée. Refuscap1001/guard/record/commit rollbacktoutfinal puis auditincomplete/missing0, fenêtresB1préservées. [Mission](../lot-8/sync-notifications-mission.md)/[handoff](../lot-8/developer-handoff.md) actualisés AVANTcode.
+
+B2 initial : `pytest tests/backend/test_sync_finalization.py -q --tb=short --junitxml=.local-tools/ops-n1b2-initial.xml` : **8 PASS, 10,815 s**, JUnit 0 erreur/échec. Session74560 terminée ; aucun rerun. Plan pur sans SQL/ORM dirty, promotions historiques, quatre statuts, absence/replay/restauration et provenance calendrier sont exercés sur `_test` b806/PG9780. Prochaine action : publier le cœur WIP puis tester cap1000/1001, rollback intégral et barrières de sauvegarde. N1A/planning/auth/ICS/models/migrationb806/API/UI/deps/CI immuables. Pasfull942local, paslive/email/DNS/remoteDB/deploy/payant/tagfinal. FinalN1exigeraacceptationCOMPLÈTE+integrated/mainCI avantN2.
+
+## Historique B1 conservé
 # OPS-N1B-1 — candidat à figer
 
 **16nov2026 12:49UTC.** Checkout isolé add4/feature/operations-readiness, DraftPR15 https://github.com/TheoxProject/RaceAtlas/pull/15. Base/mainc74086365df62bf1c71623e080bb1f649c9981f5 ; local/origin avant publication98147ac78cf6d1051a21f5e9ae97a64122a5eead. Source B1 du checkpoint981 inchangée, nouveau test edge+docs seulement. CI43836355310 development/fullfallback SUCCESS936backend272,01s/118frontend, sourceguards avant/après ; pas verdict ni gate integrated du prochain SHA.

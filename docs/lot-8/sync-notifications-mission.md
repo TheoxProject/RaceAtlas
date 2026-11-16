@@ -7,7 +7,7 @@
 Coordinator cadre puis transfère explicitement. Developer devient seul writer suivi : `raceatlas/sync/service.py`, petits helpers de projection de faits nécessaires, tests sync/notifications et fixtures synthétiques, documentation/checkpoint. Modèles/migrationb806, auth, planning/ICS, frontend, API et dépendances inchangés sauf manque réel d'interface démontré au Coordinateur. Tester lit/teste le SHA figé sans édition.
 
 - **N1B-1** : gardes par fenêtre avant mutations, vrais deltas `_apply`, événements business et restauration de présence `present`. Premier jalon attribué, gel/revue ciblée avant la suite.
-- **N1B-2** : finalisation de présence `to_verify`, plan d'audit pur, capacité et régressions ; attribution après revue N1B-1.
+- **N1B-2** : finalisation de présence `to_verify`, plan d'audit pur, capacité et régressions ; attribué après APPROVE exact3ed et CI43870248750development942/118 ; interfaces ci-dessous.
 
 N1B-1 seul ne termine pas N1B. PR15 ne fusionne qu'après acceptation indépendante COMPLÈTE du N1 final, CI nommée integrated complète, base actuelle puis mainCI. API/UI Changements récents restent N2. Aucun scheduler/live/email course nouveau.
 
@@ -38,3 +38,11 @@ N1B-2 : présence complète→to_verify→present et cancelled attesté conserv�
 Ciblés sync/notifications/coutures utiles, pas replay local des927 tests inchangés. Checkpoint avant groupes longs/après échecs, commits/push WIP cohérents, exact SHA au gel et résultats réels. Réutilisation explicite des preuves immuables, jamais ancien verdict copié. _test Developer/_review Tester tous deuxb806 au départ, PG9780/55434 existant à vérifier ; aucun reset/reseed aveugle, runtime.close avant Engines. Rapport court et limites honnêtes.
 
 Aucune collecte FFC live/bulk, service, email réel, DNS, DB distante, déploiement, achat ou publication finale autorisé. Fixtures synthétiques seulement ; les gates externes restent distincts.
+
+## Interfaces B2 retenues avant implémentation (16nov2026)
+
+Nouveau module pur final_plan : dataclasses frozen de primitifs/tuples/bytes (windows/items/races et plan), builder sans Session/ORM ni SQL. Prévoir promotions historical_duplicate et statuts logiques, success/stale/coverages, stamps metadata séparés des vraies transitions ; missing_marked compte les races. Charger snapshots sous no_autoflush ; apply après gardes numériques N1A de TOUTES les scopes des transitions réelles, pas metadata/touscandidats. Revalider snapshot avantDML sous garde, refuser plan changé sans retry silencieux.
+
+Provenance absence : ImportWindow.source_url/checked_at réellement contrôlés, version Run.parser_version validée par pipeline Calendar.normalization_version, evidence_id=window:UUID ; witness maxchecked admissible/tiebreakID. Jamais URL/horodatage fiche Race non consultée ni now inventé. Clé presence:+SHA256 tuple(run,race,absence,before,to_verify,witness). Payload source_presence seul, Race.status/revision et SourceRevision inchangés.
+
+Application dans unique commit final existant ; erreur scope/cap1001/record/commit rollback TOUTES mutations finales puis audit de refus seulement, runpartial/failed/missing0 et fenêtres affectées incomplete/diagnosticborné. Fenêtres B1 committées conservées. CoverageAPI ne peut être consistent_sample sur dernierRun refusé ; last_success antérieur reste honnête. Pas de nouveau modèle/migration/API/deps/CI.

@@ -1,3 +1,14 @@
+# OPS-N1B-2 — interfaces avant code (WIP final N1)
+
+HEAD/origin3ed83ed902a9bd16357bd5297450687f35e04fd4, PR15/basec740. Gate B1 APPROVE ciblé exact3ed/rapport6917102768 et CI43870248750developmentfull942backend424,88s/118frontend ; pas gatefinalfusion ni approbation nouveauSHA. B2 transféré, Developerseulwriter.
+
+Interface : `FinalInputs`/`FinalizationPlan` frozen (donnéesprimitives/tuples/bytes), `plan_finalization(inputs)` strictementpur ; service chargeDTO sousno_autoflush, sansanciennefinalisationmutante, puis guards seulestransitionsréelles. RevalidationSnapshot aprèsgarde etAVANTDML, applymutations/audit/record dansUNcommitfinal. Refuscap1001/contended/statechange/record/commit : rollbackfinal puis auditpartial/failed/missing0/windowincomplete, pasdroppartiel ou chunks.
+
+AbsenceprovenancecalendarWindow réelle/checkedUTC/evidencewindowUUID etRunparserVersionvalidée, jamaisficheRace/now ; witnessmaxcheckedadmissible/tieID ; clépresenceSHA(run/race/phase/before/to_verify/window). PasSourceRevisionbusiness ni annulation fictive. Metadatafreshness/promotionaudit consomment0guard/event ; tousscopesvraimentaffectés, jamaisfiltreabonnés. SourceNoAccount, RC+budgetlocal3s/guardN1Aglobalnuminchangés.
+
+Tests àfaire pargroupes : pur0SQL/nodirty/promotions/stale ; importsabsence/provenance/replay/restore/4statuts/scopes ; cap1000/1001/plus1000catalogue1delta ; rollbackdeuxièmeRecord/toutfinal/WindowsB1préservées/Coverageincomplete ; barrièressaveavant/aprèsgardefinale. Premier groupe : `pytest tests/backend/test_sync_finalization.py -q --tb=short --junitxml=.local-tools/ops-n1b2-initial.xml` = **8 PASS, 10,815 s**, session74560 terminée. Aucun rerun ; cap/rollback/barrières restent TODO. pasfull942local ni modèles/migration/auth/planning/ICS/UI/API/deps/CI.
+
+## Handoff B1 historique
 # OPS-N1B-1 — candidat à figer
 
 16 novembre2026 12:49UTC. Branche `feature/operations-readiness`, [Draft PR15](https://github.com/TheoxProject/RaceAtlas/pull/15), basec74086365df62bf1c71623e080bb1f649c9981f5. HEAD/origin avant publication98147ac78cf6d1051a21f5e9ae97a64122a5eead. N1A APPROVE exacta76e35a5e11ad86362c4716e344c3f6c0037eabe acquis ; aucune approbation B1 copiée. CI98143836355310 **development/fullfallback SUCCESS936backend272,01s/118frontend**, sourceguards avant/après ; ne valide pas les6tests edge locaux ajoutés ensuite et n'est pas gate integrated de fusion. SHA final communiqué au push, puis STOP pour revue ciblée B1.
