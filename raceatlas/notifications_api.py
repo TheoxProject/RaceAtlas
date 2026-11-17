@@ -53,18 +53,27 @@ def parse_query(limit=50, cursor=None):
     body, signature = cursor.split(".")
     try:
         raw = base64.b64decode(body + "=" * (-len(body) % 4), altchars=b"-_", validate=True)
-        value = json.loads(raw.decode("utf-8"))
-        if (
-            not isinstance(value, list)
-            or len(value) != 4
-            or type(value[0]) is not int
-            or value[0] != 1
-        ):
+        if raw.startswith(b"2\0"):
+            parts = raw.split(b"\0")
+            if len(parts) != 4:
+                raise ValueError()
+            date, change, scope = (part.decode("utf-8") for part in parts[1:])
+        else:
+            # Previously issued v1 cursors remain usable within the existing
+            # 1024-character input bound; only new cursors use the compact codec.
+            value = json.loads(raw.decode("utf-8"))
+            if (
+                not isinstance(value, list)
+                or len(value) != 4
+                or type(value[0]) is not int
+                or value[0] != 1
+            ):
+                raise ValueError()
+            date, change, scope = value[1:]
+        at = datetime.fromisoformat(date)
+        if at.tzinfo is None or timestamp(at) != date:
             raise ValueError()
-        at = datetime.fromisoformat(value[1])
-        if at.tzinfo is None or timestamp(at) != value[1]:
-            raise ValueError()
-        change_id, scope_id = _target_id(value[2]), _target_id(value[3])
+        change_id, scope_id = _target_id(change), _target_id(scope)
         if _b64(raw) != body:
             raise ValueError()
     except (ValueError, TypeError, UnicodeError, binascii.Error):
@@ -82,9 +91,12 @@ def _mac(key, account_id, body):
 
 
 def _cursor(key, account_id, at, change_id, scope_id):
-    body = _b64(
-        json.dumps([1, timestamp(at), change_id, scope_id], separators=(",", ":")).encode("utf-8")
-    )
+    # NUL is already forbidden in opaque IDs. UTF-8 uses at most four bytes per
+    # valid codepoint, including controls without JSON's six-byte escaping:
+    # 2 + 27 + 1 + 256 + 1 + 256 = 543 raw bytes, 768 signed characters maximum.
+    raw = b"2\0" + timestamp(at).encode("ascii") + b"\0"
+    raw += _target_id(change_id).encode("utf-8") + b"\0" + _target_id(scope_id).encode("utf-8")
+    body = _b64(raw)
     return body + "." + _mac(key, account_id, body)
 
 

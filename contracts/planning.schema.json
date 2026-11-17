@@ -279,8 +279,7 @@
       "type": "object",
       "properties": {
         "id": {
-          "type": "string",
-          "pattern": "^[a-z0-9][a-z0-9_-]{2,63}$"
+          "$ref": "#/$defs/Id"
         },
         "kind": {
           "enum": [

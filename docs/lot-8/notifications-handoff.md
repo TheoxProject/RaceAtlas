@@ -1,3 +1,29 @@
+# N2A-F1 — handoff correction cycle1
+
+17 novembre 2026, 08:20 UTC. PR16 / feature/notifications-interface / base014bda. HEAD/origin avant publication07f22acc4f755d1911fd4def001ca9220947777d, SHA exact communiqué au gel. Reviewer07f REQUEST CHANGES P2, rapport initial archivé `.local-tools/tester-report-notifications-n2a-initial-07f.md`. CI44042648284 development998/118 historique n’approuve pas le correctif.
+
+## Représentation bornée et couture autorisée
+
+`notifications_api.py` codec seulement : v2 b'2\0' + date UTC canonique ASCII + NUL + changeID UTF8 + NUL + scopeID UTF8. Date≤27octets, IDs≤64codepoints/256octets chacun (NUL déjà interdit) ; brut≤543, base64url≤724, point+HMAC43 => **≤768**, contrat1024 préservé pour emoji ET contrôles. Signature HMAC/domaine/acteur inchangés, version incluse dans corps signé ; anciens v1 JSON encore acceptés sous borne existante. UTF8/séparateurs/date/version/IDs invalides refusés avant SQL, pas troncature/ASCII imposé.
+
+Extension de périmètre justifiée et autorisée par Coordinator après preuve : seul `contracts/planning.schema.json:$defs.Scope.properties.id` aligné sur `$defs.Id` privé1..64 ; ancienne regexASCII contredisait scope_id/runtime. Aucun schéma public/catalogue ou runtime planning/modèle changé. Notifications et GETplanning privés testés avec IDs64emoji/64contrôles. Tests nouveaux `test_notifications_cursor.py`, mission/checkpoint actualisés.
+
+## Commandes (_test opt-in, venv/PG existants)
+
+Avec `-q --tb=short` :
+
+1. `pytest tests/backend/test_notifications_cursor.py tests/backend/test_notifications_api.py tests/backend/test_notifications_validation.py --junitxml=.local-tools/ops-n2a-f1-cursor.xml` : **14PASS/3FAIL9,515s**. Codec bornes/négatifs/signature/acteur passent. Deux schémas Scope.id privés incohérents, et un503 fixture (service gardait Account lock) ; incidents conservés.
+2. `pytest tests/backend/test_notifications_cursor.py -k legacy_json --junitxml=.local-tools/ops-n2a-f1-legacy.xml` : **1PASS3,52s** après commit caller de la lecture avant HTTP, sans changer timeout. Lecture v1 réelle service+HTTP.
+3. `pytest tests/backend/test_notifications_cursor.py -k both_maximum --junitxml=.local-tools/ops-n2a-f1-maxima.xml` : **4PASS5,15s** (deux bornes pures dont768exact avec deuxIDs64U+10FFFF/dateMax, et deux roundtrips service/HTTP/schema notifications+planning, compteur2/scopes exacts/nextpage200).
+4. `pytest tests/backend/test_private_planning.py -k private_planning_contract_matches --junitxml=.local-tools/ops-n2a-f1-planning-contract.xml` : **1PASS3,25s**, contrat privé existant après alignement.
+5. Ruff check et format --check raceatlas migrations tests/backend ops/ci_selection.py : **PASS100** ; node --test tests/contracts/contracts.test.mjs : **26PASS** publics inchangés. Range base..HEAD contrôlé avant/après commit.
+
+Aucun replay des49passes reviewer/fullN1 ; preuves07f explicitement réutilisées pour SQL E/count/page/DTO, ACK MVCC/read_at/rollback/barrières, HTTP/auth/admission/source/ICS inchangés, pas pour le codec modifié. Le schéma planning privé change : sa couture doit être revue au nouveauSHA, pas déclarée immuable. Nouveau test couvre aussi malformations v2 correctement signées avant TOUT SQL et ancien test tamper/autrui/ABA rejoué dans14verts.
+
+PG9780/127.0.0.1:55434 vérifié nativement, `_test` b806 seulement, `_review` réservée. Toutes commandes/listeners/runtimes/engines terminés, aucun processus pending. Gel et STOP après push pour renouvellement N2A/CI ; N2B non attribué, zéro opération externe réelle. Handoff précédent ci-dessous historique, aucun ancien verdict copié.
+
+## Historique candidat07f avant finding F1
+
 # OPS-N2A — handoff candidat
 
 17 novembre 2026, 07:55 UTC. feature/notifications-interface / [Draft PR16](https://github.com/TheoxProject/RaceAtlas/pull/16), base014bda3480d0f8c0233f8e6f68d0ae82886b83db. HEAD/origin avant publication finale d3544eb70caa2903e8dcb4cc2abcec7cd8b1a0ce, SHA exact communiqué au gel. CI WIP43932247137 development SUCCESS979backend290,58s/118frontend/statiques/build/guards ; pas verdict du futur SHA ni mergegate.
