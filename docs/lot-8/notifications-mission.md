@@ -55,3 +55,6 @@ Gate N2A exact8581 : APPROVE6943153896/F1F2CLOSED et CI44048466660 development10
 ## Jalon intermédiaire N2B1 (17 novembre)
 
 Contrôleur/store/section et ciblés frontend livrés avant navigateur, GEL court pour revue indépendante lease/rendu. Source sync snapshot complet est réduit par record_change aux seules clés changed : renderer compatible delta différentiel/full snapshot, sans exigence de payload complet. N2B2 vrai navigateur/Sync/captures reste TODO après gate N2B1 ; aucune acceptation N2 finale implicite.
+## N2B2 — preuves navigateur terminées, acceptation finale en attente
+
+Deux browsers réels sur `_test` (17novembre) : 2PASS96,13s, vrais synchronize successifs→52Alice/26Bob/50visibles puis ACK horspage/nouveauSync/retrait/réajout ; mobile390 calendrier décembre→absence à vérifier/ACK/restauration, quatre statuts et identités exactes. Pas modification produit/limite20/60/protocole/caméra. Captures desktop/mobile vues réellement, whitelistfailure bornée2PNG. Voir handoff pour incidents de harnais conservés et commandes. N2A/N2B1 ciblés historiques ; N2 final demeure TODO jusqu’au verdict complet exactSHA+integrated/merge/mainCI.

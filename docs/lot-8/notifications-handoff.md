@@ -1,3 +1,28 @@
+# N2 final — handoff N2B2 navigateur
+
+17 novembre 2026, 13:50 UTC. PR16, `feature/notifications-interface`, base014bda ; avant publication e5ecbb127ff30f90d61f176f94fce4a2304eea41. SHA final envoyé au Coordinateur après push, puis STOP éditions. Demander acceptation COMPLÈTE N2A+N2B et integrated exacte ; aucun ancien APPROVE n’est transféré au candidat.
+
+## Changements et preuves
+
+`tests/backend/test_notifications_ui_e2e.py` : deux scénarios React compilé→Flask→PG_test. Vrais synchronize synthétiques, SourceRecord retrouvé par provider/key exact ; scopes liés aux labels et règles de l’observation connue, jamais à l’ordre SQL/DOM. Alice sauvegarde deux scopes planned/registered, Bob le scopeB interested ; mobile utilise interested/completed.26imports réels créent52notificationsAlice/26Bob,50affichées ; ACK sans charger suite enregistre52read_at, Bob reste26. NouveauSync : Alice2/Bob27 ; retrait seulscopeA, réajout nouvelle incarnation/baseline27, puis nouveauSync Alice3 dont une seule scopeA. Aucune insertion PN de préparation. Mobile : calendrier décembre horsfiltre, vrai import absent→to_verify (pas cancelled), ACK clavier puis restauration réelle→deux nouvelles non lues ; retrait exact/autrui préservé. Carte/Summit60°10s/DEM>100, caméra/Mapnode/filtres/périodes et focus conservés.
+
+`.github/workflows/ci.yml` : uniquement deux PNG connus ajoutés à la copie failure avec contrôle fichier régulier/non-symlink, préfixe notifications-, rétention1jour conservée. Captures vues réellement : `.local-tools/notifications-ui-screenshots/desktop.png` (52nouveautés, avant/après nom/dates/deuxscopes) et `mobile.png` (390px, présence à vérifier/source/ACK, sans overflow visible). Le test vérifie aussi dernier item accessible par scroll et Tab dans dialog.
+
+## Commandes observées
+
+Venv `C:/Users/theop/.codex/worktrees/1a1e/RaceAtlas/.venv/Scripts/python.exe`. Variables : TEST_DATABASE_URL=`postgresql+psycopg://raceatlas_local@127.0.0.1:55434/raceatlas_lot2_test`, RACEATLAS_DISPOSABLE_DB=1, PLAYWRIGHT_BROWSERS_PATH=`C:/Users/theop/.codex/worktrees/1a1e/RaceAtlas/.local-tools/browsers`.
+
+- `python -m pytest tests/backend/test_notifications_ui_e2e.py -q --tb=short --junitxml=.local-tools/ops-n2b2-browser-initial.xml` :2FAIL8,382s avant navigateur, fixture supposait le titre seul au lieu du raw_label parsé comprenant les conditions. Correspondance corrigée sans ordre SQL/DOM.
+- Même commande, JUnit `ops-n2b2-browser-labels.xml` :2FAIL37,99s. Explorer ouvert interceptait Summit ; attente «0 nouveauté» erronée, composant affiche «0 nouveautés». Mobile avait déjà fait Sync/ACK204/GET200. Parcours corrigé par fermeture/réouverture normale, pluriel attendu corrigé ; aucun produit modifié.
+- Même commande, JUnit `ops-n2b2-browser-controls.xml` : **2PASS96,13s**, session9397 exit0. Pas retry aveugle : chaque reprise suit le défaut de harnais identifié et conservé ci-dessus.
+- `python -m ruff check raceatlas migrations tests/backend ops/ci_selection.py` PASS ; `python -m ruff format --check raceatlas migrations tests/backend ops/ci_selection.py` PASS101fichiers. `git diff --check 014bda3480d0f8c0233f8e6f68d0ae82886b83db` PASS, contrôle range renouvelé après commit.
+
+Production frontend/API/source/auth/DB/ICS/pins et sélectionCI inchangées par rapport à e5 : preuves ciblées N2A et N2B1 réutilisées explicitement, pas full1017 local ni rebuild du dist d9/e5 byte-identique. Test admission_clock qualifié e5 conservé : pauses61s explicites entre phases humaines, limites20/60 et protocoles CSRF→GETme mêmeproof→opération intacts, clocks session/CSRF/DB/RAF indépendantes. PG9780b806, `_review` non utilisée ; tous runtimes fermés avantEngine.dispose, aucun Python/Chrome/commande pending au gel.
+
+Limites : tests offline/synthétiques, pas performanceSLA ni délivrabilité, aucun email/DNS/service/déploiement/DB distante/liveFFC. CI e5 development1017/138 et APPROVE ciblé sont historiques ; Root doit inspecter le nouveau head et demander Tester N2complet+integrated avant fusion.
+
+---
+
 # N2B1 — handoff correction CI admission cycle1
 
 17 Nov 2026 13:24:18 UTC. PR16/feature/notifications-interface/base014bda ; HEAD/origin avant publicationd9d182dc2fa4e87e0bfcca80bd26b72c4ecc84e4, SHA corrigé communiqué au gel. APPROVE ciblé unit d9 historique archivé `.local-tools/tester-report-notifications-n2b1-initial-d9.md`. Gate CI44088350671 FAIL1/1015PASS355,66s +138frontendPASS conservé : vieuxbrowser saison Alice/Bob finit en GETme429, bouton Scope2 absent, pas panneGPU démontrée.
