@@ -1,5 +1,6 @@
 """Small explicit synthetic fixture and semantic checks for the local restore CLI."""
 
+import hashlib
 import json
 from datetime import datetime, timedelta, timezone
 from unittest.mock import patch
@@ -8,7 +9,7 @@ from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from ops.backup_proof import ROOT, require
+from ops.backup_common import ROOT, require
 from raceatlas import create_app
 from raceatlas.auth.passwords import hash_password
 from raceatlas.calendar_store import materialize_calendar
@@ -24,6 +25,135 @@ from raceatlas.seed import seed_synthetic
 PASSWORD = " Synthetic backup-only passphrase 2026 "
 ONE, TWO = "scope-split-one", "scope-split-two"
 ORIGIN = "http://127.0.0.1"
+
+
+def check_probes():
+    """Explicit domains/boundaries, not a SQL equivalence parser or permissive regex."""
+    result = {}
+    enums = [
+        ("auth_admission_bucket", "namespace", "namespace", ["global", "peer", "address"]),
+        ("auth_challenge", "purpose", "purpose", ["confirmation", "reset"]),
+        (
+            "commune",
+            "department",
+            "department",
+            ["01", "03", "07", "15", "26", "38", "42", "43", "63", "69", "73", "74"],
+        ),
+        ("commune", "provenance", "provenance", ["synthetic", "geo_api", "verified_source"]),
+        (
+            "eligibility_rule",
+            "age_reference",
+            "age_reference",
+            ["season_end", "event_date", "unknown"],
+        ),
+        ("eligibility_rule", "sex", "sex", ["men", "women", "any", "unknown"]),
+        ("email_address_quota", "purpose", "purpose", ["confirmation", "reset"]),
+        ("entry_scope", "eligibility", "eligibility_status", ["confirmed", "unknown", "ambiguous"]),
+        ("entry_scope", "identity", "identity_status", ["verified", "unverified", "needs_review"]),
+        ("entry_scope", "kind", "kind", ["entry_list", "race"]),
+        ("geocode_cache", "status", "status", ["positive", "negative", "error"]),
+        ("import_item", "status", "status", ["created", "updated", "unchanged", "review", "error"]),
+        ("import_run", "status", "status", ["running", "success", "partial", "failed"]),
+        ("import_window", "status", "status", ["success", "incomplete", "partial", "failed"]),
+        (
+            "race",
+            "department",
+            "department",
+            ["01", "03", "07", "15", "26", "38", "42", "43", "63", "69", "73", "74"],
+        ),
+        ("race", "discipline", "discipline", ["road", "gravel", "mtb", "cyclocross"]),
+        ("race", "presence", "source_presence", ["present", "missing", "to_verify"]),
+        ("race", "status", "status", ["scheduled", "cancelled", "postponed", "unknown"]),
+        ("race_change", "kind", "kind", ["business", "presence"]),
+        (
+            "race_type",
+            "code",
+            "code",
+            ["road_race", "time_trial", "gravel_race", "xco", "enduro", "downhill", "cyclocross"],
+        ),
+        ("saved_entry", "status", "status", ["interested", "planned", "registered", "completed"]),
+        ("source_record", "provider", "provider", ["synthetic", "ffc"]),
+    ]
+    for table, suffix, column, values in enums:
+        result[(table, f"ck_{table}_{suffix}")] = [({column: value}, True) for value in values] + [
+            ({column: "backup_invalid_domain"}, False)
+        ]
+    stamp = "2026-11-17T00:00:00Z"
+    result[("email_address_quota", "ck_email_address_quota_admitted")] = [
+        ({"admitted": n, "admissions": [stamp] * n}, 1 <= n <= 100) for n in (0, 1, 2, 99, 100, 101)
+    ] + [({"admitted": 2, "admissions": [stamp]}, False)]
+    result[("geocode_cache", "ck_geocode_cache_result")] = [
+        (
+            {"status": status, "commune_id": commune},
+            (status == "positive" and commune is not None)
+            or (status in {"negative", "error"} and commune is None),
+        )
+        for status in ("positive", "negative", "error", "backup_invalid_domain")
+        for commune in (None, "synthetic-commune")
+    ]
+    allowed = {
+        "road": {"road_race", "time_trial"},
+        "gravel": {"gravel_race"},
+        "mtb": {"xco", "enduro", "downhill"},
+        "cyclocross": {"cyclocross"},
+    }
+    result[("race_type", "ck_race_type_discipline_type")] = [
+        ({"discipline": discipline, "code": code}, code in allowed.get(discipline, set()))
+        for discipline in (*allowed, "backup_invalid_domain")
+        for code in (
+            "road_race",
+            "time_trial",
+            "gravel_race",
+            "xco",
+            "enduro",
+            "downhill",
+            "cyclocross",
+            "backup_invalid_domain",
+        )
+    ]
+    return result
+
+
+def verify_check_differences(source, restored, source_definitions, restored_definitions):
+    old = {(row[0], row[1]): row[2] for row in source_definitions}
+    new = {(row[0], row[1]): row[2] for row in restored_definitions}
+    require(old.keys() == new.keys(), "constraint_names")
+    changed = [key for key in old if old[key] != new[key]]
+    probes = check_probes()
+    require(all(key in probes for key in changed), "unexpected_constraint_definition")
+    checks = 0
+    for engine in (source, restored):
+        with engine.connect() as connection:
+            for table, name in changed:
+                expression = connection.exec_driver_sql(
+                    "SELECT pg_get_expr(conbin,conrelid) FROM pg_constraint "
+                    "WHERE conrelid::regclass::text=%s AND conname=%s AND contype='c'",
+                    (table, name),
+                ).scalar_one()
+                for values, expected in probes[(table, name)]:
+                    # All table names are the explicit fixture allowlist above;
+                    # expression is this run's trusted catalog, never operator SQL.
+                    actual = connection.exec_driver_sql(
+                        f"SELECT ({expression}) IS NOT FALSE FROM "
+                        f'jsonb_populate_record(NULL::"{table}", %s::jsonb) AS t',
+                        (json.dumps(values),),
+                    ).scalar_one()
+                    require(actual is expected, "check_domain_mismatch")
+                    checks += 1
+    return dict(
+        check_sql_text_match=not changed,
+        check_sql_diff_count=len(changed),
+        check_domain_assertions=checks,
+        check_sql_differences=[
+            dict(
+                table=key[0],
+                name=key[1],
+                source_sha256=hashlib.sha256(old[key].encode()).hexdigest(),
+                restored_sha256=hashlib.sha256(new[key].encode()).hexdigest(),
+            )
+            for key in changed
+        ],
+    )
 
 
 def build_fixture(engine):
@@ -93,21 +223,25 @@ def verify_constraints(engine, fixture):
         "notifications_after_sequence) SELECT 'backup-duplicate',account_id,scope_id,"
         "status,revision,notifications_after_sequence FROM saved_entry "
         "WHERE account_id=:alice LIMIT 1",
-        "UPDATE saved_entry SET scope_id='backup-nonexistent-scope' WHERE account_id=:alice",
+        "UPDATE saved_entry SET scope_id='backup-nonexistent-scope' "
+        "WHERE account_id=:alice AND scope_id='scope-split-one'",
         "UPDATE saved_entry SET notifications_after_sequence=-1 WHERE account_id=:alice",
         "UPDATE personal_notification SET scope_id='backup-nonexistent-scope' "
-        "WHERE account_id=:alice",
+        "WHERE account_id=:alice AND scope_id='scope-split-one' "
+        "AND change_id=(SELECT min(change_id) FROM personal_notification WHERE account_id=:alice)",
         "DELETE FROM entry_scope WHERE id='scope-split-one'",
     ]
     with engine.connect() as connection:
         transaction = connection.begin()
         try:
-            for statement in statements:
+            for statement, expected_code in zip(
+                statements, ("23505", "23505", "23503", "23514", "23503", "23503"), strict=True
+            ):
                 try:
                     with connection.begin_nested():
                         connection.execute(text(statement), fixture)
                 except IntegrityError as error:
-                    require(error.orig.sqlstate in {"23505", "23503", "23514"}, "constraint_code")
+                    require(error.orig.sqlstate == expected_code, "constraint_code")
                 else:
                     require(False, "constraint_not_enforced")
             with connection.begin_nested() as nested:

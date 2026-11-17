@@ -1,7 +1,12 @@
 """Normal CI guard tests; native two-new-database proof is a separate explicit CLI."""
 
+import hashlib
+import json
+from contextlib import nullcontext
+from copy import deepcopy
 from dataclasses import replace
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -230,3 +235,82 @@ def test_wrong_new_source_connection_stops_before_migration_or_fixture(config, m
     assert result["phase"] == "migration_fixture" and result["code"] == "server_identity"
     assert len(commands) == 2 and all(args[-1] == "--version" for args in commands)
     assert [item["dbname"] for item in connections] == ["postgres", config.source_name]
+
+
+@pytest.mark.parametrize("part", ["tables", "constraints", "sequences"])
+def test_manifest_comparison_never_ignores_data_or_constraint_structure(part):
+    source = {
+        "tables": {"account": {"count": 2, "sha256": "a" * 64}},
+        "constraints": [
+            [
+                "saved_entry",
+                "fk_scope",
+                "f",
+                [3],
+                "entry_scope",
+                [1],
+                "a",
+                "r",
+                "s",
+                False,
+                False,
+                True,
+                False,
+            ]
+        ],
+        "sequences": [["scope_change_sequence_seq", 2]],
+    }
+    proof.compare_manifests(source, deepcopy(source))
+    changed = deepcopy(source)
+    if part == "tables":
+        changed[part]["account"]["sha256"] = "b" * 64
+    elif part == "constraints":
+        changed[part][0][7] = "c"  # RESTRICT -> CASCADE must never compare equal.
+    else:
+        changed[part][0][1] = 1
+    with pytest.raises(proof.ProofError, match="manifest_mismatch"):
+        proof.compare_manifests(source, changed)
+
+
+def test_archive_is_rehashed_immediately_before_restore(tmp_path):
+    archive = tmp_path / "synthetic.dump"
+    archive.write_bytes(b"synthetic archive created by this run")
+    digest = hashlib.sha256(archive.read_bytes()).hexdigest()
+    proof.verify_archive(archive, digest)
+    archive.write_bytes(b"changed after creation")
+    with pytest.raises(proof.ProofError, match="archive_changed"):
+        proof.verify_archive(archive, digest)
+
+
+def test_unknown_check_definition_difference_is_not_silently_accepted():
+    from ops.backup_fixture import verify_check_differences
+
+    source = [("account", "unexpected", "CHECK (1=1)")]
+    restored = [("account", "unexpected", "CHECK (1=2)")]
+    with pytest.raises(proof.ProofError, match="unexpected_constraint_definition"):
+        verify_check_differences(None, None, source, restored)
+
+
+def test_known_check_domains_are_probed_on_both_sides_and_changed_truth_fails():
+    from ops.backup_fixture import verify_check_differences
+
+    source = [("auth_challenge", "ck_auth_challenge_purpose", "source deparse")]
+    restored = [("auth_challenge", "ck_auth_challenge_purpose", "restored deparse")]
+
+    def engine(always_true=False):
+        def execute(statement, params):
+            if "pg_get_expr" in statement:
+                value = "purpose = ANY(ARRAY['confirmation','reset'])"
+            else:
+                value = always_true or json.loads(params[0])["purpose"] in {"confirmation", "reset"}
+            return SimpleNamespace(scalar_one=lambda: value)
+
+        return SimpleNamespace(
+            connect=lambda: nullcontext(SimpleNamespace(exec_driver_sql=execute))
+        )
+
+    result = verify_check_differences(engine(), engine(), source, restored)
+    assert result["check_sql_text_match"] is False and result["check_sql_diff_count"] == 1
+    assert result["check_domain_assertions"] == 6
+    with pytest.raises(proof.ProofError, match="check_domain_mismatch"):
+        verify_check_differences(engine(), engine(always_true=True), source, restored)

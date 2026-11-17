@@ -15,13 +15,10 @@ from psycopg import sql
 from sqlalchemy import create_engine
 from sqlalchemy.engine import URL
 
-ROOT = Path(__file__).resolve().parents[1]
+from ops.backup_common import ROOT, ProofError, require
+
 CLUSTER = ROOT / ".local-tools" / "pgdata-lot2-native"
 MIGRATION = "b806e44f7901"
-
-
-class ProofError(Exception):
-    """Only bounded codes may cross the CLI boundary, never driver output."""
 
 
 @dataclass(frozen=True)
@@ -35,11 +32,6 @@ class ProofConfig:
     hostaddr: str = "127.0.0.1"
     port: int = 55434
     user: str = "raceatlas_local"
-
-
-def require(condition, code):
-    if not condition:
-        raise ProofError(code)
 
 
 def validate_config(config, environ):
@@ -203,6 +195,7 @@ def tool_identity(env):
         tool_sha256=hashlib.sha256(
             (ROOT / "ops/backup_proof.py").read_bytes()
             + (ROOT / "ops/backup_fixture.py").read_bytes()
+            + (ROOT / "ops/backup_common.py").read_bytes()
         ).hexdigest(),
     )
 
@@ -224,7 +217,9 @@ def manifest(engine):
             )
             tables[name] = dict(count=len(rows), sha256=hashlib.sha256(canonical(rows)).hexdigest())
         constraints = connection.exec_driver_sql(
-            "SELECT conrelid::regclass::text, conname, pg_get_constraintdef(oid) "
+            "SELECT conrelid::regclass::text, conname, contype, conkey, "
+            "NULLIF(confrelid,0)::regclass::text, confkey, confupdtype, confdeltype, "
+            "confmatchtype, condeferrable, condeferred, convalidated, connoinherit "
             "FROM pg_constraint WHERE connamespace='public'::regnamespace ORDER BY 1,2"
         ).all()
         sequences = connection.exec_driver_sql(
@@ -242,8 +237,34 @@ def manifest(engine):
         )
 
 
+def write_constraint_definitions(engine, path):
+    # PostgreSQL re-parses dump DDL and may move text[] casts onto ARRAY elements.
+    # Preserve both deparses for review; do not claim byte equality proves semantics.
+    with engine.connect() as connection:
+        rows = connection.exec_driver_sql(
+            "SELECT conrelid::regclass::text, conname, pg_get_constraintdef(oid) "
+            "FROM pg_constraint WHERE connamespace='public'::regnamespace ORDER BY 1,2"
+        ).all()
+    path.write_bytes(canonical([list(row) for row in rows]))
+    return rows
+
+
+def compare_manifests(before, after):
+    require(before == after, "manifest_mismatch")
+
+
+def verify_archive(archive, digest):
+    require(archive.is_file() and not archive.is_symlink(), "archive_path")
+    require(hashlib.sha256(archive.read_bytes()).hexdigest() == digest, "archive_changed")
+
+
 def run_proof(config):
-    from ops.backup_fixture import build_fixture, verify_constraints, verify_http
+    from ops.backup_fixture import (
+        build_fixture,
+        verify_check_differences,
+        verify_constraints,
+        verify_http,
+    )
 
     phase = "validation"
     report = {"result": "failed", "phase": phase}
@@ -290,6 +311,9 @@ def run_proof(config):
             source_engine = create_engine(source_url)
             fixture = build_fixture(source_engine)
             before = manifest(source_engine)
+            source_definitions = write_constraint_definitions(
+                source_engine, config.output_directory / "constraints-source.json"
+            )
             (config.output_directory / "manifest-source.json").write_bytes(canonical(before))
             phase = "dump"
             archive = config.output_directory / "synthetic.dump"
@@ -299,13 +323,22 @@ def run_proof(config):
             create_database(maintenance, config, config.restore_name)
             phase = "restore"
             restore_env = child_environment(os.environ, config, passfile, config.restore_name)
+            verify_archive(archive, report["archive_sha256"])
             command(restore_arguments(config, archive), restore_env, "restore")
         restore_engine = create_engine(database_url(config, passfile, config.restore_name))
         phase = "manifest"
         validate_target(config, passfile, config.restore_name)
         restored = manifest(restore_engine)
+        restored_definitions = write_constraint_definitions(
+            restore_engine, config.output_directory / "constraints-restored.json"
+        )
         (config.output_directory / "manifest-restored.json").write_bytes(canonical(restored))
-        require(restored == before, "manifest_mismatch")
+        compare_manifests(before, restored)
+        report.update(
+            verify_check_differences(
+                source_engine, restore_engine, source_definitions, restored_definitions
+            )
+        )
         report["manifest_sha256"] = hashlib.sha256(canonical(restored)).hexdigest()
         report["tables_verified"] = len(restored["tables"])
         phase = "constraints"
