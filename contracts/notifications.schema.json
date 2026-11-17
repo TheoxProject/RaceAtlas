@@ -1,0 +1,156 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "RaceAtlas private notification pages",
+  "description": "Exact virtual unread count and page share one SELECT snapshot. Live keyset pagination, no durable inter-request snapshot. Scope-specific DTO only; no personal eligibility inference.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "items",
+    "unread_count",
+    "has_more",
+    "next_cursor"
+  ],
+  "properties": {
+    "items": {
+      "type": "array",
+      "maxItems": 100,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "change_id",
+          "scope_id",
+          "kind",
+          "created_at",
+          "read_at",
+          "delta",
+          "provenance",
+          "entry"
+        ],
+        "properties": {
+          "change_id": {
+            "$ref": "./planning.schema.json#/$defs/Id"
+          },
+          "scope_id": {
+            "$ref": "./planning.schema.json#/$defs/Id"
+          },
+          "kind": {
+            "enum": [
+              "business",
+              "presence"
+            ]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "read_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "delta": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "before",
+              "after"
+            ],
+            "properties": {
+              "before": {
+                "type": "object",
+                "propertyNames": {
+                  "enum": [
+                    "name",
+                    "start_date",
+                    "end_date",
+                    "status",
+                    "source_presence",
+                    "commune",
+                    "raw_label",
+                    "eligibility",
+                    "discipline",
+                    "types",
+                    "organizer",
+                    "competition"
+                  ]
+                }
+              },
+              "after": {
+                "type": "object",
+                "propertyNames": {
+                  "enum": [
+                    "name",
+                    "start_date",
+                    "end_date",
+                    "status",
+                    "source_presence",
+                    "commune",
+                    "raw_label",
+                    "eligibility",
+                    "discipline",
+                    "types",
+                    "organizer",
+                    "competition"
+                  ]
+                }
+              }
+            }
+          },
+          "provenance": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "source_url",
+              "checked_at",
+              "normalization_version"
+            ],
+            "properties": {
+              "source_url": {
+                "type": "string",
+                "format": "uri"
+              },
+              "checked_at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "normalization_version": {
+                "type": "string"
+              },
+              "evidence_id": {
+                "type": "string"
+              }
+            }
+          },
+          "entry": {
+            "$ref": "./planning.schema.json#/$defs/SavedItem"
+          }
+        }
+      }
+    },
+    "unread_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "has_more": {
+      "type": "boolean"
+    },
+    "next_cursor": {
+      "anyOf": [
+        {
+          "type": "string",
+          "maxLength": 1024
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  }
+}

@@ -3,3 +3,15 @@
 .scope-save{margin-top:16px;padding:14px;background:#f3f5f8;border:1px solid #dce3eb;border-radius:10px}.scope-save label{display:grid;gap:7px;font-weight:650}.scope-save select{width:100%;min-height:44px;border:1px solid #bdc7d3;border-radius:8px;padding:9px;color:#111f37;background:#fff}.scope-save .hint{margin:9px 0}.scope-save .scope-saved{font-weight:650;margin:12px 0 0;color:#111f37}.scope-save button{margin-top:8px}.season-row{display:grid;width:100%;gap:7px;text-align:left;padding:15px;margin:10px 0;color:#111f37;background:#f3f5f8;border:1px solid #dce3eb;overflow-wrap:anywhere}.season-row span{font-weight:400;font-size:13px}.season-detail h2{font-size:22px}.season-detail .scope{overflow-wrap:anywhere}
 
 .security-actions{display:grid;gap:12px}.account-danger{background:#9b2b21;color:white}.security-confirm{display:flex!important;align-items:flex-start;gap:10px!important;line-height:1.5}.security-confirm input{width:20px!important;min-height:20px!important;margin-top:1px;flex-shrink:0}.security-actions button{min-height:44px}
+
+.notifications-panel { margin-top: 1.5rem; border-top: 2px solid #e3e8ef; padding-top: 1rem; }
+.notification-actions { display: flex; flex-wrap: wrap; gap: .65rem; }
+.notification-card { margin: 1rem 0; padding: 1rem; background: #fff; border: 1px solid #d8e0ea; border-radius: .65rem; overflow-wrap: anywhere; }
+.notification-card h4 { margin: .35rem 0; }
+.notification-card dl > div { margin: .65rem 0; }
+.notification-card dt { font-weight: 700; color: #111F37; }
+.notification-card dd { margin: .25rem 0; white-space: pre-line; }
+.notification-card dd span { display: block; }
+.notification-unread { border-left: 3px solid #F97316; padding-left: .5rem; font-weight: 700; }
+.notification-read { color: #596579; }
+.notification-card a { color: #111F37; text-decoration: underline; }
