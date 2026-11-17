@@ -314,3 +314,43 @@ def test_known_check_domains_are_probed_on_both_sides_and_changed_truth_fails():
     assert result["check_domain_assertions"] == 6
     with pytest.raises(proof.ProofError, match="check_domain_mismatch"):
         verify_check_differences(engine(), engine(always_true=True), source, restored)
+
+
+def test_invalid_enum_sentinel_fits_even_smallest_varchar_domain():
+    from ops.backup_fixture import check_probes
+
+    probes = check_probes()
+    for key in (
+        ("auth_admission_bucket", "ck_auth_admission_bucket_namespace"),
+        ("auth_challenge", "ck_auth_challenge_purpose"),
+        ("commune", "ck_commune_department"),
+        ("source_record", "ck_source_record_provider"),
+    ):
+        values, expected = probes[key][-1]
+        assert expected is False and set(values.values()) == {"!"}
+        assert all(len(value) <= 2 for value in values.values())
+
+
+@pytest.mark.parametrize("mode", ["correct", "wrong_url", "wrong_database"])
+def test_restored_factory_target_verified_before_any_http(mode):
+    from ops.backup_fixture import verify_app_database
+
+    url = proof.URL.create("postgresql+psycopg", host="127.0.0.1", database="new_restore")
+    expected = SimpleNamespace(url=url)
+    if mode == "wrong_url":
+        actual = SimpleNamespace(
+            url=url.set(database="raceatlas_lot2_test"),
+            connect=lambda: pytest.fail("Must fail before SQL"),
+        )
+    else:
+        name = "new_restore" if mode == "correct" else "raceatlas_lot2_review"
+        connection = SimpleNamespace(
+            exec_driver_sql=lambda sql: SimpleNamespace(scalar_one=lambda: name)
+        )
+        actual = SimpleNamespace(url=url, connect=lambda: nullcontext(connection))
+    app = SimpleNamespace(extensions={"database": actual})
+    if mode == "correct":
+        verify_app_database(app, expected)
+    else:
+        with pytest.raises(proof.ProofError, match="factory_database"):
+            verify_app_database(app, expected)

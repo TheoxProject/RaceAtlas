@@ -76,7 +76,7 @@ def check_probes():
     ]
     for table, suffix, column, values in enums:
         result[(table, f"ck_{table}_{suffix}")] = [({column: value}, True) for value in values] + [
-            ({column: "backup_invalid_domain"}, False)
+            ({column: "!"}, False)
         ]
     stamp = "2026-11-17T00:00:00Z"
     result[("email_address_quota", "ck_email_address_quota_admitted")] = [
@@ -88,7 +88,7 @@ def check_probes():
             (status == "positive" and commune is not None)
             or (status in {"negative", "error"} and commune is None),
         )
-        for status in ("positive", "negative", "error", "backup_invalid_domain")
+        for status in ("positive", "negative", "error", "!")
         for commune in (None, "synthetic-commune")
     ]
     allowed = {
@@ -99,7 +99,7 @@ def check_probes():
     }
     result[("race_type", "ck_race_type_discipline_type")] = [
         ({"discipline": discipline, "code": code}, code in allowed.get(discipline, set()))
-        for discipline in (*allowed, "backup_invalid_domain")
+        for discipline in (*allowed, "!")
         for code in (
             "road_race",
             "time_trial",
@@ -108,7 +108,7 @@ def check_probes():
             "enduro",
             "downhill",
             "cyclocross",
-            "backup_invalid_domain",
+            "!",
         )
     ]
     return result
@@ -272,6 +272,17 @@ def verify_constraints(engine, fixture):
     return len(statements) + 1
 
 
+def verify_app_database(app, engine):
+    actual = app.extensions["database"]
+    require(actual.url == engine.url, "factory_database_url")
+    with actual.connect() as connection:
+        require(
+            connection.exec_driver_sql("SELECT current_database()").scalar_one()
+            == engine.url.database,
+            "factory_database_identity",
+        )
+
+
 def verify_http(engine, fixture):
     # No external HTTP, including accidental email-provider use, is allowed.
     with patch("requests.sessions.Session.request", side_effect=RuntimeError("Network forbidden")):
@@ -288,6 +299,7 @@ def verify_http(engine, fixture):
         )
         checks = 0
         try:
+            verify_app_database(app, engine)
             public = app.test_client()
             selected = json.loads(
                 (ROOT / "fixtures/scenarios.v1.json").read_text(encoding="utf-8")
