@@ -1,3 +1,32 @@
+# OPS-N2B1 — handoff WIP contrôleur/rendu
+
+17 novembre 2026, 12:56 UTC. PR16 / feature/notifications-interface / base014bda, HEAD/origin avant publication8581b5b23b52d5c884583eff2e8d84aebea06a35. SHA intermédiaire communiqué au gel. N2A APPROVE6943153896/CI44048466660development1016/118 historique, aucune approbation UI copiée.
+
+Fichiers frontend seulement : privateAccount.js, SeasonPanel.jsx/test, nouveaux notifications.js/test, NotificationsPanel.jsx/test, notificationsController.test.js, account.css. Backend/API/source/auth/planning/ICS/DB/deps/CI inchangés ; ni captures ni navigateur encore.
+
+Contrôleur : état notifications/reset avec contexte, allowlist query limit50/cursor normalisés RAM, validation réponse2MiB/texte16KiB/count sûr/composites. loadSeason coalesce un listTask ScopeSaveActions actif puis lit entries→notifications sous opération/proof commune ; acteur/epoch d’appel et ticket avant await initial, assertCurrent avant fetch et after await, publication/catch/finally gardés. ACK EXACT204 puis GET fresh, compteur jamais déduit de page ni forcé0 ; si ACK confirmé maisGET échoue message confirmé/counter inconnu distinct du POST inconnu, pas retry. Retrait204 enlève ses seuls messages et invalide count/cursor horspage avant relecture ; statut seul ne supprime pas suivi.
+
+SectionFR accessible : compteur global, lues/nonlues, vide/chargement/erreur, Actualiser/Charger suite/Marquer toutes. Source payload contient déjà les seules clés changed via record_change ; comparaison structurelle défensive fonctionne aussi pour full snapshots. Faits lisibles, groupes de conditions/rawlabels corrélés, pas admissibilité personnelle/annulation depuis manque/JSON brut/IDs compétition DOM. Liens http(s) sûrs/noreferrer, instants de constat vs dates civiles distingués. Carte et ICS conservés.
+
+## Exécution avant interruption, sorties réconciliées17nov12:54
+
+Depuis frontend, Node24/caches existants, commandes NATIVES :
+
+- `node node_modules/vitest/vitest.mjs run src/notificationsController.test.js src/privateAccount.test.js src/season.test.js src/accountSensitive.test.js` : **47PASS3,32s** (dernier contrôleur après garde avantHTTP).
+- `node node_modules/vitest/vitest.mjs run src/SeasonPanel.test.jsx src/NotificationsPanel.test.jsx src/AccountPanel.test.jsx src/App.test.jsx` : **20PASS11,09s**. Vrai montage React ScopeSaveActions derrière dialog+SeasonPanel coalesce sans boucle ; erreurs/états/provenance/rendu et coutures publiquesApp.
+- Préliminaire `node node_modules/vitest/vitest.mjs run src/notifications.test.js src/NotificationsPanel.test.jsx` : **7PASS3,56s**, dont4utilitaires (allowlist/limites/diff/conditions) ;3composants recoupés avec20, pas somme de tests uniques.
+- `node node_modules/eslint/bin/eslint.js . --max-warnings 0` : PASS ; `node node_modules/vite/bin/vite.js build` : PASS4,44s, avertissement chunk>500KiB connu conservé, aucun changement de seuil/timeout/bundler.
+
+Première tentative sandbox sur4fichiers : **0test/4fork-start errors**, NONPASS. Passage natif a exécuté les tests sans changer Vitest ; tentative CSS mauvais cwd échouée sans écrire puis chemin corrigé. Préliminaires3/13/34PASS existent mais recoupés avec derniers groupes, pas additionnés. Pas de JUnit Vitest configuré : preuve = sorties exec conservées/relevées dans `.local-tools/ops-n2b1-observed-checks.md`, sessions68967/98162 terminées exit0. Source WIP inchangée entre ces résultats et reprise, aucune passe relabellisée/cache.
+
+Au17nov12:54 : aucun Python/Chrome/test concurrent, Nodes externes identiques intacts. Aucun PG/test/browser exécuté à reprise, _review réservée ; vérifier PG9780/55434b806 avant futur _test. Pas1016backendlocal/reinstall ni changement source/DB.
+
+## Limites et prochain gate
+
+GEL COURT N2B1 : revue ciblée indépendante lease/store/orchestration/rendu puis release. Ce n’est ni acceptation finaleN2 ni preuve visuelle/navigateur ; N2B2 reste TODO avec vrai synchronize fixture→UI/count/ACK/newchangeunread, deux acteurs/scopes/retrait/réajout/offpage/mobile390/contexte public et captures inspectées. CI courante du WIP à suivre ; finalN2 nécessitera acceptation complète/integrated/main. STOP éditions après push, aucun acte externe réel.
+
+## Historique N2A
+
 # N2A-F2 — handoff correction cycle2
 
 17 Nov 2026 08:37:57 UTC. PR16 / feature/notifications-interface / base014bda ; HEAD/origin avant publicationa4fce6bdadcd9f25a060c395c0f214bb5cb09884, SHA exact communiqué au gel. F1 CLOSED, a4f REQUEST CHANGES F2P2 (dates offset extrêmes v1/v2 lèvent OverflowError, GET500sansSQL). Rapport archivé `.local-tools/tester-report-notifications-n2a-initial-a4f.md`, CI44046262877development1004/118 historique ne valide pas le futurSHA.

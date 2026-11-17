@@ -6,7 +6,7 @@ import fixture from '../../fixtures/catalog.v1.json';
 const race = fixture.races.find(value => value.id === 'race-road-split');
 const entries = race.entry_scopes.map((scope, index) => ({ id: 'saved-' + index, scope_id: scope.id, status: index ? 'registered' : 'planned', created_at: '2026-11-14T00:00:00Z', scope, race: { ...race, entry_scopes: undefined } }));
 const state = { status: 'member', account: { id: 'alice', email: 'alice@example.test' }, contextEpoch: 7, entries: { status: 'ready', items: entries }, busy: false, revalidating: false };
-const client = () => ({ loadEntries: vi.fn(), saveScope: vi.fn(), removeEntry: vi.fn() });
+const client = () => ({ loadEntries: vi.fn(), loadSeason: vi.fn(), saveScope: vi.fn(), removeEntry: vi.fn() });
 afterEach(cleanup);
 test('season has both scopes outside public selection and detail cannot invent sibling scope', () => {
   const controller = client();
@@ -43,7 +43,7 @@ test('loading/error never shows old private scopes, retry is read only', () => {
   expect(screen.queryByText(race.name)).toBeNull();
   rerender(<SeasonPanel account={{ ...state, entries: { status: 'error', items: [], error: { code: 'network' } } }} controller={controller} />);
   fireEvent.click(screen.getByRole('button', { name: 'Actualiser ma saison' }));
-  expect(controller.loadEntries).toHaveBeenCalledOnce();
+  expect(controller.loadSeason).toHaveBeenCalledWith({ refresh: true });
   expect(controller.saveScope).not.toHaveBeenCalled();
   expect(within(screen.getByRole('alert')).getByText(/peut avoir déjà/)).toBeTruthy();
 });

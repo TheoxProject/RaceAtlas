@@ -1,5 +1,6 @@
 import { readCalendar } from './calendarDownload.js';
 import { opaqueSegment, SAVED_LABELS } from './season.js';
+import { notificationPath, allowedNotificationPath, notificationPage, notificationKey } from './notifications.js';
 const AUTH = '/api/v1/auth/';
 const ACTIONS = {
   login: 'login', register: 'register', resend: 'confirmation/resend', forgot: 'password-reset/request',
@@ -12,7 +13,8 @@ const SENSITIVE = {
   deleteAccount: { path: '/api/v1/me', method: 'DELETE' },
 };
 const READS = { entries: '/api/v1/me/saved-entries', calendar: '/api/v1/me/calendar.ics' };
-const ROUTES = new Set(['/api/v1/me', AUTH + 'csrf', ...Object.values(ACTIONS).map(path => AUTH + path), ...Object.values(READS), ...Object.values(SENSITIVE).map(item => item.path)]);
+const NOTIFICATION_ACK = '/api/v1/me/notifications/read-all';
+const ROUTES = new Set(['/api/v1/me', NOTIFICATION_ACK, AUTH + 'csrf', ...Object.values(ACTIONS).map(path => AUTH + path), ...Object.values(READS), ...Object.values(SENSITIVE).map(item => item.path)]);
 const ACCEPTED = 'Demande prise en compte. Vérifiez votre boîte de réception et vos courriers indésirables ; si un message vous parvient, suivez ses instructions.';
 
 export class AccountRequestError extends Error {
@@ -23,12 +25,13 @@ const stopped = () => new DOMException('Demande interrompue.', 'AbortError');
 // No public fetch monkeypatch, provider headers, storage, logs or session bearer in JS.
 export function createAccountController(fetcher = (...args) => globalThis.fetch(...args)) {
   const emptyEntries = () => ({ status: 'idle', items: [], error: null });
-  let state = { status: 'unknown', account: null, busy: false, revalidating: false, error: null, message: null, contextEpoch: 0, entries: emptyEntries(), entryError: null };
-  let generation = 0, contextEpoch = 0, listTask = null, refreshQueued = false;
+  const emptyNotifications = () => ({ status: 'idle', items: [], unreadCount: null, nextCursor: null, hasMore: false, error: null, message: null });
+  let state = { status: 'unknown', account: null, busy: false, revalidating: false, error: null, message: null, contextEpoch: 0, entries: emptyEntries(), notifications: emptyNotifications(), entryError: null };
+  let generation = 0, contextEpoch = 0, listTask = null, seasonTask = null, notificationTask = null, refreshQueued = false;
   const listeners = new Set(), pending = new Set();
   const publish = patch => { state = { ...state, ...patch }; listeners.forEach(listener => listener()); };
   const invalidate = () => { generation += 1; pending.forEach(controller => controller.abort()); pending.clear(); return generation; };
-  const advanceContext = () => { contextEpoch += 1; listTask = null; return { contextEpoch, entries: emptyEntries(), entryError: null }; };
+  const advanceContext = () => { contextEpoch += 1; listTask = null; seasonTask = null; notificationTask = null; return { contextEpoch, entries: emptyEntries(), notifications: emptyNotifications(), entryError: null }; };
   const current = operation => operation.ticket === generation && operation.epoch === contextEpoch;
   const begin = () => { const ticket = invalidate(), controller = new AbortController(); pending.add(controller); return { ticket, epoch: contextEpoch, controller }; };
   const assertCurrent = operation => { if (!current(operation) || operation.controller.signal.aborted) throw stopped(); };
@@ -36,7 +39,8 @@ export function createAccountController(fetcher = (...args) => globalThis.fetch(
   const isCurrent = context => context && context.generation === generation && context.contextEpoch === contextEpoch && context.accountId === state.account?.id && state.status === 'member' && !state.revalidating;
   const entryPath = /^\/api\/v1\/me\/saved-entries\/(?:by-scope\/)?[^/?#]+$/;
   async function request(path, operation, { method = 'GET', body, headers = {}, binary = false, expectedStatus } = {}) {
-    if (!ROUTES.has(path) && !entryPath.test(path)) throw new AccountRequestError('invalid_request');
+    assertCurrent(operation);
+    if (!ROUTES.has(path) && !entryPath.test(path) && !allowedNotificationPath(path)) throw new AccountRequestError('invalid_request');
     const response = await fetcher(path, {
       method, credentials: 'same-origin', cache: 'no-store', redirect: 'error', referrerPolicy: 'no-referrer', mode: 'same-origin',
       signal: operation.controller.signal, headers: { ...headers, ...(body === undefined ? {} : { 'Content-Type': 'application/json' }) },
@@ -84,6 +88,12 @@ export function createAccountController(fetcher = (...args) => globalThis.fetch(
     pending.delete(operation.controller);
     if (operation.ticket === generation && state.busy) publish({ busy: false });
     if (refreshQueued && !state.busy) { refreshQueued = false; api.refresh(); }
+  }
+  async function notificationHead(operation, proof, cursor = null) {
+    const data = await request(notificationPath(cursor), operation, { headers: { 'X-CSRF-Token': proof }, expectedStatus: 200 });
+    const page = notificationPage(data);
+    if (!isCurrent(contextFor(operation))) throw stopped();
+    return page;
   }
   async function writeEntry(scopeId, action) {
     if (!state.account || state.status !== 'member' || state.busy || state.revalidating || state.entries.status !== 'ready') return false;
@@ -188,8 +198,8 @@ export function createAccountController(fetcher = (...args) => globalThis.fetch(
       } finally { settle(operation); }
     },
     loadEntries() {
-      if (!state.account || state.status !== 'member' || state.revalidating || state.busy) return Promise.resolve(false);
       if (listTask) return listTask;
+      if (!state.account || state.status !== 'member' || state.revalidating || state.busy) return Promise.resolve(false);
       let readContext = null;
       publish({ entries: { status: 'loading', items: [], error: null }, entryError: null });
       const task = (async () => {
@@ -209,6 +219,93 @@ export function createAccountController(fetcher = (...args) => globalThis.fetch(
       listTask = task;
       return task;
     },
+    loadSeason({ refresh = false } = {}) {
+      if (seasonTask) return seasonTask;
+      if (!state.account || state.status !== 'member' || state.busy || state.revalidating) return Promise.resolve(false);
+      const expected = state.account.id, epoch = contextEpoch;
+      const task = Promise.resolve().then(async () => {
+        // ScopeSaveActions may already be reading behind the dialog. Let that
+        // operation finish before starting our single preflight/read pipeline.
+        const waiting = listTask, waitingTicket = generation;
+        if (waiting && !await waiting) return false;
+        if (generation !== waitingTicket || state.account?.id !== expected || contextEpoch !== epoch || state.busy || state.revalidating) return false;
+        const needsEntries = refresh || state.entries.status !== 'ready', operation = begin();
+        let entriesReady = !needsEntries;
+        publish({ busy: true, notifications: { ...emptyNotifications(), status: 'loading' }, ...(needsEntries ? { entries: { status: 'loading', items: [], error: null }, entryError: null } : {}) });
+        try {
+          const proof = await preflight(operation, state.account);
+          if (needsEntries) {
+            const data = await request(READS.entries, operation, { headers: { 'X-CSRF-Token': proof }, expectedStatus: 200 });
+            if (!Array.isArray(data.items) || data.items.length > 1000) throw new AccountRequestError('invalid_response');
+            if (!isCurrent(contextFor(operation))) throw stopped();
+            publish({ entries: { status: 'ready', items: data.items, error: null } });
+            entriesReady = true;
+          }
+          const page = await notificationHead(operation, proof);
+          if (!isCurrent(contextFor(operation))) throw stopped();
+          publish({ notifications: { ...page, status: 'ready', error: null, message: null } });
+          return true;
+        } catch (error) {
+          if (current(operation)) {
+            if (error.status === 401) showAccount(null);
+            else publish({ notifications: { ...emptyNotifications(), status: 'error', error: { code: error.code || 'network', status: error.status || 0 } }, ...(!entriesReady ? { entries: { status: 'error', items: [], error: { code: error.code || 'network', status: error.status || 0 } } } : {}) });
+          }
+          failure(error, operation);
+          return false;
+        } finally { settle(operation); }
+      }).finally(() => { if (seasonTask === task) seasonTask = null; });
+      seasonTask = task;
+      return task;
+    },
+    loadNotifications({ more = false } = {}) {
+      if (notificationTask) return notificationTask;
+      if (!state.account || state.status !== 'member' || state.busy || state.revalidating || listTask) return Promise.resolve(false);
+      if (more && (!state.notifications.hasMore || !state.notifications.nextCursor)) return Promise.resolve(false);
+      const previous = state.notifications, expected = state.account, operation = begin();
+      const task = (async () => {
+        publish({ busy: true, notifications: { ...previous, status: 'loading', unreadCount: null, error: null, message: null } });
+        try {
+          const proof = await preflight(operation, expected);
+          const page = await notificationHead(operation, proof, more ? previous.nextCursor : null);
+          const items = new Map((more ? previous.items : []).map(item => [notificationKey(item), item]));
+          page.items.forEach(item => items.set(notificationKey(item), item));
+          if (!isCurrent(contextFor(operation))) throw stopped();
+          publish({ notifications: { ...page, items: [...items.values()], status: 'ready', error: null, message: null } });
+          return true;
+        } catch (error) {
+          if (current(operation)) {
+            if (error.status === 401) showAccount(null);
+            else publish({ notifications: { ...previous, status: 'error', unreadCount: null, error: { code: error.code || 'network', status: error.status || 0 } } });
+          }
+          failure(error, operation);
+          return false;
+        } finally { settle(operation); }
+      })().finally(() => { if (notificationTask === task) notificationTask = null; });
+      notificationTask = task;
+      return task;
+    },
+    async markNotificationsRead() {
+      if (!state.account || state.status !== 'member' || state.busy || state.revalidating || state.notifications.status !== 'ready' || !state.notifications.unreadCount) return false;
+      const expected = state.account, operation = begin();
+      let acknowledged = false;
+      publish({ busy: true, notifications: { ...emptyNotifications(), status: 'loading' } });
+      try {
+        const proof = await preflight(operation, expected);
+        await request(NOTIFICATION_ACK, operation, { method: 'POST', body: {}, headers: { 'X-CSRF-Token': proof }, expectedStatus: 204 });
+        acknowledged = true;
+        const page = await notificationHead(operation, proof);
+        if (!isCurrent(contextFor(operation))) throw stopped();
+        publish({ notifications: { ...page, status: 'ready', error: null, message: 'Lecture enregistrée. Les nouvelles notifications restent à lire.' } });
+        return true;
+      } catch (error) {
+        if (current(operation)) {
+          if (error.status === 401) showAccount(null);
+          else publish({ notifications: { ...emptyNotifications(), status: 'error', error: { code: error.code || 'network', status: error.status || 0 }, message: acknowledged ? 'Lecture enregistrée. Actualisez pour vérifier les nouveautés.' : null } });
+        }
+        failure(error, operation);
+        return false;
+      } finally { settle(operation); }
+    },
     saveScope(scopeId, status) {
       if (!Object.hasOwn(SAVED_LABELS, status)) return Promise.resolve(false);
       let encoded;
@@ -225,7 +322,9 @@ export function createAccountController(fetcher = (...args) => globalThis.fetch(
       const saved = state.entries.items.find(item => item.id === entryId);
       if (!saved) return Promise.resolve(false);
       return writeEntry(saved.scope_id, async (operation, csrf, items) => {
-        await request(READS.entries + '/' + opaqueSegment(entryId), operation, { method: 'DELETE', body: {}, headers: { 'X-CSRF-Token': csrf } });
+        await request(READS.entries + '/' + opaqueSegment(entryId), operation, { method: 'DELETE', body: {}, headers: { 'X-CSRF-Token': csrf }, expectedStatus: 204 });
+        assertCurrent(operation);
+        publish({ notifications: { ...emptyNotifications(), items: state.notifications.items.filter(item => item.scope_id !== saved.scope_id) } });
         return items.filter(item => item.id !== entryId);
       });
     },
