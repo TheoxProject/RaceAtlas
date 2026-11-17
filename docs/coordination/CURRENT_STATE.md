@@ -1,16 +1,17 @@
-# OPS-N2B1 — candidat intermédiaire contrôleur/rendu à geler
+# N2B1 — candidat correction CI admission, cycle1
 
-**17 novembre 2026, 12:56 UTC.** add4/feature/notifications-interface / [DraftPR16](https://github.com/TheoxProject/RaceAtlas/pull/16). HEAD/origin avant publication8581b5b23b52d5c884583eff2e8d84aebea06a35 ; base/main014bda3480d0f8c0233f8e6f68d0ae82886b83db reconfirmés. N2A APPROVE6943153896/F1F2CLOSED ; CI44048466660 development1016backend294,41s/118front/statiques/guards historique, pas validation de l’UI.
+17 Nov 2026 13:24:18 UTC. add4/feature/notifications-interface / [DraftPR16](https://github.com/TheoxProject/RaceAtlas/pull/16), base014bda3480d0f8c0233f8e6f68d0ae82886b83db ; HEAD/origin avant publicationd9d182dc2fa4e87e0bfcca80bd26b72c4ecc84e4. Tester APPROVE ciblé unit d9 historique, rapport archivé ; **CI44088350671/job134056681973 FAIL1/1015backendPASS355,66s,138frontendPASS**, pas gatevert.
 
-N2B1 implémenté : store privé notifications, count global serveur, pagination composites/curseurRAM/allowlist stricte ; loadSeason attend/coalesce listTask ScopeSaveActions derrière dialog puis pipeline entries→notifications avec preuve liée. Acteur/epoch capturés à l’appel et ticket avant attente initiale ; guards après await/publication/catch/finally et avant émission HTTP. ACK204→GET sans faux0 ni retry ; retrait204 filtre CEscope et invalide count horspage. RenduFR des clés changed (delta source déjà différentiel via record_change), comparaison défensive compatible snapshots complets ; provenance/conditions corrélées/to_verify distinct annulé. Carte/calendrier/ICS/backend inchangés.
+Cause vérifiée directement dans logs GitHub :51requêtes privées,21GETme en50s =17×200+3×401 admis puis1×429. GETme admet l’action read avant auth, seuil peer20/min atteint ; global60 non atteint. Aucun doublon auto démontré/aucune correction frontend. Analyse metadata ignorée ops-n2b1-ci-failure-analysis.json (pas headers/body/cursors).
 
-## Preuves réellement exécutées, sans replay à reprise
+Correction TESTONLY dans test_accounts_ui_e2e.py : fixture horloge admission._now locale/thread-safe, auth._now global inchangé ; unitaire prouve20×401 admis puis429, refus à59s non prolongé, reprise401admisà61s. Browser existant attend fin de pipelineAlice puis avance61svirtuelles avantBob ; mêmes politiques20/60, mêmes préflights CSRF→GETme→op, aucune clocksession/CSRF/DB/DateProxy/RAF ni délai caméra modifié. Statuts bornés par phase, aucune baisse d’assertions.
 
-- Premier run sandbox :0test/4fork-start timeout, NONPASS ; CSS mauvais cwd échoué sans écrire. Puis commandes natives sans changer Vitest/délais/config.
-- Dernier groupe contrôleur : **47PASS3,32s** (notificationsController/privateAccount/season/accountSensitive).
-- Dernier groupe React/App : **20PASS11,09s** (SeasonPanel/NotificationsPanel/AccountPanel/App), session98162 finalisée exit0 ; ESLint PASS, build PASS4,44s (avertissement chunk>500KiB déjà connu).
-- Préliminaire utilitaire/rendu : **7PASS3,56s** ; groupes précédents13/34/3PASS recoupés, pas additionnés. Sorties retenues `.local-tools/ops-n2b1-observed-checks.md`, commandes exactes [handoff](../lot-8/notifications-handoff.md). Aucun artifact Vitest/JUnit prétendu.
+## Preuves exécutées _test
 
-Developer seul writer, Tester STOP. Aucun test/session pending ; reprise native12:54UTC sans Python/Chrome, Nodes externes préservés. Aucun nouveau test/DB/serveur/browser lancé à reprise. N2B2 navigateur réel React→Flask→PG_test avec synchronize fixture reste TODO après gate ciblée N2B1, captures desktop/mobile390 et QA réelles pas encore faites. Pas backend1016local/reinstall. _review réservée, PG9780/55434b806 existants à revalider avant futurPG.
+- `pytest tests/backend/test_accounts_ui_e2e.py -k browser_admission_clock -q --tb=short --junitxml=.local-tools/ops-n2b1-ci-admission.xml` : **1PASS9,85s**, quotas réels/refus/récupération.
+- Même fichier `-k test_season_scope_actions_map_two_accounts_outside_public_filters --junitxml=.local-tools/ops-n2b1-ci-browser.xml` : **1PASS55,97s**, UNbrowserrun, session42252 exit0. PhaseAlice14×200+3×401=17reads ; phaseBob5×200 ; zéro429 avec pausevirtuelle61s. Metadata ops-n2b1-ci-browser-phases.json. Caméra60°/10s/DEM>100, acteurs/scopes/métiers/filtres intacts.
+- Ruff check/format100 et range base..HEAD PASS avantcommit, à revalider après. Runtime frontend/backend/contracts/API/source/auth/DB/ICS/CI/deps byte-inchangé : unit71+2sondes reviewer d9 et lint/build conservés sans replay.
 
-**Prochain geste sûr : publier WIP cohérent et GEL court N2B1, STOP éditions pour revue ciblée lease/store/rendu + CI courante.** Pas acceptation N2 complète : N2B2 puis acceptation complète/integrated/main requises. Aucun email/live/DNS/service/DB distante/deploy/achat/tag.
+Developer seul writer, Tester STOP/_review réservée. PG9780/127.0.0.1:55434b806 confirmé natif, _test seulement ; aucune commande/session/test pending, browser/serveur/runtime fermés avant dispose. Pas1016local ni nouveau scénarioSync N2B2 (toujours TODO après gate corrigé). N2A gate8581 reste historique ; pas verdict copié au nouveauSHA.
+
+**Prochain geste : commit/push cohérent, GEL nouveauSHA et STOP pour contre-revue/CI.** Le débit rapide du harnais est modélisé par pause contrôlée, pas limite production élargie ; l’UI peut honnêtement rencontrer429 et demande reprise explicite. Futur N2B2 respectera ces quotas avec le helper scoped, sans flush ni retry jusqu’au vert. Aucun acte externe autorisé.

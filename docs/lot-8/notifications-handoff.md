@@ -1,3 +1,29 @@
+# N2B1 — handoff correction CI admission cycle1
+
+17 Nov 2026 13:24:18 UTC. PR16/feature/notifications-interface/base014bda ; HEAD/origin avant publicationd9d182dc2fa4e87e0bfcca80bd26b72c4ecc84e4, SHA corrigé communiqué au gel. APPROVE ciblé unit d9 historique archivé `.local-tools/tester-report-notifications-n2b1-initial-d9.md`. Gate CI44088350671 FAIL1/1015PASS355,66s +138frontendPASS conservé : vieuxbrowser saison Alice/Bob finit en GETme429, bouton Scope2 absent, pas panneGPU démontrée.
+
+Logs job134056681973 lus par connecteur GitHub et décolorisés ANSI pour compter :51requêtes privées,21GETme13:01:48→13:02:38UTC =17×200+3×401 admis puis429. Admission read est AVANT auth ;20admissions/50s atteignent limite peer20/min, global60 non atteint. Pas doublon auto démontré, aucune suppression d’attestation ni optimisation/réglage runtime.
+
+## Changement borné
+
+Seulement `tests/backend/test_accounts_ui_e2e.py` : fixture admission_clock non autouse (patch scoped de raceatlas.auth.admission._now, thread-safe), assertion identité auth._now globale intacte. Test HTTP garde policy20/60 et prouve refus/récupération de fenêtre glissante, sans prolonger le refus. Ancien browser attend pipeline fini aprèsAlice, puis pause61svirtuelles avant phaseBob. Aucun sleep réel, clocks session/CSRF/DB/DateProxy/RAF ou timeout/pitch/caméra/identité/filtres changé ; aucune purgequota entre phases.
+
+Métadonnées statut/count seulement par phase et assertions ≤20/zéro429 ; aucun header/body/query/proof/token/accountID enregistré. Pause modélise deux parcours humains séparés ; elle n’efface pas le besoin d’UI honnête429 en production. Helper réutilisable N2B2 après nouvelle attribution, aucun vraiSync nouveau ici.
+
+## Commandes et résultats
+
+Venv/caches existants, TEST_DATABASE_URL=postgresql+psycopg://raceatlas_local@127.0.0.1:55434/raceatlas_lot2_test ; RACEATLAS_DISPOSABLE_DB=1 ; PLAYWRIGHT_BROWSERS_PATH=C:/Users/theop/.codex/worktrees/1a1e/RaceAtlas/.local-tools/browsers. Compilé frontend d9 courant réutilisé après diff nul, pas rebuild/réinstall :
+
+1. `pytest tests/backend/test_accounts_ui_e2e.py -k browser_admission_clock -q --tb=short --junitxml=.local-tools/ops-n2b1-ci-admission.xml` : **1PASS9,85s**.20×401(admis),429, encore429à59s/bucket20stampsinchangés, puis401admisà61s ; mêmes limites.
+2. `pytest tests/backend/test_accounts_ui_e2e.py -k test_season_scope_actions_map_two_accounts_outside_public_filters -q --tb=short --junitxml=.local-tools/ops-n2b1-ci-browser.xml` : **1PASS55,97s**, UNrun. Sorties phases :Alice14×200+3×401, Bob5×200, pausevirtuelle61s/zéro429. Anciennes assertions caméra60°/10s/DEM>100 et sourceprivée/acteurs/scopes/périodes conservées. Aucun rerun jusqu’auvert.
+3. Ruff check et format --check raceatlas migrations tests/backend ops/ci_selection.py : **PASS100** ; range git diff --check base014..HEAD avant/aprèscommit. Pas full1016local, unit frontend71+2sondes/lint/build d9 réutilisés après code byte-identique.
+
+Artefacts ignorés :ops-n2b1-ci-admission.xml,ops-n2b1-ci-browser.xml,ops-n2b1-ci-browser-phases.json,ops-n2b1-ci-failure-analysis.json ; capture synthétique season-desktop existante, aucune QA N2B2 prétendue. PG9780/55434b806 confirmé natif ; _review réservée, tous tests/serveur/browser/runtime/listeners fermés avantEngine.dispose, aucune commande pending. Frontend/production/API/authpolicies/source/DB/ICS/schema/CI/deps IMMUTABLES.
+
+Au push : GEL/STOP pour revue renouvelée exacte+CI. Pas d’APPROVE copié, N2B2/Sync/390 restent TODO après gate. Aucun email réel/liveFFC/DNS/service/remoteDB/deploy/achat/tag.
+
+## Historique premier jalon d9
+
 # OPS-N2B1 — handoff WIP contrôleur/rendu
 
 17 novembre 2026, 12:56 UTC. PR16 / feature/notifications-interface / base014bda, HEAD/origin avant publication8581b5b23b52d5c884583eff2e8d84aebea06a35. SHA intermédiaire communiqué au gel. N2A APPROVE6943153896/CI44048466660development1016/118 historique, aucune approbation UI copiée.

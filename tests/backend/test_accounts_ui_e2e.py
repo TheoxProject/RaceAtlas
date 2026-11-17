@@ -4,6 +4,7 @@ import json
 import re
 import threading
 import time
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from queue import Queue
 from urllib.parse import parse_qs, urlsplit
@@ -32,6 +33,34 @@ ACCEPTED_TEXT = (
     "Demande prise en compte. Vérifiez votre boîte de réception et vos courriers indésirables ; "
     "si un message vous parvient, suivez ses instructions."
 )
+
+
+@pytest.fixture
+def admission_clock(monkeypatch):
+    """Only admission's sliding window moves; auth/CSRF/DB/RAF clocks stay real."""
+    from raceatlas import auth
+    from raceatlas.auth import admission
+
+    global_now = auth._now
+
+    class Clock:
+        def __init__(self):
+            self._time = datetime.now(timezone.utc)
+            self._lock = threading.Lock()
+
+        def now(self, _session=None):
+            with self._lock:
+                return self._time
+
+        def advance(self, seconds):
+            assert type(seconds) is int and seconds > 0
+            with self._lock:
+                self._time += timedelta(seconds=seconds)
+
+    clock = Clock()
+    monkeypatch.setattr(admission, "_now", clock.now)
+    yield clock
+    assert auth._now is global_now  # Never mutate session/security time globally.
 
 
 @pytest.fixture
@@ -73,6 +102,43 @@ def account_server(database, seeded, monkeypatch):
     assert not thread.is_alive()
     assert runtime.close(timeout=5)
     app.extensions["database"].dispose()
+
+
+def test_browser_admission_clock_preserves_read_limit_and_recovers(
+    admission_clock, account_server, database
+):
+    from sqlalchemy import select
+    from sqlalchemy.orm import Session
+
+    from raceatlas.auth.admission import key_digest
+    from raceatlas.models import AuthAdmissionBucket
+
+    origin, _, app = account_server
+    runtime = app.extensions["auth"]
+    assert runtime.admission_policy.per_peer == 20
+    assert runtime.admission_policy.per_global == 60
+    client = app.test_client()
+    start = admission_clock.now()
+    # These anonymous401 requests are admitted before auth, exactly like the CI
+    # trace; none is a successful authenticated read or a bypass of admission.
+    assert [client.get("/api/v1/me", base_url=origin).status_code for _ in range(20)] == [401] * 20
+    assert client.get("/api/v1/me", base_url=origin).status_code == 429
+    admission_clock.advance(59)
+    assert client.get("/api/v1/me", base_url=origin).status_code == 429
+    digest = key_digest(runtime.settings.rate_policy.rate_key, "peer", "read", "127.0.0.1")
+    with Session(database) as session:
+        bucket = session.scalar(
+            select(AuthAdmissionBucket).where(
+                AuthAdmissionBucket.namespace == "peer", AuthAdmissionBucket.key_digest == digest
+            )
+        )
+        assert bucket.admissions == [start] * 20
+        assert bucket.expires_at == start + timedelta(hours=1)  # Denials did not extend it.
+    admission_clock.advance(2)
+    assert client.get("/api/v1/me", base_url=origin).status_code == 401
+    with Session(database) as session:
+        bucket = session.get(AuthAdmissionBucket, ("peer", digest))
+        assert bucket.admissions == [admission_clock.now()]
 
 
 def prepare(page, *, mobile=False):
@@ -565,7 +631,9 @@ def test_copy202_is_identical_without_delivery_promise_when_provider_fails_or_no
 
 
 @pytest.mark.e2e
-def test_season_scope_actions_map_two_accounts_outside_public_filters(account_server, database):
+def test_season_scope_actions_map_two_accounts_outside_public_filters(
+    admission_clock, account_server, database
+):
     from sqlalchemy import select
     from sqlalchemy.orm import Session
 
@@ -574,10 +642,20 @@ def test_season_scope_actions_map_two_accounts_outside_public_filters(account_se
     origin, _, _ = account_server
     alice = identity(database, "alice@example.test")
     bob = identity(database, "bob@example.test")
+    clock_start = admission_clock.now()
+    read_statuses = {"alice": {}, "bob": {}}
     with sync_playwright() as playwright:
         browser = launch(playwright)
         page = browser.new_page(timezone_id="Europe/Paris")
         prepare(page)
+
+        def observe_read(response):
+            if urlsplit(response.url).path == "/api/v1/me":
+                phase = "alice" if admission_clock.now() == clock_start else "bob"
+                counts = read_statuses[phase]
+                counts[str(response.status)] = counts.get(str(response.status), 0) + 1
+
+        page.on("response", observe_read)
         try:
             page.goto(origin)
             expect(page.locator(".map-canvas")).to_have_attribute(
@@ -644,7 +722,13 @@ def test_season_scope_actions_map_two_accounts_outside_public_filters(account_se
             expect(selected.locator(".scope-saved")).to_have_text("Sauvegardée : Terminée")
             selected.get_by_role("button", name="Retirer cette sauvegarde", exact=True).click()
             expect(page.locator(".season-row")).to_have_count(1)
+            expect(page.locator(".notifications-panel")).to_have_attribute("aria-busy", "false")
+            expect(page.get_by_role("button", name="Utiliser un autre compte")).to_be_enabled()
             screenshot(page, "season-desktop.png")
+            # Two fast automated account journeys exceed read20/minute. Model a
+            # deliberate pause between phases; production admission and every
+            # CSRF→GETme→operation attestation remain unchanged.
+            admission_clock.advance(61)
             sign_in(page, "bob@example.test", PASSWORD)
             page.get_by_role("button", name="Ma saison", exact=True).click()
             expect(page.get_by_text("Votre saison est vide.", exact=False)).to_be_visible()
@@ -672,6 +756,8 @@ def test_season_scope_actions_map_two_accounts_outside_public_filters(account_se
             assert_camera_unchanged(camera(page), before)
             expect(page.get_by_label("Mois", exact=True)).to_have_value("11")
             expect(page.get_by_label("Route", exact=True)).to_be_checked()
+            assert all("429" not in phase for phase in read_statuses.values())
+            assert all(sum(phase.values()) <= 20 for phase in read_statuses.values())
         except Exception:
             try:
                 screenshot(page, "season-desktop.png")
@@ -680,6 +766,23 @@ def test_season_scope_actions_map_two_accounts_outside_public_filters(account_se
                 pass
             raise
         finally:
+            # Counts/statuses only: never record private URL queries, headers,
+            # bodies, proof strings or account identifiers in this diagnostic.
+            try:
+                path = SHOTS.parent / "ops-n2b1-ci-browser-phases.json"
+                path.write_text(
+                    json.dumps(
+                        {
+                            "read_peer_limit": 20,
+                            "virtual_pause_seconds": 61,
+                            "read_statuses": read_statuses,
+                        },
+                        sort_keys=True,
+                    ),
+                    encoding="utf-8",
+                )
+            except OSError:
+                pass
             browser.close()
 
 
