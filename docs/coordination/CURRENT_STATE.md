@@ -1,15 +1,19 @@
-# OPS-N2 — candidat final à geler
+# Lot8 — préparation opérationnelle finale, cadrage
 
-17 novembre 2026, 13:50 UTC. Worktree add4, branche `feature/notifications-interface`, Draft PR16 : https://github.com/TheoxProject/RaceAtlas/pull/16. Base/main `014bda3480d0f8c0233f8e6f68d0ae82886b83db`, HEAD/origin avant publication `e5ecbb127ff30f90d61f176f94fce4a2304eea41` ; nouveau SHA exact communiqué au gel après commit/push.
+17nov2026 18:55UTC. Branche feature/operations-final-readiness, worktree isolé add4. HEAD/base avant cadrage **1f1d50b1395eaf271d1a22e255555cc027f34bf1**, origin/main identique après fetch et mainCI44150897395 SUCCESS1019backend467,95s/138frontend. N2 PR16 intégré, arbre0ea469ff584d9b3cfa90a16c5e5a8e3e8212142f et [preuves durables](../lot-8/n2-integration.md). Nouvelle Draft PR à ouvrir après commit de cadrage ; aucun code E/B/V implémenté.
 
-- N2A : APPROVE ciblé exact8581/F1-F2 CLOSED, CI44048466660 development1016/118 historiques.
-- N2B1 : APPROVE ciblé exacte5ecbb1 (comment6949430174), CI44092575080 development1017backend292,49s/138frontend. Ancien FAIL429 CI44088350671 conservé dans le handoff ; admission20/60 inchangée.
-- N2B2 : preuves navigateur DONE, acceptation complète N2 TODO. Nouveau fichier `test_notifications_ui_e2e.py` seulement : vrais imports synchronize, deux comptes/scopes, quatre statuts, 52messages/50visibles/ACK horspage, nouvelle source encore non lue, retrait/réajout baseline ; mobile390 absence→à vérifier→ACK→restauration, calendrier décembre/clavier/focus/caméra conservés.
+| Tâche | État |
+|---|---|
+| OPS-N1 journal/sync/baselines | DONE intégré PR15/main vert |
+| OPS-N2 backend/UI notifications | DONE intégré PR16/main vert |
+| OPS-E erreurs/couverture/quotas | TODO, premier jalon borné à attribuer |
+| OPS-B preuve dump/restauration locale | TODO, après revue ciblée E |
+| OPS-V matrice/candidat V1 | TODO, consolidation E/B et preuves existantes |
 
-Commandes réelles : `pytest tests/backend/test_notifications_ui_e2e.py -q --tb=short --junitxml=.local-tools/ops-n2b2-browser-controls.xml` : **2 PASS96,13s**, session9397 exit0. Incidents de harnais précédents : initial2FAIL8,382s (labels parsés contiennent les conditions) ; labels2FAIL37,99s (panneau Explorer recouvre Summit ; zéro prend le pluriel). Corrections de parcours/assertions seulement, pas défaut produit ni hausse de seuil. Ruff check et format --check complets : PASS101 ; `git diff --check <base>` PASS.
+[Mission finale](../lot-8/operations-final-mission.md). E/B/V regroupés en PR opérationnelle cohérente ; gels/revues ciblées E/B, acceptation complète finale +ci:full/integrated/Ready/main. Root seul writer du cadrage, transfert Developer seul writer après Draft. Tester STOP jusqu'au gel E. Aucun précédent verdict transféré à un futur SHA.
 
-Deux PNG synthétiques vus réellement : `.local-tools/notifications-ui-screenshots/desktop.png` et `mobile.png`. Whitelist CI ajoute seulement ces fichiers réguliers non symlinks, destinations notifications-*, rétention1jour inchangée. Aucun changement frontend/backend/API/source/auth/DB/ICS/deps/CIselection ; build d9/e5 réutilisé à diff nul. Pas nouvelle prétention de verdict Tester ou CI pour le prochain SHA.
+Prochain geste sûr : commit/push cadrage, ouvrir Draft et inspecter sa CI, puis attribuer E (au plus1couture importincomplet→pasfaussealerte→reprise/replay). Réutiliser les preuves d'erreurs existantes après diff vérifié. Ne pas inventer transport HTTPFFC429 ni modifier runtime/politiques/UI pour ce test.
 
-Environnement : PG9780/127.0.0.1:55434 existant, schéma b806, `_test` seulement ; `_review` réservée. Venv Python/Chromium1a1e réutilisés, DateProxy et horloge admission TESTONLY (pauses explicites61s), aucune horloge session/CSRF/DB/RAF modifiée. Tous browsers/serveurs/runtimes fermés avant dispose ; aucun Python/Chrome restant, aucune commande pending. Zéro email réel/liveFFC/DNS/service/DB distante/déploiement/achat/tag.
+Environnement à vérifier avant tests : PG17 localadd4/.local-tools/pgdata-lot2-native, dernierPID9780/127.0.0.1:55434, _test Developer/_review Tester b806, preview ancienne intacte. Python/Node24/pnpm10/browsers1a1e réutilisables. Aucun test/serveur de cadrage ; vérifier natif avant réemploi, pas initdb/reseed/piddelete/anciencheckout ; runtime.close avant engines. B n'utilisera que deux bases locales NEUVES synthétiques. Aucun dump privé/token dans Git/artefacts publics.
 
-Prochaine action sûre : publier le candidat cohérent, communiquer SHA exact puis STOP éditions pour acceptation COMPLÈTE N2 et CI integrated demandée par Root. Ne pas rejouer les tests verts ni commencer la suite avant merge/mainCI. Le verdict ciblé e5 et ses preuves sont historiques ; le nouveau SHA demande renouvellement complet.
+N2 rapports/CI/échecs conservés. Main/Ready/app external restent distincts : aucun achat, DNS, email réel, service, DB distante, déploiement, collecte live ou tag final autorisé. ResendFree/raceatlas.ucthonon.fr préparés nonactivés, APP_BASE_URL Render réelle inconnue, qualifications fournisseurs/GPU/capacité/backup externe à faire avant activation. Quota nonmesurable, pas de reprise automatique promise.
