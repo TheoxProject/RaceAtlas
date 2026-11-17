@@ -86,8 +86,8 @@ jobs:
           cache-dependency-path: frontend/pnpm-lock.yaml
       - run: python -m pip install -r requirements-dev.txt
       - run: python -m pip check
-      - run: python -m ruff check raceatlas migrations tests/backend ops/ci_selection.py
-      - run: python -m ruff format --check raceatlas migrations tests/backend ops/ci_selection.py
+      - run: python -m ruff check raceatlas migrations tests/backend ops
+      - run: python -m ruff format --check raceatlas migrations tests/backend ops
       - run: node --test tests/contracts/contracts.test.mjs
       - run: pnpm --dir frontend install --frozen-lockfile
       - run: pnpm --dir frontend lint
