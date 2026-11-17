@@ -5,6 +5,7 @@ import pytest
 from jsonschema import Draft202012Validator, FormatChecker
 from referencing import Registry, Resource
 from sqlalchemy import event, select
+from sqlalchemy.exc import SQLAlchemyError
 from test_auth_http_sessions import bootstrap
 from test_notifications import ONE, change
 from test_private_planning import ORIGIN, actor_client, save, write
@@ -12,6 +13,7 @@ from test_private_planning import app as _planning_app
 from test_private_planning import isolation as isolation
 
 from raceatlas.models import CatalogState
+from raceatlas.planning_snapshot import PlanningLimits
 
 BASE = "/api/v1/me/notifications"
 
@@ -101,3 +103,108 @@ def test_read_proof_cookie_switch_and_mutation_csrf_refused_before_sql(app, data
     assert alice.get(BASE, base_url=ORIGIN, headers={"X-CSRF-Token": proof}).status_code == 200
     anonymous = app.test_client().get(BASE, base_url=ORIGIN)
     assert anonymous.status_code == 401 and "Set-Cookie" not in anonymous.headers
+
+
+@pytest.mark.parametrize("failure", [False, True])
+def test_notification_session_closed_and_commit_required_before_204(
+    app, database, seeded, monkeypatch, failure
+):
+    import raceatlas.notifications_http as http
+
+    client, _ = actor_client(app, database)
+    save(client, ONE)
+    change(seeded, scopes=(ONE,))
+    seeded.commit()
+    proof = bootstrap(client)
+    closed = []
+    original = http.AccountFlowSession
+
+    class Observed(original):
+        def commit(self):
+            if failure:
+                raise SQLAlchemyError("Synthetic private commit failure")
+            return super().commit()
+
+        def close(self):
+            result = super().close()
+            closed.append(True)
+            return result
+
+    monkeypatch.setattr(http, "AccountFlowSession", Observed)
+    original_response = app.response_class
+
+    class AfterClose(original_response):
+        def __init__(self, *args, **kwargs):
+            assert closed, "Private Response created before closing Session"
+            super().__init__(*args, **kwargs)
+
+    app.response_class = AfterClose
+    response = client.post(
+        BASE + "/read-all",
+        json={},
+        base_url=ORIGIN,
+        headers={"Origin": ORIGIN, "X-CSRF-Token": proof},
+    )
+    app.response_class = original_response
+    assert response.status_code == (503 if failure else 204) and closed
+    assert "Set-Cookie" not in response.headers
+    monkeypatch.setattr(http, "AccountFlowSession", original)
+    assert client.get(BASE, base_url=ORIGIN).json["unread_count"] == (1 if failure else 0)
+
+
+def test_notification_http_wrong_origin_unknown_body_and_explicit_response_limit(
+    app, database, seeded
+):
+    client, _ = actor_client(app, database)
+    save(client, ONE)
+    change(seeded, scopes=(ONE,))
+    seeded.commit()
+    proof = bootstrap(client)
+    bad_origin = client.post(
+        BASE + "/read-all",
+        json={},
+        base_url=ORIGIN,
+        headers={"Origin": "https://different.example.test", "X-CSRF-Token": proof},
+    )
+    bad_body = write(client, BASE + "/read-all", {"scope_id": ONE}, "post")
+    assert bad_origin.status_code == 403 and bad_body.status_code == 400
+    app.extensions["notification_limits"] = PlanningLimits(response_bytes=64)
+    too_large = client.get(BASE, base_url=ORIGIN)
+    assert too_large.status_code == 413 and too_large.json["code"] == "selection_limit"
+
+
+def test_notification_openapi_refs_are_local_and_routes_are_additive():
+    root = Path(__file__).resolve().parents[2] / "contracts"
+    document = json.loads((root / "notifications.openapi.json").read_text(encoding="utf-8"))
+
+    def walk(value):
+        if isinstance(value, dict):
+            if "$ref" in value:
+                path, _, pointer = value["$ref"].partition("#")
+                # Existing security scheme references use "auth.openapi.json"
+                # without a leading ./; both are valid local relative URIs.
+                assert (root / path).resolve().parent == root.resolve()
+                resolved = json.loads((root / path).read_text(encoding="utf-8"))
+                for segment in pointer.split("/")[1:]:
+                    resolved = resolved[segment]
+            for child in value.values():
+                walk(child)
+        elif isinstance(value, list):
+            for child in value:
+                walk(child)
+
+    walk(document)
+    assert set(document["paths"]) == {BASE, BASE + "/read-all"}
+    assert "204" in document["paths"][BASE + "/read-all"]["post"]["responses"]
+
+
+def test_native_basic_header_is_not_account_bearer_and_unverified_account_cannot_read(
+    app, database
+):
+    client, _ = actor_client(app, database)
+    preview_header = {"Authorization": "Basic c3ludGhldGljOnByZXZpZXc="}
+    assert client.get(BASE, base_url=ORIGIN, headers=preview_header).status_code == 200
+    anonymous = app.test_client().get(BASE, base_url=ORIGIN, headers=preview_header)
+    assert anonymous.status_code == 401 and "Set-Cookie" not in anonymous.headers
+    unverified, _ = actor_client(app, database, "unverified@example.test", verified=False)
+    assert unverified.get(BASE, base_url=ORIGIN).status_code == 401

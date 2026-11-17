@@ -6,10 +6,10 @@ Branche `feature/notifications-interface`, checkout isolé `C:/Users/theop/.code
 
 Propriétaire : section **Changements récents dans Ma saison**, compteur nouveautés, **Marquer comme lues** pour **TOUTES les notifications déjà disponibles, même non affichées**. Retrait d'une sauvegarde supprime SES messages ; autres scopes/comptes préservés, réajout avec baseline fraîche. Pas centre séparé, email course, troisième page de découverte ou source live. Les quatre statuts sont suivis, Inscrit reste déclaratif et admissibilité personnelle non évaluée.
 
-- **N2A backend**, premier jalon attribuable : services de lecture/acquittement, routes/contrats, tests PG/HTTP/snapshot. Gel/revue ciblée avant UI.
+- **N2A backend**, jalon attribué et implémenté, candidat à revue ciblée : services de lecture/acquittement, routes/contrats, tests PG/HTTP/snapshot. Gel/revue ciblée avant UI.
 - **N2B UI** : section/store/client dans Ma saison, compteur/lecture/pagination accessibles, vrais navigateurs ; mission détaillée après gate N2A.
 
-Developer sera seul writer après transfert explicite ; Root cadre/PR/gates et notes, Tester lit/teste le SHA figé sans édition. N2A : notifications.py ou petit module dédié, notifications_http.py, raccord factory/guards minimal, contrats notifications et tests/docs/checkpoint. Pas refonte auth/sync/planning/ICS, migration b806, frontend ou dépendance supplémentaire sans besoin démontré. API et UI seront acceptées COMPLÈTEMENT au SHA final avant integrated/fusion/mainCI ; N2A seul ne termine pas N2/lot8.
+Developer est seul writer après transfert explicite ; Root cadre/PR/gates et notes, Tester lit/teste le SHA figé sans édition. N2A : notifications.py ou petit module dédié, notifications_http.py, raccord factory/guards minimal, contrats notifications et tests/docs/checkpoint. Pas refonte auth/sync/planning/ICS, migration b806, frontend ou dépendance supplémentaire sans besoin démontré. API et UI seront acceptées COMPLÈTEMENT au SHA final avant integrated/fusion/mainCI ; N2A seul ne termine pas N2/lot8.
 
 ## N2A — service et snapshot
 
