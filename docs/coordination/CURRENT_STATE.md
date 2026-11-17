@@ -1,19 +1,9 @@
-# Lot8 — préparation opérationnelle finale, cadrage
+# OPS-E — candidat ciblé à geler, PR17
 
-17nov2026 18:55UTC. Branche feature/operations-final-readiness, worktree isolé add4. HEAD/base avant cadrage **1f1d50b1395eaf271d1a22e255555cc027f34bf1**, origin/main identique après fetch et mainCI44150897395 SUCCESS1019backend467,95s/138frontend. N2 PR16 intégré, arbre0ea469ff584d9b3cfa90a16c5e5a8e3e8212142f et [preuves durables](../lot-8/n2-integration.md). Nouvelle Draft PR à ouvrir après commit de cadrage ; aucun code E/B/V implémenté.
+17 novembre 2026, 19:01 UTC. add4/feature/operations-final-readiness, HEAD/origin1c20ac1c800c4503d5f137526bf9221882a2730d, base/main1f1d50b1395eaf271d1a22e255555cc027f34bf1. N2 intégré et mainCI44150897395 SUCCESS1019/138. PR17 Draft https://github.com/TheoxProject/RaceAtlas/pull/17, CIcadrage44153369011 development SUCCESS138front/statiques/contrats/build/guards, backend none docs-only ; pas verdict E/B/V.
 
-| Tâche | État |
-|---|---|
-| OPS-N1 journal/sync/baselines | DONE intégré PR15/main vert |
-| OPS-N2 backend/UI notifications | DONE intégré PR16/main vert |
-| OPS-E erreurs/couverture/quotas | TODO, premier jalon borné à attribuer |
-| OPS-B preuve dump/restauration locale | TODO, après revue ciblée E |
-| OPS-V matrice/candidat V1 | TODO, consolidation E/B et preuves existantes |
+Developer seul writer après transfert ; E seul attribué. Une couture test_ops_errors.py : SourceRecord/key exact→save scopeA exact→détail incomplet/coverageincomplete/dernier succès conservé/zéro notification→vrai delta/reprise/une notification scopeA→replaystable. Source horsréseau WindowBatch, pas fauxHTTPFFC429. Aucun runtime/politique/migration/UI/deps changé. OPS-B/OPS-V TODO, aucune CREATE DB B autorisée à ce stade.
 
-[Mission finale](../lot-8/operations-final-mission.md). E/B/V regroupés en PR opérationnelle cohérente ; gels/revues ciblées E/B, acceptation complète finale +ci:full/integrated/Ready/main. Root seul writer du cadrage, transfert Developer seul writer après Draft. Tester STOP jusqu'au gel E. Aucun précédent verdict transféré à un futur SHA.
+Preuves acquises : 7PASS10,20s (.local-tools/ops-e-targeted.xml/session32376 exit0), Ruff check/format PASS102, contrats26PASS, diffcheck depuis base PASS. Aucun échec dans ce groupe. Matrice et commandes : docs/lot-8/errors-validation.md et errors-handoff.md. Diff nul réel sur runtime/frontend/contrats/migrations/deps/CI et tests existants nommés ; preuves intégrées réutilisées explicitement, sans nouveau verdict présumé. Prochaine action sûre : commit/push cohérent, communiquer SHA exact puis STOP pour revue ciblée E/CI courante. PG9780/127.0.0.1:55434, _testb806 confirmé natif ; aucun Python/Chrome au départ, _review réservée. Venv/caches1a1e réutilisés, aucun initdb/reseed manuel/réinstall ; fixture jetable existante fait son cycle schéma. Aucun autre test concurrent, aucun Python/Chrome restant et aucune commande pending. Zéro mail/DNS/collecte/service/DBdistante/deploy/achat/tag.
 
-Prochain geste sûr : commit/push cadrage, ouvrir Draft et inspecter sa CI, puis attribuer E (au plus1couture importincomplet→pasfaussealerte→reprise/replay). Réutiliser les preuves d'erreurs existantes après diff vérifié. Ne pas inventer transport HTTPFFC429 ni modifier runtime/politiques/UI pour ce test.
-
-Environnement à vérifier avant tests : PG17 localadd4/.local-tools/pgdata-lot2-native, dernierPID9780/127.0.0.1:55434, _test Developer/_review Tester b806, preview ancienne intacte. Python/Node24/pnpm10/browsers1a1e réutilisables. Aucun test/serveur de cadrage ; vérifier natif avant réemploi, pas initdb/reseed/piddelete/anciencheckout ; runtime.close avant engines. B n'utilisera que deux bases locales NEUVES synthétiques. Aucun dump privé/token dans Git/artefacts publics.
-
-N2 rapports/CI/échecs conservés. Main/Ready/app external restent distincts : aucun achat, DNS, email réel, service, DB distante, déploiement, collecte live ou tag final autorisé. ResendFree/raceatlas.ucthonon.fr préparés nonactivés, APP_BASE_URL Render réelle inconnue, qualifications fournisseurs/GPU/capacité/backup externe à faire avant activation. Quota nonmesurable, pas de reprise automatique promise.
+Gel E après ciblés/checks/handoff, STOP pour revue indépendante exacte ; E n’approuve pas B/V. Ne pas rejouer full1019 ni les browsers N2 immuables. Historique N2 et preuves : n2-integration.md ; mission finale operations-final-mission.md.
