@@ -95,12 +95,20 @@ def test_existing_output_wrong_cluster_symlink_and_missing_binary_rejected(confi
 def test_cli_and_psycopg_both_use_explicit_local_parameters_and_empty_passfile(config):
     passfile = config.output_directory / "empty.pgpass"
     env = proof.child_environment(
-        {"PGSERVICE": "bad", "PGPASSWORD": "bad", "DATABASE_URL": "bad", "PATH": "safe"},
+        {
+            "PGSERVICE": "bad",
+            "PGPASSWORD": "bad",
+            "DATABASE_URL": "bad",
+            "PATH": "safe",
+            "RESEND_API_KEY": "synthetic-not-for-child",
+            "AUTH_CSRF_KEY": "synthetic-parent-key",
+        },
         config,
         passfile,
         config.source_name,
     )
     assert "PGSERVICE" not in env and "PGPASSWORD" not in env and "DATABASE_URL" not in env
+    assert "RESEND_API_KEY" not in env and "AUTH_CSRF_KEY" not in env
     params = proof.connection_parameters(config, passfile, config.source_name)
     assert params["host"] == params["hostaddr"] == env["PGHOST"] == env["PGHOSTADDR"] == "127.0.0.1"
     assert params["passfile"] == env["PGPASSFILE"] == str(passfile)
@@ -354,3 +362,80 @@ def test_restored_factory_target_verified_before_any_http(mode):
     else:
         with pytest.raises(proof.ProofError, match="factory_database"):
             verify_app_database(app, expected)
+
+
+def test_http_worker_uses_restore_environment_and_leaves_parent_untouched(config, monkeypatch):
+    monkeypatch.setenv("DATABASE_URL", "synthetic-parent-must-not-be-used")
+    monkeypatch.setenv("PGSERVICE", "synthetic-parent-service")
+    import os
+
+    before = dict(os.environ)
+    observed = []
+
+    def run(arguments, env, code, **kwargs):
+        observed.append((arguments, env, kwargs))
+        return 0, b'{"result":"passed","http_assertions":21}'
+
+    monkeypatch.setattr(proof, "command", run)
+    fixture = {"alice": "synthetic-alice", "bob": "synthetic-bob"}
+    passfile = config.output_directory / "empty.pgpass"
+    assert proof.verify_http_worker(config, passfile, fixture) == 21
+    arguments, env, kwargs = observed[0]
+    assert arguments[1:] == ["-m", "ops.backup_fixture"]
+    assert "PGSERVICE" not in env and env["PGDATABASE"] == config.restore_name
+    assert proof.URL.create("postgresql+psycopg").drivername in env["DATABASE_URL"]
+    assert config.restore_name in env["DATABASE_URL"]
+    assert json.loads(kwargs["input_data"]) == fixture and kwargs["allow_failure"]
+    assert dict(os.environ) == before
+
+
+@pytest.mark.parametrize(
+    "exit_code,body",
+    [
+        (1, b'{"result":"failed","code":"restored_hash_login"}'),
+        (0, b'{"result":"passed","http_assertions":0}'),
+        (0, b'{"result":"passed","http_assertions":true}'),
+        (1, b'{"result":"passed","http_assertions":21}'),
+    ],
+)
+def test_failed_or_incomplete_worker_is_never_a_pass(config, monkeypatch, exit_code, body):
+    monkeypatch.setattr(proof, "command", lambda *args, **kwargs: (exit_code, body))
+    with pytest.raises(proof.ProofError):
+        proof.verify_http_worker(config, config.output_directory / "empty.pgpass", {})
+
+
+@pytest.mark.parametrize("patch", ["valid", "remote", "test_database", "ambient_service"])
+def test_worker_target_guard_before_connection(config, monkeypatch, patch):
+    from ops import backup_fixture
+
+    monkeypatch.setattr(backup_fixture, "ROOT", proof.ROOT)
+    config.output_directory.mkdir(parents=True)
+    passfile = config.output_directory / "empty.pgpass"
+    passfile.write_bytes(b"")
+    url = proof.database_url(config, passfile, config.restore_name)
+    env = proof.child_environment({}, config, passfile, config.restore_name)
+    if patch == "remote":
+        url = url.set(host="example.test")
+    elif patch == "test_database":
+        url = url.set(database="raceatlas_lot2_test")
+    elif patch == "ambient_service":
+        env["PGSERVICE"] = "untrusted"
+    env.update(DATABASE_URL=url.render_as_string(hide_password=False), RACEATLAS_ENV="test")
+    fixture = {"alice": "a", "bob": "b"}
+    if patch == "valid":
+        _, actual_passfile, actual_url = backup_fixture.worker_parameters(env, fixture)
+        assert (
+            actual_url
+            == proof.URL.create(
+                "postgresql+psycopg",
+                username=url.username,
+                host=url.host,
+                port=url.port,
+                database=url.database,
+                query={k: v for k, v in url.query.items() if v != ""},
+            )
+            and actual_passfile == passfile
+        )
+    else:
+        with pytest.raises(proof.ProofError, match="worker_"):
+            backup_fixture.worker_parameters(env, fixture)

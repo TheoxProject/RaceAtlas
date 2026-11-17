@@ -2,14 +2,19 @@
 
 import hashlib
 import json
+import os
+import re
+import sys
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 from unittest.mock import patch
 
-from sqlalchemy import text
+from sqlalchemy import create_engine, text
+from sqlalchemy.engine import make_url
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from ops.backup_common import ROOT, require
+from ops.backup_common import ROOT, ProofError, require
 from raceatlas import create_app
 from raceatlas.auth.passwords import hash_password
 from raceatlas.calendar_store import materialize_calendar
@@ -366,3 +371,72 @@ def verify_http(engine, fixture):
         finally:
             require(app.extensions["auth"].close(timeout=5), "runtime_close")
             app.extensions["database"].dispose()
+
+
+def worker_parameters(environ, fixture):
+    from ops.backup_proof import ProofConfig, child_environment, database_url
+
+    require(isinstance(fixture, dict) and set(fixture) == {"alice", "bob"}, "worker_fixture")
+    require(
+        all(
+            isinstance(value, str) and 1 <= len(value) <= 64 and "\0" not in value
+            for value in fixture.values()
+        ),
+        "worker_fixture",
+    )
+    url = make_url(environ.get("DATABASE_URL", ""))
+    match = re.fullmatch("raceatlas_backup_dst_([a-f0-9]{16})", url.database or "")
+    require(match is not None, "worker_database")
+    nonce = match.group(1)
+    output = ROOT / ".local-tools/backup-proof" / nonce
+    passfile = output / "empty.pgpass"
+    require(passfile.is_file() and passfile.read_bytes() == b"", "worker_passfile")
+    require(
+        not any(parent.is_symlink() for parent in (passfile, *passfile.parents)), "worker_passfile"
+    )
+    config = ProofConfig(
+        Path("."),
+        ROOT / ".local-tools/pgdata-lot2-native",
+        "raceatlas_backup_src_" + nonce,
+        url.database,
+        output,
+    )
+    expected_url = make_url(
+        database_url(config, passfile, config.restore_name).render_as_string(hide_password=False)
+    )
+    # URL parsing omits the empty options query value. The separately checked
+    # child libpq environment still fixes PGOPTIONS=""; nonempty options fail.
+    require(url == expected_url, "worker_database_url")
+    expected = child_environment({}, config, passfile, config.restore_name)
+    observed = {key: value for key, value in environ.items() if key.upper().startswith("PG")}
+    require(observed == expected, "worker_libpq_environment")
+    require(environ.get("RACEATLAS_ENV") == "test", "worker_environment")
+    return config, passfile, url
+
+
+def worker_main():
+    from ops.backup_proof import validate_target
+
+    engine = None
+    try:
+        raw = sys.stdin.buffer.read(4097)
+        require(len(raw) <= 4096, "worker_fixture")
+        fixture = json.loads(raw.decode("utf-8"))
+        config, passfile, url = worker_parameters(os.environ, fixture)
+        validate_target(config, passfile, config.restore_name)
+        engine = create_engine(url)
+        result = dict(result="passed", http_assertions=verify_http(engine, fixture))
+    except Exception as error:
+        result = dict(
+            result="failed",
+            code=str(error) if isinstance(error, ProofError) else "operation_failed",
+        )
+    finally:
+        if engine is not None:
+            engine.dispose()
+    print(json.dumps(result, sort_keys=True))
+    return 0 if result["result"] == "passed" else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(worker_main())

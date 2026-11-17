@@ -61,11 +61,23 @@ def executable(config, name):
 
 
 def child_environment(environ, config, passfile, database):
-    result = {
-        key: value
-        for key, value in environ.items()
-        if not key.upper().startswith("PG") and key not in {"DATABASE_URL", "TEST_DATABASE_URL"}
+    system_keys = {
+        "PATH",
+        "PATHEXT",
+        "SYSTEMROOT",
+        "WINDIR",
+        "SYSTEMDRIVE",
+        "COMSPEC",
+        "TEMP",
+        "TMP",
+        "HOME",
+        "USERPROFILE",
+        "APPDATA",
+        "LOCALAPPDATA",
+        "LANG",
+        "LC_ALL",
     }
+    result = {key: value for key, value in environ.items() if key.upper() in system_keys}
     result.update(
         PGHOST=config.host,
         PGHOSTADDR=config.hostaddr,
@@ -108,17 +120,18 @@ def database_url(config, passfile, database):
     )
 
 
-def command(arguments, env, code, *, timeout=120):
+def command(arguments, env, code, *, timeout=120, input_data=None, allow_failure=False):
     result = subprocess.run(
         [str(arg) for arg in arguments],
         cwd=ROOT,
         env=env,
         capture_output=True,
+        input=input_data,
         timeout=timeout,
         check=False,
     )
-    require(result.returncode == 0, code)
-    return result.stdout
+    require(allow_failure or result.returncode == 0, code)
+    return (result.returncode, result.stdout) if allow_failure else result.stdout
 
 
 def validate_server(connection, config, *, database_name="postgres"):
@@ -258,12 +271,41 @@ def verify_archive(archive, digest):
     require(hashlib.sha256(archive.read_bytes()).hexdigest() == digest, "archive_changed")
 
 
+def verify_http_worker(config, passfile, fixture):
+    env = child_environment(os.environ, config, passfile, config.restore_name)
+    env.update(
+        DATABASE_URL=database_url(config, passfile, config.restore_name).render_as_string(
+            hide_password=False
+        ),
+        RACEATLAS_ENV="test",
+    )
+    exit_code, raw = command(
+        [sys.executable, "-m", "ops.backup_fixture"],
+        env,
+        "http_worker",
+        input_data=canonical(fixture),
+        allow_failure=True,
+    )
+    require(len(raw) <= 4096, "http_worker_response")
+    result = json.loads(raw)
+    require(isinstance(result, dict), "http_worker_response")
+    if result.get("result") != "passed":
+        code = result.get("code", "failed")
+        require(
+            isinstance(code, str) and re.fullmatch("[a-z_]{1,64}", code), "http_worker_response"
+        )
+        raise ProofError("http_worker_" + code)
+    require(exit_code == 0, "http_worker_exit")
+    count = result.get("http_assertions")
+    require(type(count) is int and count >= 21, "http_worker_assertions")
+    return count
+
+
 def run_proof(config):
     from ops.backup_fixture import (
         build_fixture,
         verify_check_differences,
         verify_constraints,
-        verify_http,
     )
 
     phase = "validation"
@@ -345,7 +387,7 @@ def run_proof(config):
         report["constraints_verified"] = verify_constraints(restore_engine, fixture)
         require(manifest(restore_engine) == before, "constraint_rollback")
         phase = "http"
-        report["http_assertions"] = verify_http(restore_engine, fixture)
+        report["http_assertions"] = verify_http_worker(config, passfile, fixture)
         report.update(result="passed", phase="complete", migration=MIGRATION)
     except Exception as error:
         # No raw exception, driver stderr, DSN, password, mail or token crosses here.

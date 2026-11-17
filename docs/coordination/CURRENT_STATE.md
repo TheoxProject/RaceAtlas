@@ -1,6 +1,6 @@
 # OPS-B — IN_PROGRESS, correctif de sonde prêt
 
-2026-11-17 19:44 UTC. Worktree add4, feature/operations-final-readiness/PR17, HEAD/origin `a750686df80a5e7a9412cabd99d26599e86d8257`, base/main `1f1d50b1395eaf271d1a22e255555cc027f34bf1`. E APPROVE6958216564 +CI44154102929development1/138 acquis. CI WIP7eca44158520031 SUCCESS ; CIa75044160225621 job134311707156 encorebackendfull au dernier contrôle (statiques/front verts). Aucun deuxièmepush tant qu’elle n’est pas conclue.
+2026-11-17 19:44 UTC. Worktree add4, feature/operations-final-readiness/PR17, HEAD/origin `7718399fa9ad9baa4d09b4560d0948b94fa789da`, base/main `1f1d50b1395eaf271d1a22e255555cc027f34bf1`. E APPROVE6958216564 +CI44154102929development1/138 acquis. CI WIP7eca44158520031 SUCCESS ; CIa75044160225621 job134311707156 encorebackendfull au dernier contrôle (statiques/front verts). Aucun deuxièmepush tant qu’elle n’est pas conclue.
 
 | Tâche | État |
 |---|---|
@@ -24,3 +24,5 @@ Prochain geste sûr : après conclusionCIa750, commit/pushcorrectifPROPRE et not
 AuPASSentier : docs/handoff/range, gelB exact et STOP pourReviewerautrenonce/CI ; B n’approuvepas V/finalPR17. Tester mêmeagent reprendaprèsresetowner, aucunverdictBprésumé. Aucunemail/DNS/service/remoteDB/liveFFC/achat/deploy/tag ; chiffrement/rétention/stockagebackup réels NONqualifiés.
 
 2026-11-17 19:47 UTC — CIa75044160225621 CONCLUEFAIL1055PASS/3FAIL491,33s+138frontPASS. Logs lus : vieuxbrowserseasonJanvier requestfinished15s, notificationsdesktopcount1absent15s, notifmobilecaméracentrechangé0,03567deg. Aucun testBFAIL ; aucune causeproduit/GPUconclue, aucunrerunCI ni éditionbrowser horsscope. Rootalerté, gatesPR17restentBLOQUÉSparcesdéfauts àattribuer. CorrectifB39unit1,29s+3factory1,56sPASS nonchevauchants prêt ; commit/pushcodepropre puisNative4nonce20261117b0000004, pasréutilisationDB.
+
+2026-11-17 19:57 UTC — Native4 à771PROPRE nonce20261117b0000004 : FAILHTTPRuntimeError, après30tables/structure144/4séquences/336CHECK/7DMLcontraintes+rollbackPASS. Factoryapp lit DATABASE_URLenvironavantconfigoverride ; aucunAPIréelencore. WorkerHTTPenfant autorisé : ENVminimalDATABASE_URLrestore explicite/PGtargetrevalidé/parentinchangé/stdinIDsfictifs/aucunsecretstdout. Unitésworker initial7PASS1FAIL(options=vide omisparseURL), correctioncanonicalisationcontrôlée+PGOPTIONSvide ; dernier10PASS1,09s, dontexit1avecstdoutsuccessREFUSÉ. CI77144162444692 SUCCESS1062backend374,44s/138front/gardes771avantaprès ; ne clôtpascauses3browsersCIa750FAIL (Rootdiagnosticfutur). Prochain geste : commit/pushworkerpropre puisUNE Native5nonce20261117b0000005 ; pas repriseancienneDB.
