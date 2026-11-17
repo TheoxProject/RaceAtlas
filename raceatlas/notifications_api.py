@@ -76,7 +76,7 @@ def parse_query(limit=50, cursor=None):
         change_id, scope_id = _target_id(change), _target_id(scope)
         if _b64(raw) != body:
             raise ValueError()
-    except (ValueError, TypeError, UnicodeError, binascii.Error):
+    except (ValueError, TypeError, UnicodeError, binascii.Error, OverflowError):
         raise NotificationQueryError() from None
     return limit, (at, change_id, scope_id, body, signature)
 

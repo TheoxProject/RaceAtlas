@@ -1,3 +1,21 @@
+# N2A-F2 — handoff correction cycle2
+
+17 Nov 2026 08:37:57 UTC. PR16 / feature/notifications-interface / base014bda ; HEAD/origin avant publicationa4fce6bdadcd9f25a060c395c0f214bb5cb09884, SHA exact communiqué au gel. F1 CLOSED, a4f REQUEST CHANGES F2P2 (dates offset extrêmes v1/v2 lèvent OverflowError, GET500sansSQL). Rapport archivé `.local-tools/tester-report-notifications-n2a-initial-a4f.md`, CI44046262877development1004/118 historique ne valide pas le futurSHA.
+
+Seul changement runtime : ajouter `OverflowError` à l’exception du bloc validation PURE de `parse_query`, sans modifier timestamp global ni capturer des erreurs SQL/opérationnelles. Les débordements UTC deviennent NotificationQueryError/HTTP400 générique avant touteSQL ; Date UTC canonique valide reste acceptée. Codec v2≤768/v1compat/HMAC acteur/champs/limites et schéma privé F1 inchangés.
+
+## Exécuté
+
+- `pytest tests/backend/test_notifications_cursor.py -k "date_boundary or canonical_utc_extremes" -q --tb=short --junitxml=.local-tools/ops-n2a-f2-dates.xml` : **12PASS9,02s**,6deselected, exit0. V1/v2×haute/basse overflow, noncanonicalité/+00:00 et timezone absente : parse refuse, GETanonyme400/no-store/aucuneSQL. V1/v2×UTCannée0001/9999.microsecondes : authentification/sig acteur réelles, service+HTTP200, counts/page/schéma cohérents. Aucune erreur initiale dans ce groupe correctif.
+- `python .local-tools/tester-n2a-cursor-date-boundary.py` : quatre cas deviennent NotificationQueryError, pure/sansSQL ; le script HTTP reviewer n’a PAS été exécuté contre `_review`, ses cas sont couverts sur `_test` par le groupe ci-dessus.
+- Ruff check et format --check raceatlas migrations tests/backend ops/ci_selection.py : **PASS100**. node --test tests/contracts/contracts.test.mjs :26contrats publics. `git diff --check 014bda3480d0f8c0233f8e6f68d0ae82886b83db..HEAD` avant/après commit.
+
+Les14passes reviewer a4f (F1maxima/contrat/tamper/legacy) et49PG07f (snapshot/ACK/isolation/HTTP) sont explicitement réutilisées après diff nul de leurs branches, pas relabellisées ni rejouées. Scope.id privé a changé dans F1, mais PAS ce cycle ; contrats/runtimeplanning inchangés vs a4f. Aucun fullN1 local/browser/build inchangé.
+
+PG9780/127.0.0.1:55434 confirmé natif, `_test` b806 uniquement, `_review` réservée. Session10919 terminée/listeners/runtimes/engines fermés, aucun pending. Au push/GEL STOP éditions pour revue ciblée N2A renouvelée+CI ; N2B non attribué. Aucun acte externe autorisé.
+
+## Historique F1, avant finding F2
+
 # N2A-F1 — handoff correction cycle1
 
 17 novembre 2026, 08:20 UTC. PR16 / feature/notifications-interface / base014bda. HEAD/origin avant publication07f22acc4f755d1911fd4def001ca9220947777d, SHA exact communiqué au gel. Reviewer07f REQUEST CHANGES P2, rapport initial archivé `.local-tools/tester-report-notifications-n2a-initial-07f.md`. CI44042648284 development998/118 historique n’approuve pas le correctif.

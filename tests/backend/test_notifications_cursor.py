@@ -198,3 +198,65 @@ def test_malformed_compact_payloads_fail_before_any_sql(seeded):
         assert statements == []
     finally:
         event.remove(seeded.bind, "before_cursor_execute", observe)
+
+
+def date_payload(version, date, change_id="change", scope_id="scope"):
+    if version == 1:
+        return json.dumps([1, date, change_id, scope_id], separators=(",", ":")).encode()
+    return b"2\0" + date.encode() + b"\0" + change_id.encode() + b"\0" + scope_id.encode()
+
+
+@pytest.mark.parametrize("version", [1, 2])
+@pytest.mark.parametrize(
+    "date",
+    [
+        "9999-12-31T23:59:59.999999-23:59",  # UTC conversion exceeds datetime.max
+        "0001-01-01T00:00:00+23:59",  # UTC conversion precedes datetime.min
+        "2026-11-17T08:00:00+00:00",  # Valid instant, noncanonical cursor spelling
+        "2026-11-17T08:00:00",  # Missing timezone
+    ],
+)
+def test_invalid_date_boundary_is_400_before_sql_for_both_versions(app, version, date):
+    cursor = b64(date_payload(version, date)) + "." + "a" * 43
+    with pytest.raises(NotificationQueryError):
+        parse_query(1, cursor)
+    statements = []
+
+    def observe(*_args):
+        statements.append(True)
+
+    engine = app.extensions["database"]
+    event.listen(engine, "before_cursor_execute", observe)
+    try:
+        response = app.test_client().get(BASE, query_string={"cursor": cursor}, base_url=ORIGIN)
+    finally:
+        event.remove(engine, "before_cursor_execute", observe)
+    assert response.status_code == 400 and response.json["code"] == "invalid_request"
+    assert response.headers["Cache-Control"] == "no-store" and "Set-Cookie" not in response.headers
+    assert statements == []
+
+
+@pytest.mark.parametrize("version", [1, 2])
+@pytest.mark.parametrize("date", ["0001-01-01T00:00:00Z", "9999-12-31T23:59:59.999999Z"])
+def test_canonical_utc_extremes_keep_valid_signature_and_http_read(
+    app, database, seeded, version, date
+):
+    from test_notifications import ONE, change
+
+    client, actor_id = actor_client(app, database)
+    actor = seeded.get(Account, actor_id)
+    put_saved_entry(seeded, actor, ONE)
+    change(seeded, scopes=(ONE,))
+    seeded.commit()
+    raw = date_payload(version, date, scope_id=ONE)
+    cursor = signed(KEY, actor_id, raw)
+    assert timestamp(parse_query(1, cursor)[1][0]) == date
+    page = read(seeded, actor, limit=1, cursor=cursor)
+    assert page["unread_count"] == 1
+    assert len(page["items"]) == (0 if date.startswith("0001") else 1)
+    seeded.commit()  # Service read owns an Account lock; release before HTTP.
+    http_cursor = signed(app.extensions["auth"].settings.csrf_key, actor_id, raw)
+    response = client.get(BASE, query_string={"cursor": http_cursor}, base_url=ORIGIN)
+    assert response.status_code == 200 and response.json["unread_count"] == 1
+    assert len(response.json["items"]) == len(page["items"])
+    validate_document(response.json)
