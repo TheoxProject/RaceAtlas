@@ -1,19 +1,14 @@
-# Lot 8 — suivi de la CI navigateur desktop
+# Initialisation du catalogue FFC 2027
 
-Point du **18 novembre 2026 à 16:03 UTC**. La [PR 17](https://github.com/TheoxProject/RaceAtlas/pull/17) est fusionnée sur main au SHA `e766a70996e7ce375a7826da5d064a3caac91b61`. Le [contrôle intégré post-fusion](https://github.com/TheoxProject/RaceAtlas/actions/runs/44338906844/job/134923111166) a échoué avec 1 078 tests backend réussis et 2 échecs desktop en 460,07 s. Le cas mobile et la nouvelle régression terrain passent.
+Point du 18 novembre 2026 à 16:58 UTC. Base GitHub vérifiée `7f7cd9cd887c87fccfbe8f1537bd981c5eb778b1`. La CI `integrated` de cette base est [verte](https://github.com/TheoxProject/RaceAtlas/actions/runs/44346863088). Le propriétaire demande un chargement ponctuel et a confirmé les droits de réutilisation. Le périmètre est l’année civile 2027, les douze départements d’Auvergne-Rhône-Alpes et les quatre disciplines V1.
 
 | Tâche | État | Preuve ou condition restante |
 |---|---|---|
-| OPS-GUI diagnostic post-fusion | DONE | Saison desktop bloquée sur le témoin de janvier après deux réponses HTTP 200. Notifications desktop bloquées sur l'attente du pitch alors que le diagnostic a observé 60° et quatre avertissements GPU. |
-| OPS-GUI réduction du tampon SwiftShader | IN_PROGRESS | Développeur `2872bdf33425b0a162a0788e85824576dfc51172` sur `fix/desktop-map-ci`, worktree `.local-tools/worktrees/desktop-map-ci`. Deux parcours locaux réussis. Publication, PR, CI du correctif et verdict indépendant à consigner. |
-| OPS-V validation finale | BLOCKED | Le contrôle intégré post-fusion requiert une correction et une validation GitHub avant la suite de la [recette V1](../readiness/release-candidate.md). |
+| FFC27-01 Vérifier Neon et préparer le schéma | IN_PROGRESS | Projet Free `raceatlas`, branche `production`, base `neondb` vide au contrôle préalable. Sur une branche temporaire PostgreSQL 18, la connexion TLS directe, la migration `b806e44f7901` et `alembic check` passent. Appliquer puis vérifier la même chaîne sur la cible. |
+| FFC27-02 Qualifier le lecteur public | IN_PROGRESS | Fenêtres civiles effectives confirmées en Isère sur un intervalle de 14 jours. Le lecteur synthétique ne reconnaît ni le calendrier ni la fiche réelle. Le développeur travaille sur `feature/ffc-2027-reader` dans le worktree `.local-tools/ffc-reader`. |
+| FFC27-03 Préparer le chargement et les contrôles | TODO | L’import existant est local. Préparer un lancement opérateur, sans ordonnanceur, qui utilise les observations positives et conserve les anomalies de couverture. Vérifier idempotence, provenance, fenêtres, admissibilité et décompte. |
+| FFC27-04 Revoir et charger le catalogue | TODO | CI intégrée et revue indépendante du SHA final. Répéter sur un environnement jetable puis vérifier la cible et les parcours API après chargement. |
 
-Le harnais applique `Map.setPixelRatio(0.5)` avant Summit sur la page principale de ces deux tests. Dans une sonde A/B/B/A sous Chromium 1194 et SwiftShader, le tampon WebGL passe de 1 096 × 667 à 548 × 333 pixels. Le viewport reste à 1 440 × 960 CSS. Les quatre passages atteignent le pitch 60° et une élévation moteur de 829,26 m. La réduction des pixels est vérifiée, avec quatre avertissements GPU par passage et des délais hôte variables. Ces mesures locales ne déterminent pas la cause des délais Ubuntu.
+Branche d’intégration `feature/ffc-2027-initial-catalog`, worktree `078f`. Aucune revue du nouveau code ni CI de la branche à ce point. La CI du SHA final et les verdicts seront consignés dans la PR. Les dépendances Python 3.12.14 sont isolées sous `.local-tools/neon-runtime`. La branche Neon `raceatlas-initial-schema-check` expire le 18 novembre à 19:57 UTC. Les identifiants de maintenance restent dans l’environnement du processus.
 
-**Validation locale.** Build du frontend vérifié contre main, Python 3.12.14 et PostgreSQL 17.11 sur `127.0.0.1:55434/raceatlas_lot2_test`. Aucune autre session sur cette base jetable avant le lancement. Deux tests en 129,04 s, Ruff `check` et `format --check` sur les trois fichiers modifiés, puis `git diff --check` réussis.
-
-~~~text
-python -m pytest -q --tb=short --junitxml=.local-tools/desktop-pixel-ratio.xml tests/backend/test_accounts_ui_e2e.py::test_season_scope_actions_map_two_accounts_outside_public_filters tests/backend/test_notifications_ui_e2e.py::test_notifications_real_sync_offpage_ack_two_actors_scope_readd_desktop
-~~~
-
-**Prochaine action.** Publier la branche en Draft et vérifier la CI du SHA publié. Le verdict indépendant et le contrôle `integrated` sont requis pour décider de la fusion. La base `_test` est libérée et `_review` demeure réservée au testeur. Les preuves locales sont sous `.local-tools/`. Éviter de relancer les mêmes tests sans changement ni question de validation identifiable. Toute opération externe de recette ou de publication relève des accords prévus.
+**Prochaine action.** Après confirmation de la réussite d’Alembic sur la branche temporaire, appliquer la chaîne au schéma vide de `neondb` sur `production` et confirmer la révision et l’état du catalogue. Vérifier la cible et les tables avant toute reprise. Le premier chargement restera ponctuel et la synchronisation récurrente requiert une autorisation distincte.
