@@ -52,6 +52,11 @@ RANGES = {
     "de open 1 à open 3": ("open_1", "open_2", "open_3"),
 }
 SEXES = {"hommes tout âge": "men", "femmes tout âge": "women"}
+ENGAGER_TYPES = {"Club", "Individuel"}
+SUMMARY_VALUES = {
+    "Places restantes": re.compile(r"[0-9]+\s*/\s*[0-9]+"),
+    "Tarif d'engagement": re.compile(r"[0-9]+(?:[,.][0-9]{1,2})?\s*€"),
+}
 
 
 class _DetailReader(Reader):
@@ -221,28 +226,103 @@ def _is_criteria_title(node):
     return node.has_class("epreuve-titre") and node.text.casefold().replace("’", "'") == CRITERIA
 
 
-def _known_criteria_layout(description, found_badges):
-    sections = description.all(
-        lambda node: any(
-            isinstance(child, Node) and _is_criteria_title(child) for child in node.children
-        )
-    )
-    if len(sections) != 1:
-        return False
-    items = [child for child in sections[0].children if isinstance(child, Node) or child.strip()]
+def _content(node):
+    return [child for child in node.children if isinstance(child, Node) or child.strip()]
+
+
+def _criteria_badges(section):
+    items = _content(section)
     if (
         len(items) != 2
         or not all(isinstance(item, Node) for item in items)
         or not _is_criteria_title(items[0])
         or not items[1].has_class("horizontal")
     ):
-        return False
-    badges = [child for child in items[1].children if isinstance(child, Node) or child.strip()]
-    return (
-        bool(badges)
-        and all(isinstance(badge, Node) and badge.has_class("epreuve-badge") for badge in badges)
-        and [badge.text for badge in badges] == list(found_badges)
+        return (), False
+    items = _content(items[1])
+    badges = tuple(
+        item.text
+        for item in items
+        if isinstance(item, Node)
+        and item.has_class("epreuve-badge")
+        and not any(isinstance(child, Node) for child in item.children)
+        and item.text
     )
+    return badges, bool(badges) and len(badges) == len(items)
+
+
+def _summary_card(card):
+    if not isinstance(card, Node) or not card.has_class("epreuve-important"):
+        return False
+    items = _content(card)
+    if len(items) != 2 or not all(isinstance(item, Node) for item in items):
+        return False
+    text, icon = items
+    if not text.has_class("epreuve-important-texte") or not (
+        icon.has_class("epreuve-important-icone") and not icon.text
+    ):
+        return False
+    values = _content(text)
+    if len(values) != 2 or not all(isinstance(value, Node) for value in values):
+        return False
+    label, amount = (value.text for value in values)
+    pattern = SUMMARY_VALUES.get(label.replace("’", "'"))
+    return pattern is not None and pattern.fullmatch(amount) is not None
+
+
+def _known_summary(section):
+    items = _content(section)
+    return (
+        section.has_class("horizontal")
+        and bool(items)
+        and all(_summary_card(item) for item in items)
+    )
+
+
+def _engager_types(section):
+    members = _content(section)
+    if not section.has_class("vertical") or len(members) != 1:
+        return None
+    (row,) = members
+    if (
+        not isinstance(row, Node)
+        or row.tag != "div"
+        or any(isinstance(child, Node) for child in row.children)
+    ):
+        return None
+    if not row.text.startswith(ENGAGERS):
+        return None
+    values = tuple(part.strip() for part in row.text.removeprefix(ENGAGERS).split(","))
+    if len(set(values)) != len(values) or not set(values) <= ENGAGER_TYPES:
+        return None
+    return values
+
+
+def _description_facts(description):
+    sections = _content(description)
+    criteria = [
+        section
+        for section in sections
+        if isinstance(section, Node)
+        and any(isinstance(child, Node) and _is_criteria_title(child) for child in section.children)
+    ]
+    if len(criteria) != 1:
+        return (), (), False
+    (criterion,) = criteria
+    badges, recognized = _criteria_badges(criterion)
+    engagers = ()
+    for section in sections:
+        if section is criterion:
+            continue
+        if not isinstance(section, Node):
+            return badges, (), False
+        if _known_summary(section):
+            continue
+        values = _engager_types(section)
+        if values is None or engagers:
+            return badges, (), False
+        engagers = values
+    return badges, engagers, recognized
 
 
 def _scope(entry):
@@ -251,42 +331,21 @@ def _scope(entry):
         return ScopeObservation(
             str(uuid4()), "entry_list", "Admissibilité non établie", "unknown", ()
         )
-    description = descriptions[0]
-    raw_badges = tuple(
-        node.text for node in description.all(lambda node: node.has_class("epreuve-badge"))
-    )
-    engager_texts = tuple(
-        node.text
-        for node in description.all(
-            lambda node: node.tag == "div"
-            and not any(isinstance(child, Node) for child in node.children)
-        )
-        if node.text.startswith(ENGAGERS)
-    )
-    raw = "; ".join((*raw_badges, *engager_texts))
+    raw_badges, engagers, recognized = _description_facts(descriptions[0])
+    raw = "; ".join(raw_badges)
     normalized = tuple(label.casefold() for label in raw_badges)
     categories = [RANGES[label] for label in normalized if label in RANGES]
     sexes = [SEXES[label] for label in normalized if label in SEXES]
     if (
-        not _known_criteria_layout(description, raw_badges)
+        not recognized
         or len(categories) != 1
         or not sexes
         or len(set(sexes)) != len(sexes)
         or len(categories) + len(sexes) != len(normalized)
-        or len(engager_texts) > 1
     ):
         return ScopeObservation(
             str(uuid4()), "entry_list", raw or "Admissibilité non établie", "unknown", ()
         )
-    engagers = ()
-    if engager_texts:
-        engagers = tuple(
-            value.strip()
-            for value in engager_texts[0].removeprefix(ENGAGERS).split(",")
-            if value.strip()
-        )
-        if not engagers:
-            return ScopeObservation(str(uuid4()), "entry_list", raw, "unknown", ())
     rules = tuple(
         RuleObservation(
             str(uuid4()),

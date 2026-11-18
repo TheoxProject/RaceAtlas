@@ -13,6 +13,9 @@ CALENDAR = f"{BASE}/calendrier/?debut=2027-01-01&nbjours=14&departement=38"
 PATH = "/calendrier/competition/2027/C4100041234/course-test/"
 KEY = SourceKey(2027, "C4100041234")
 REQUEST = WindowRequest(date(2027, 1, 1), date(2027, 1, 14), "38")
+ENGAGER_BLOCK = (
+    '<div class="vertical"><div>Engagements réservés pour : Club, Individuel</div></div>'
+)
 
 
 def calendar_html(count=1, department="38", end="jeudi 14 janvier 2027"):
@@ -68,7 +71,7 @@ def race_html(
               <div class="epreuve-titre">Critères d'admissibilité</div>
               <div class="horizontal">{badges}</div>
             </div>
-            <div class="vertical"><div>Engagements réservés pour : Club, Individuel</div></div>
+            {ENGAGER_BLOCK}
           </div>
         </div>
       </div>
@@ -172,6 +175,60 @@ class PublicFfcReaderTests(TestCase):
         race, _ = parse_race(html)
         self.assertEqual(race.scopes[0].eligibility_status, "unknown")
         self.assertEqual(race.scopes[0].rules, ())
+
+    def test_nested_engager_and_unknown_sibling_restriction_make_scope_unknown(self):
+        html = race_html("De U17 à U17", "Hommes tout âge").replace(
+            ENGAGER_BLOCK,
+            '<div class="vertical">'
+            "<div>Engagements réservés pour : <strong>Club</strong></div>"
+            "<div>Réservé aux résidents de la commune</div>"
+            "</div>",
+        )
+        race, _ = parse_race(html)
+        scope = race.scopes[0]
+        self.assertEqual(scope.eligibility_status, "unknown")
+        self.assertEqual(scope.rules, ())
+        self.assertEqual(scope.raw_label, "De U17 à U17; Hommes tout âge")
+
+    def test_unrelated_badge_is_never_persisted_as_a_criterion(self):
+        html = race_html("De U17 à U17", "Hommes tout âge").replace(
+            ENGAGER_BLOCK, ENGAGER_BLOCK + '<div class="epreuve-badge">Nom sans rapport</div>'
+        )
+        race, _ = parse_race(html)
+        scope = race.scopes[0]
+        self.assertEqual(scope.eligibility_status, "unknown")
+        self.assertEqual(scope.rules, ())
+        self.assertEqual(scope.raw_label, "De U17 à U17; Hommes tout âge")
+
+    def test_known_price_and_availability_cards_support_pilot_layout(self):
+        summary = """
+        <div class="horizontal">
+          <div class="epreuve-important horizontal">
+            <div class="epreuve-important-texte vertical">
+              <div>Places restantes</div>
+              <div>
+                <span class="info-places-1">175</span><span class="info-places-2">/200</span>
+              </div>
+            </div>
+            <div class="epreuve-important-icone"><i class="icone"></i></div>
+          </div>
+          <div class="epreuve-important horizontal">
+            <div class="epreuve-important-texte vertical">
+              <div>Tarif d'engagement</div>
+              <div>7,50€</div>
+            </div>
+            <div class="epreuve-important-icone"><i class="icone"></i></div>
+          </div>
+        </div>
+        """
+        html = race_html("De U17 à U17", "Hommes tout âge").replace(
+            ENGAGER_BLOCK, summary + ENGAGER_BLOCK
+        )
+        race, _ = parse_race(html)
+        scope = race.scopes[0]
+        self.assertEqual(scope.eligibility_status, "confirmed")
+        self.assertEqual(scope.rules[0].restrictions.engagers, ("Club", "Individuel"))
+        self.assertEqual(scope.raw_label, "De U17 à U17; Hommes tout âge")
 
     def test_type_and_commune_require_explicit_labels(self):
         race, commune = parse_race(
