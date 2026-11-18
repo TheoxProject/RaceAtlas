@@ -18,6 +18,7 @@ from map_support import (
     install_camera_diagnostic,
     intercept_map,
     launch,
+    limit_software_map_framebuffer,
     set_civil_date,
 )
 from playwright.sync_api import expect, sync_playwright
@@ -682,6 +683,7 @@ def test_season_scope_actions_map_two_accounts_outside_public_filters(
             page.get_by_label("Route", exact=True).check()
             page.get_by_placeholder("Course, commune ou club…").fill("race-road-split")
             expect(page.locator(".result-count strong")).to_have_text("1", timeout=15000)
+            limit_software_map_framebuffer(page)
             assert install_camera_diagnostic(page)
             assert "snapshot" in camera_diagnostic(page)
             page.get_by_role("button", name=re.compile("Summit")).click()

@@ -142,6 +142,51 @@ def camera(page):
     return json.loads(page.locator(".map-canvas").get_attribute("data-camera"))
 
 
+# The app does not expose its engine globally. Keep access to the pinned React ref in one place.
+_FIND_MAP = """node => {
+    const key = Object.keys(node).find(key => key.startsWith('__reactFiber'));
+    let fiber = node[key];
+    for (let depth = 0; fiber && depth < 20; depth++, fiber = fiber.return) {
+        let hook = fiber.memoizedState;
+        for (let step = 0; hook && step < 100; step++, hook = hook.next) {
+            const candidate = hook.memoizedState?.current;
+            if (candidate && typeof candidate.getPitch === 'function'
+                && typeof candidate.getTerrain === 'function') {
+                return candidate;
+            }
+        }
+    }
+    return null;
+}"""
+
+
+def limit_software_map_framebuffer(page):
+    """Reduce SwiftShader's screen buffer while keeping desktop layout and terrain."""
+    measured = page.locator(".map-canvas").evaluate(
+        """node => {
+            const map = (FIND_MAP)(node);
+            if (!map || map.isMoving() || map.getTerrain()) {
+                throw new Error('Expected a stationary map before Summit');
+            }
+            const canvas = map.getCanvas();
+            const gl = canvas.getContext('webgl2');
+            if (!gl || gl.isContextLost()) throw new Error('Expected active WebGL2');
+            const measure = () => ({
+                css: [canvas.clientWidth, canvas.clientHeight],
+                framebuffer: [gl.drawingBufferWidth, gl.drawingBufferHeight],
+                camera: [map.getCenter().toArray(), map.getZoom(), map.getBearing(), map.getPitch()]
+            });
+            const before = measure();
+            map.setPixelRatio(0.5);
+            return {before, after: measure()};
+        }""".replace("FIND_MAP", _FIND_MAP)
+    )
+    before, after = measured["before"], measured["after"]
+    assert after["css"] == before["css"] == before["framebuffer"], measured
+    assert after["framebuffer"] == [size // 2 for size in before["css"]], measured
+    assert after["camera"] == before["camera"], measured
+
+
 def install_camera_diagnostic(page):
     """Read the pinned React engine ref for diagnostics only; never change map behavior."""
     counts = {"console_error": 0, "console_warning": 0, "gpu_stall": 0, "pageerror": 0}
@@ -164,21 +209,10 @@ def install_camera_diagnostic(page):
         page._raceatlas_camera_latest = payload
 
     page.expose_binding("__raceatlasCameraSnapshot", receive)
-    return page.evaluate("""() => {
+    return page.evaluate(
+        """() => {
         const node = document.querySelector('.map-canvas');
-        const key = Object.keys(node).find(key => key.startsWith('__reactFiber'));
-        let fiber = node[key], map;
-        for (let depth = 0; fiber && depth < 20 && !map; depth++, fiber = fiber.return) {
-            let hook = fiber.memoizedState;
-            for (let step = 0; hook && step < 100; step++, hook = hook.next) {
-                const candidate = hook.memoizedState?.current;
-                if (candidate && typeof candidate.getPitch === 'function'
-                    && typeof candidate.getTerrain === 'function') {
-                    map = candidate;
-                    break;
-                }
-            }
-        }
+        const map = (FIND_MAP)(node);
         const trace = [], stops = [], contexts = {lost: 0, restored: 0};
         let frames = 0, lastFrameSample = -Infinity;
         const state = () => ({
@@ -254,7 +288,8 @@ def install_camera_diagnostic(page):
         }
         window.__raceatlasCameraDiagnostic = {state, trace};
         return !!map;
-    }""")
+    }""".replace("FIND_MAP", _FIND_MAP)
+    )
 
 
 def camera_diagnostic(page):
