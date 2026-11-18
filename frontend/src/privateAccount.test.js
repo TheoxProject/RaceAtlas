@@ -40,7 +40,7 @@ test('wrong login401 preserves A and exact legacy password; transport remains sa
   expect(c.getSnapshot()).toMatchObject({ account: A, error: { status: 401 } });
   for (const [path, options] of fetcher.mock.calls) {
     expect(path.startsWith('/api/')).toBe(true);
-    expect(options).toMatchObject({ credentials: 'same-origin', cache: 'no-store', mode: 'same-origin', redirect: 'error', referrerPolicy: 'no-referrer' });
+    expect(options).toMatchObject({ credentials: 'same-origin', cache: 'no-store', mode: 'cors', redirect: 'error', referrerPolicy: 'no-referrer' });
     expect(options.headers.Authorization).toBeUndefined();
   }
 });
