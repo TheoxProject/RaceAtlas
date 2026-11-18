@@ -42,7 +42,7 @@ export function createAccountController(fetcher = (...args) => globalThis.fetch(
     assertCurrent(operation);
     if (!ROUTES.has(path) && !entryPath.test(path) && !allowedNotificationPath(path)) throw new AccountRequestError('invalid_request');
     const response = await fetcher(path, {
-      method, credentials: 'same-origin', cache: 'no-store', redirect: 'error', referrerPolicy: 'no-referrer', mode: 'same-origin',
+      method, credentials: 'same-origin', cache: 'no-store', redirect: 'error', referrerPolicy: 'no-referrer', mode: 'cors',
       signal: operation.controller.signal, headers: { ...headers, ...(body === undefined ? {} : { 'Content-Type': 'application/json' }) },
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
     });
