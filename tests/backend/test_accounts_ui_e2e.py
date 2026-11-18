@@ -11,6 +11,7 @@ from urllib.parse import parse_qs, urlsplit
 
 import pytest
 import requests
+from browser_diagnostics import PublicTransportDiagnostic
 from map_support import (
     camera,
     camera_diagnostic,
@@ -206,7 +207,10 @@ def select_public_month(page, month, expected_ids):
     observed = {}
 
     def matches(request, kind):
-        parsed = urlsplit(request.url)
+        return matches_url(request.url, kind)
+
+    def matches_url(url, kind):
+        parsed = urlsplit(url)
         path, limit = {
             "races": ("/api/v1/races", "200"),
             "map": ("/api/v1/map", "200"),
@@ -255,6 +259,15 @@ def select_public_month(page, month, expected_ids):
     }
     for event, callback in callbacks.items():
         page.on(event, callback)
+    transport = PublicTransportDiagnostic(
+        page,
+        lambda url: next(
+            (kind for kind in ("races", "map", "witness") if matches_url(url, kind)), None
+        ),
+        trace,
+        emit=False,  # Reuse the existing PUBLIC_MONTH_SELECTION_TIMING output.
+    )
+    transport.__enter__()
 
     try:
         # List/map are parallel; their version witness is a subsequent mandatory fetch.
@@ -281,6 +294,8 @@ def select_public_month(page, month, expected_ids):
             # pinned driver creates redundant tasks that outlive browser teardown.
             if response is None or response.status != 200:
                 raise AssertionError("Public selection transport was not completed successfully")
+            trace["phase"] = kind + "-validation"
+            record(completed.value, "validation-start", response.status)
             try:
                 document = response.json()
             except Exception:
@@ -304,11 +319,11 @@ def select_public_month(page, month, expected_ids):
             raise AssertionError("Public selection IDs/version mismatch; bodies withheld")
         trace["versions_equal"] = True
         trace["api_finished_ms"] = round((time.monotonic() - started) * 1000, 2)
-        trace["phase"] = "presentation"
+        transport.mark("presentation")
         expect(page.locator(".result-count strong")).to_have_text(
             str(len(expected_ids)), timeout=15000
         )
-        trace["phase"] = "ready"
+        transport.mark("ready")
     except Exception as error:
         trace["error_type"] = type(error).__name__
         trace["elapsed_ms"] = round((time.monotonic() - started) * 1000, 2)
@@ -319,6 +334,7 @@ def select_public_month(page, month, expected_ids):
         for event, callback in callbacks.items():
             page.remove_listener(event, callback)
         trace["elapsed_ms"] = round((time.monotonic() - started) * 1000, 2)
+        transport.__exit__(None, None, None)
         print("PUBLIC_MONTH_SELECTION_TIMING " + json.dumps(trace))
 
 

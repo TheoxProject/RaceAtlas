@@ -103,7 +103,7 @@ export function MapView({ features, races, mode, setMode, onReliefError, onSelec
       if (!map.getSource('terrain-elevation')) map.addSource('terrain-elevation', { type: 'raster-dem', url: DEM, tileSize: 512, encoding: 'terrarium', attribution: '© Mapterhorn' });
       map.setTerrain({ source: 'terrain-elevation', exaggeration: 1.3 }); map.easeTo({ pitch: 60, duration: 500 });
     }
-    else { map.setTerrain(null); map.easeTo({ pitch: 35, duration: 500 }); /* Period/filter updates never touch this camera. */ }
+    else { map.setTerrain(null); if (map.getPitch() !== 35 || map.isEasing()) map.easeTo({ pitch: 35, duration: 500 }); /* Period/filter updates never touch this camera. */ }
   }, [mode, ready]);
   useEffect(() => { if (visible && ready) mapRef.current?.resize(); }, [visible, ready]);
   return <>

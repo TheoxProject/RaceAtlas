@@ -1,5 +1,6 @@
 """Real offline synchronization -> compiled React/Flask/PG, no debug endpoint."""
 
+import json
 from dataclasses import replace
 from datetime import timedelta
 from pathlib import Path
@@ -7,6 +8,12 @@ from urllib.parse import urlsplit
 
 import pytest
 import test_sync as source
+from browser_diagnostics import (
+    PublicTransportDiagnostic,
+    camera_phase,
+    install_mobile_camera_diagnostic,
+    public_search_kind,
+)
 from map_support import camera, camera_diagnostic, install_camera_diagnostic, launch
 from playwright.sync_api import expect, sync_playwright
 from sqlalchemy import func, select
@@ -223,8 +230,17 @@ def test_notifications_real_sync_offpage_ack_two_actors_scope_readd_desktop(
             for revision in range(1, 27):
                 changed_source(database, original, revision)
             page.get_by_role("button", name="← Retour aux courses", exact=True).click()
-            page.get_by_placeholder("Course, commune ou club…").fill("race-road-split")
-            expect(page.locator(".result-count strong")).to_have_text("1", timeout=15000)
+            with PublicTransportDiagnostic(
+                page,
+                lambda url: public_search_kind(url, "race-road-split"),
+                {"selection": "road-split-search"},
+                callbacks=True,
+            ) as diagnostic:
+                diagnostic.mark("search-action")
+                page.get_by_placeholder("Course, commune ou club…").fill("race-road-split")
+                diagnostic.mark("presentation")
+                expect(page.locator(".result-count strong")).to_have_text("1", timeout=15000)
+                diagnostic.mark("ready")
             select_public_month(page, "1", [])
             season(page, 52)
             expect(page.locator(".notification-card")).to_have_count(50)
@@ -299,8 +315,17 @@ def test_notifications_real_sync_offpage_ack_two_actors_scope_readd_desktop(
                 assert {
                     scope.raw_label: scope.id for scope in session.get(Race, race_id).scopes
                 } == scopes
-            page.get_by_placeholder("Course, commune ou club…").fill("race-road-split")
-            expect(page.locator(".result-count strong")).to_have_text("1", timeout=15000)
+            with PublicTransportDiagnostic(
+                page,
+                lambda url: public_search_kind(url, "race-road-split"),
+                {"selection": "road-split-search"},
+                callbacks=True,
+            ) as diagnostic:
+                diagnostic.mark("search-action")
+                page.get_by_placeholder("Course, commune ou club…").fill("race-road-split")
+                diagnostic.mark("presentation")
+                expect(page.locator(".result-count strong")).to_have_text("1", timeout=15000)
+                diagnostic.mark("ready")
             select_public_month(page, "1", [])
             season(page, 1)
             changed_source(database, original, 28)
@@ -339,15 +364,20 @@ def test_notifications_calendar_presence_ack_and_mobile_keyboard(
         page = browser.new_page(timezone_id="Europe/Paris")
         prepare(page, mobile=True)
         try:
+            install_mobile_camera_diagnostic(page)
+            camera_phase(page, "navigation")
             page.goto(origin)
             expect(page.locator(".map-canvas")).to_have_attribute(
                 "data-ready", "true", timeout=20000
             )
+            camera_phase(page, "initial-ready-before-baseline")
             node, before = page.locator(".map-canvas").element_handle(), camera(page)
+            camera_phase(page, "filters")
             page.get_by_role("button", name="☷ Filtres", exact=True).click()
             page.get_by_label("Route", exact=True).check()
             page.get_by_placeholder("Course, commune ou club…").fill(PREFIX)
             page.get_by_role("button", name="Voir les courses sur la carte", exact=True).click()
+            camera_phase(page, "calendar")
             page.get_by_role("button", name="Calendrier", exact=True).click()
             expect(page.locator(".calendar-view")).to_have_attribute("aria-busy", "false")
             page.locator('td[data-date="2026-11-11"] .calendar-day').click()
@@ -355,11 +385,13 @@ def test_notifications_calendar_presence_ack_and_mobile_keyboard(
             page.locator(".race-detail .scope").filter(has_text="Liste fictive A").get_by_role(
                 "button", name="Se connecter pour sauvegarder cette liste", exact=True
             ).click()
+            camera_phase(page, "account-dialog")
             sign_in(page, ALICE, PASSWORD)
             close_account(page)
             save(page, one, "interested", "Intéressé")
             save(page, two, "completed", "Terminée")
             page.get_by_role("button", name="Fermer les détails", exact=True).click()
+            camera_phase(page, "calendar-scroll-next-month")
             page.get_by_role("button", name="Mois suivant", exact=True).scroll_into_view_if_needed()
             page.get_by_role("button", name="Mois suivant", exact=True).click()
             expect(page.get_by_role("heading", name="Décembre 2026", exact=True)).to_be_visible()
@@ -370,6 +402,7 @@ def test_notifications_calendar_presence_ack_and_mobile_keyboard(
                 database, [source.batch(keys=(), checked=absent)], checked_at=absent
             )
             assert result.status == "success" and result.missing_marked == 1
+            camera_phase(page, "notifications-dialog")
             season(page, 2)
             expect(page.locator(".notification-card")).to_have_count(2)
             expect(
@@ -384,6 +417,7 @@ def test_notifications_calendar_presence_ack_and_mobile_keyboard(
             ).to_have_count(0)
             capture(page, "mobile.png")
             mark = page.get_by_role("button", name="Marquer comme lues", exact=True)
+            camera_phase(page, "notification-scroll-keyboard")
             mark.scroll_into_view_if_needed()
             mark.focus()
             page.keyboard.press("Enter")
@@ -411,6 +445,7 @@ def test_notifications_calendar_presence_ack_and_mobile_keyboard(
             assert page.locator("dialog.account-dialog").evaluate(
                 "node=>node.scrollWidth<=node.clientWidth+1"
             )
+            camera_phase(page, "dialog-tab")
             page.keyboard.press("Tab")
             assert page.locator("dialog.account-dialog").evaluate(
                 "node=>node.contains(document.activeElement)"
@@ -438,12 +473,17 @@ def test_notifications_calendar_presence_ack_and_mobile_keyboard(
             close_account(page)
             expect(page.get_by_role("heading", name="Décembre 2026", exact=True)).to_be_visible()
             assert node.evaluate("node=>node===document.querySelector('.map-canvas')")
+            camera_phase(page, "final-camera-assertion")
             assert_camera_unchanged(camera(page), before)
+            camera_phase(page, "filters")
             page.get_by_role("button", name="☷ Filtres", exact=True).click()
             expect(page.get_by_placeholder("Course, commune ou club…")).to_have_value(PREFIX)
             expect(page.get_by_label("Route", exact=True)).to_be_checked()
         except Exception:
+            print("MOBILE_CAMERA_DIAGNOSTIC " + json.dumps(camera_diagnostic(page)))
             capture_failure(page, "mobile.png")
             raise
+        else:
+            print("MOBILE_CAMERA_DIAGNOSTIC " + json.dumps(camera_diagnostic(page)))
         finally:
             browser.close()

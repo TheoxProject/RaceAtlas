@@ -61,7 +61,7 @@ Après approbation : vérifier HTTPS/redirection et refus anonyme des pages/asse
 
 ## Sauvegarde et restauration préparées
 
-Procédure définie ici ; automatisation et **preuve complète de restauration restent au lot 8**. Aucun dump de données réelles ni test de restauration n'a été réalisé dans cette PR.
+Le lot8 fournit désormais un [CLI local borné et une preuve Developer synthétique complète](../lot-8/backup-validation.md) sur deux bases neuves PostgreSQL17. La revue indépendante B et les gates finaux restent requis. Aucun dump de données réelles ni restauration distante n’a été effectué ; la procédure opérationnelle réelle (chiffrement, rétention, stockage externe) n’est pas qualifiée par cette preuve locale.
 
 1. Opérateur autorisé, client PostgreSQL **17 ou plus récent compatible** avec la version serveur, depuis un environnement privé hors filesystem Render. Ne pas supposer que le `postgresql-client` de Render est en version 17.
 2. URL directe et TLS vérifié. Fournir `PGHOST`, `PGPORT`, `PGDATABASE`, `PGUSER`, `PGSSLMODE=verify-full`, `PGSSLROOTCERT` et un `PGPASSFILE` privé fourni par le gestionnaire de secrets. Aucun mot de passe/DSN en argv ou logs.
