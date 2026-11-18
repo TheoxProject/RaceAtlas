@@ -95,7 +95,9 @@ class Race(Base):
         ForeignKeyConstraint(["commune_id", "department"], ["commune.id", "commune.department"]),
         CheckConstraint("end_date >= start_date", name="date_order"),
         CheckConstraint(f"department IN ({DEPARTMENTS})", name="department"),
-        CheckConstraint("discipline IN ('road','gravel','mtb','cyclocross')", name="discipline"),
+        CheckConstraint(
+            "discipline IN ('road','track','gravel','mtb','cyclocross')", name="discipline"
+        ),
         CheckConstraint("status IN ('scheduled','cancelled','postponed','unknown')", name="status"),
         CheckConstraint("source_presence IN ('present','missing','to_verify')", name="presence"),
         CheckConstraint("revision >= 1", name="revision"),
@@ -128,12 +130,12 @@ class RaceType(Base):
     __table_args__ = (
         ForeignKeyConstraint(["race_id", "discipline"], ["race.id", "race.discipline"]),
         CheckConstraint(
-            "code IN ('road_race','time_trial','gravel_race',"
+            "code IN ('road_race','time_trial','hill_climb','gravel_race',"
             "'xco','enduro','downhill','cyclocross')",
             name="code",
         ),
         CheckConstraint(
-            "(discipline = 'road' AND code IN ('road_race','time_trial')) OR "
+            "(discipline = 'road' AND code IN ('road_race','time_trial','hill_climb')) OR "
             "(discipline = 'gravel' AND code = 'gravel_race') OR "
             "(discipline = 'mtb' AND code IN ('xco','enduro','downhill')) OR "
             "(discipline = 'cyclocross' AND code = 'cyclocross')",

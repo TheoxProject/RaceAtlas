@@ -66,7 +66,7 @@ def check_probes():
             "department",
             ["01", "03", "07", "15", "26", "38", "42", "43", "63", "69", "73", "74"],
         ),
-        ("race", "discipline", "discipline", ["road", "gravel", "mtb", "cyclocross"]),
+        ("race", "discipline", "discipline", ["road", "track", "gravel", "mtb", "cyclocross"]),
         ("race", "presence", "source_presence", ["present", "missing", "to_verify"]),
         ("race", "status", "status", ["scheduled", "cancelled", "postponed", "unknown"]),
         ("race_change", "kind", "kind", ["business", "presence"]),
@@ -74,7 +74,16 @@ def check_probes():
             "race_type",
             "code",
             "code",
-            ["road_race", "time_trial", "gravel_race", "xco", "enduro", "downhill", "cyclocross"],
+            [
+                "road_race",
+                "time_trial",
+                "hill_climb",
+                "gravel_race",
+                "xco",
+                "enduro",
+                "downhill",
+                "cyclocross",
+            ],
         ),
         ("saved_entry", "status", "status", ["interested", "planned", "registered", "completed"]),
         ("source_record", "provider", "provider", ["synthetic", "ffc"]),
@@ -97,7 +106,8 @@ def check_probes():
         for commune in (None, "synthetic-commune")
     ]
     allowed = {
-        "road": {"road_race", "time_trial"},
+        "road": {"road_race", "time_trial", "hill_climb"},
+        "track": set(),
         "gravel": {"gravel_race"},
         "mtb": {"xco", "enduro", "downhill"},
         "cyclocross": {"cyclocross"},
@@ -108,6 +118,7 @@ def check_probes():
         for code in (
             "road_race",
             "time_trial",
+            "hill_climb",
             "gravel_race",
             "xco",
             "enduro",

@@ -57,6 +57,8 @@ def test_invalid_json_duplicate_keys_and_nonfinite_values_are_public_errors(raw)
         {"from": "2027-01-01", "to": "2026-01-01"},
         {"disciplines": ["clm"]},
         {"disciplines": ["gravel"], "types": ["time_trial"]},
+        {"disciplines": ["track"], "types": ["hill_climb"]},
+        {"disciplines": ["hill_climb"]},
         {"categories": ["open_1", "open_1"]},
         {"unexpected": True},
         {"geography": {"mode": "all", "departments": ["26"]}},

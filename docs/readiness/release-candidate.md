@@ -8,7 +8,7 @@ Les références aux lots intégrés décrivent les preuves déjà exécutées. 
 
 | Exigence | État local et preuve | Qualification restante |
 |---|---|---|
-| Catalogue AURA, quatre disciplines et CLM sur route | Contrats et fixtures vérifiés. `test_catalog.py` exerce carte et résultats API sur Flask et PostgreSQL, y compris pagination et positions absentes. | Compatibilité et droits pour le catalogue réel. |
+| Catalogue AURA et filtre Discipline partagé | `test_catalog.py` exerce les résultats et la carte sur Flask et PostgreSQL, dont la pagination et les positions absentes. Le candidat ajoute Piste et les types Route Course en ligne, CLM et Grimpée au filtre partagé par la carte et le calendrier. | Vérifier la compatibilité et les droits pour le catalogue réel. |
 | Filtres corrélés et provenance | `test_catalog.py` vérifie OU et ET dans le même périmètre d’engagement, sans combinaison entre listes. Les conditions et libellés bruts restent consultables. | Établir l’identité durable des listes réelles avant import. |
 | Carte Altitude et Summit | [Lot 5](../lot-5/integration.md) avec carte rendue, points au centre des communes, regroupement et replis en cas d’erreur du fond de carte, du relief ou du WebGL. | Données et crédits des fournisseurs, rendu sur appareils physiques. |
 | Périodes civiles et calendrier mensuel | [Lot 6](../lot-6/integration.md) avec semaines ISO, Europe/Paris, courses multijours et bascule qui conserve le mois. Les contrôles navigateur de la PR finale restent à conclure. | Vérifier caméra et sélection pendant la recette privée. |

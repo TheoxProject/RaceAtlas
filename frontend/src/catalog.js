@@ -1,5 +1,5 @@
-export const SPORTS = { road: 'Route', gravel: 'Gravel', mtb: 'VTT', cyclocross: 'Cyclo-cross' };
-export const TYPES = { road_race: ['road', 'Course en ligne'], time_trial: ['road', 'CLM'], gravel_race: ['gravel', 'Gravel'], xco: ['mtb', 'Cross-country'], enduro: ['mtb', 'Enduro'], downhill: ['mtb', 'Descente'], cyclocross: ['cyclocross', 'Cyclo-cross'] };
+export const SPORTS = { road: 'Route', track: 'Piste', cyclocross: 'Cyclo-cross', gravel: 'Gravel', mtb: 'VTT' };
+export const TYPES = { road_race: ['road', 'Course en ligne'], time_trial: ['road', 'CLM'], hill_climb: ['road', 'Grimpée'], gravel_race: ['gravel', 'Gravel'], xco: ['mtb', 'Cross-country'], enduro: ['mtb', 'Enduro'], downhill: ['mtb', 'Descente'], cyclocross: ['cyclocross', 'Cyclo-cross'] };
 export const DEPARTMENTS = { '01': 'Ain', '03': 'Allier', '07': 'Ardèche', '15': 'Cantal', '26': 'Drôme', '38': 'Isère', '42': 'Loire', '43': 'Haute-Loire', '63': 'Puy-de-Dôme', '69': 'Rhône', '73': 'Savoie', '74': 'Haute-Savoie' };
 export const MONTHS = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
 const day = 86400000;

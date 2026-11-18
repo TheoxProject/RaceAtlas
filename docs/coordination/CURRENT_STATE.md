@@ -1,19 +1,16 @@
-# Lot 8 — suivi de la CI navigateur desktop
+# Prépublication V1 — filtre Discipline
 
-Point du **18 novembre 2026 à 16:03 UTC**. La [PR 17](https://github.com/TheoxProject/RaceAtlas/pull/17) est fusionnée sur main au SHA `e766a70996e7ce375a7826da5d064a3caac91b61`. Le [contrôle intégré post-fusion](https://github.com/TheoxProject/RaceAtlas/actions/runs/44338906844/job/134923111166) a échoué avec 1 078 tests backend réussis et 2 échecs desktop en 460,07 s. Le cas mobile et la nouvelle régression terrain passent.
+Point du **18 novembre 2026 à 20:29 UTC**. Le filtre Discipline demandé par le propriétaire reprend les lots 4–6 sur la base distante vérifiée `b9a0c4313c5b93ca014b945bb0c1447ab8cfb9e6`. Le [correctif de rendu desktop](https://github.com/TheoxProject/RaceAtlas/pull/18) avait passé la [CI main](https://github.com/TheoxProject/RaceAtlas/actions/runs/44346863088) au `7f7cd9c`.
 
 | Tâche | État | Preuve ou condition restante |
 |---|---|---|
-| OPS-GUI diagnostic post-fusion | DONE | Saison desktop bloquée sur le témoin de janvier après deux réponses HTTP 200. Notifications desktop bloquées sur l'attente du pitch alors que le diagnostic a observé 60° et quatre avertissements GPU. |
-| OPS-GUI réduction du tampon SwiftShader | IN_PROGRESS | Développeur `2872bdf33425b0a162a0788e85824576dfc51172` sur `fix/desktop-map-ci`, worktree `.local-tools/worktrees/desktop-map-ci`. Deux parcours locaux réussis. Publication, PR, CI du correctif et verdict indépendant à consigner. |
-| OPS-V validation finale | BLOCKED | Le contrôle intégré post-fusion requiert une correction et une validation GitHub avant la suite de la [recette V1](../readiness/release-candidate.md). |
+| DISC-01 · Développeur | DONE | Un seul bouton Discipline, cinq disciplines sélectionnables et types Route Course en ligne, CLM et Grimpée. Le parcours Chromium 390 px vérifie le filtre commun carte/calendrier et le retour du focus avec Échap. |
+| DISC-02 · Développeur | DONE | Migration `4fc0cc210b83`, 26 tests de contrats et trois cas API sur PostgreSQL pour Piste et Grimpée. Le filtre de type conserve son intersection avec les disciplines. |
+| DISC-03 · Développeur | DONE | `85ae591c67dd033202d0c75bad70a3abe8544ac9` aligne le test de notifications sur le mode `cors` déjà présent sur main. Treize tests ciblés passent. La [CI de la base](https://github.com/TheoxProject/RaceAtlas/actions/runs/44382718254) avait isolé cette assertion. |
+| DISC-04 · Testeur et Coordinateur | IN_PROGRESS | Revue indépendante du SHA figé, contrôle GitHub `integrated`, fusion et contrôle main. |
 
-Le harnais applique `Map.setPixelRatio(0.5)` avant Summit sur la page principale de ces deux tests. Dans une sonde A/B/B/A sous Chromium 1194 et SwiftShader, le tampon WebGL passe de 1 096 × 667 à 548 × 333 pixels. Le viewport reste à 1 440 × 960 CSS. Les quatre passages atteignent le pitch 60° et une élévation moteur de 829,26 m. La réduction des pixels est vérifiée, avec quatre avertissements GPU par passage et des délais hôte variables. Ces mesures locales ne déterminent pas la cause des délais Ubuntu.
+**Travail et validation.** Worktree `C:/Users/theop/.codex/worktrees/161d/RaceAtlas`, branche `feature/discipline-picker`, [PR 20](https://github.com/TheoxProject/RaceAtlas/pull/20) en Draft. Handoff développeur au `d08921c554a3cd56ba7204dcf5564689f842eb90` avant ce checkpoint, build et lint réussis. Quatre tests PostgreSQL/Chromium réussis en 35,42 s avec le cycle Alembic de la suite. Le [premier contrôle development](https://github.com/TheoxProject/RaceAtlas/actions/runs/44391007743) porte sur le commit `85ae591`. Aucun SHA approuvé par le testeur à ce stade.
 
-**Validation locale.** Build du frontend vérifié contre main, Python 3.12.14 et PostgreSQL 17.11 sur `127.0.0.1:55434/raceatlas_lot2_test`. Aucune autre session sur cette base jetable avant le lancement. Deux tests en 129,04 s, Ruff `check` et `format --check` sur les trois fichiers modifiés, puis `git diff --check` réussis.
+**Environnement.** Node 24.22.1, Python 3.12.14, Chromium 1194 et PostgreSQL 17.11 jetable sur `127.0.0.1:55454` dans `.local-tools/discipline-pg/native-data`. `raceatlas_discipline_test` pour le développeur et `raceatlas_discipline_review` pour le testeur. Garder les bases distinctes. Le premier `initdb` dans le bac à sable a été interrompu. Éviter de le relancer sur le répertoire partiel `data` et de reseeder une base existante. Aucun déploiement ni collecte FFC dans ce chantier.
 
-~~~text
-python -m pytest -q --tb=short --junitxml=.local-tools/desktop-pixel-ratio.xml tests/backend/test_accounts_ui_e2e.py::test_season_scope_actions_map_two_accounts_outside_public_filters tests/backend/test_notifications_ui_e2e.py::test_notifications_real_sync_offpage_ack_two_actors_scope_readd_desktop
-~~~
-
-**Prochaine action.** Publier la branche en Draft et vérifier la CI du SHA publié. Le verdict indépendant et le contrôle `integrated` sont requis pour décider de la fusion. La base `_test` est libérée et `_review` demeure réservée au testeur. Les preuves locales sont sous `.local-tools/`. Éviter de relancer les mêmes tests sans changement ni question de validation identifiable. Toute opération externe de recette ou de publication relève des accords prévus.
+**Prochaine action.** Publier le SHA qui contient ce checkpoint, confirmer la tête de la PR 20 et lancer la revue indépendante et le contrôle `integrated` sur ce même SHA. Consigner les résultats dans la PR pendant le gel.

@@ -71,6 +71,33 @@ def test_category_and_has_only_same_scope_witnesses_and_keeps_correlated_rules(s
     assert "race-road-split" not in rows and "race-other-one" not in rows
 
 
+@pytest.mark.parametrize(
+    "disciplines,types,race_id,discipline",
+    [
+        (["track"], [], "race-track", "track"),
+        (["road"], ["hill_climb"], "race-hill-climb", "road"),
+        (["road", "track"], ["hill_climb"], "race-hill-climb", "road"),
+    ],
+)
+def test_track_and_road_hill_climb_are_filterable_in_both_api_views(
+    sport_examples, app, disciplines, types, race_id, discipline
+):
+    client = app.test_client()
+    selected = dict(SCENARIOS[0]["filter"], disciplines=disciplines, types=types)
+    response = request_page(client, selected)
+    map_response = request_page(client, selected, map_view=True)
+    assert response.status_code == map_response.status_code == 200
+    page, mapped = response.json, map_response.json
+    validate(page, "RacePage")
+    validate(mapped, "MapPage")
+    assert [(item["race"]["id"], item["race"]["types"]) for item in page["items"]] == [
+        (race_id, types)
+    ]
+    assert [
+        (feature["id"], feature["properties"]["discipline"]) for feature in mapped["features"]
+    ] == [(race_id, discipline)]
+
+
 @pytest.mark.parametrize("scenario", SCENARIOS, ids=lambda scenario: scenario["id"])
 def test_limit_one_pages_have_shared_cursor_complete_parity_and_stable_order(seeded, app, scenario):
     client = app.test_client()

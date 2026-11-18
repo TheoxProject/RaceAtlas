@@ -18,7 +18,7 @@ from sqlalchemy.engine import URL
 from ops.backup_common import ROOT, ProofError, guard_path, require
 
 CLUSTER = ROOT / ".local-tools" / "pgdata-lot2-native"
-MIGRATION = "b806e44f7901"
+MIGRATION = "4fc0cc210b83"
 
 
 @dataclass(frozen=True)

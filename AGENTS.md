@@ -118,7 +118,7 @@ If GitHub integration returns `403`, report the tool permission failure. An alre
 
 - Interactive map with **Altitude** (topographic 2.5D) and **Summit** (3D terrain), plus a **monthly calendar**; no separate list-view page.
 - Commune-center markers only; never invented race start coordinates. Cache geocoding and show unlocated races distinctly.
-- Disciplines: Road, Gravel, MTB and Cyclo-cross. CLM/time trial is a Road type, not a fifth discipline.
+- Disciplines: Road, Track, Cyclo-cross, Gravel and MTB. Road types are road race, time trial (CLM) and hill climb. The map and calendar share one discipline dropdown.
 - Category filters support OR and AND. AND requires every selected category to be accepted by the **same race/entry scope**, never by combining separate scopes or races. Expand generic `Access`/`Open` only when source-confirmed; retain raw labels and restrictions.
 - Map Year/Month/ISO Week controls start at the **current civil calendar year** (Europe/Paris). Map and calendar share selection logic; temporal filtering does not reset the camera.
 - Saved race statuses: Interested, Planned, Registered and Completed, for the specific race/entry scope. `Registered` is user-declared, not FFC-verified.

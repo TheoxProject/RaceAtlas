@@ -1,4 +1,6 @@
+import { useId, useRef, useState } from 'react';
 import { changePeriod, DEPARTMENTS, MONTHS, SPORTS, TYPES, weeksInYear } from './catalog.js';
+import './discipline-picker.css';
 
 export function PeriodControls({ period, setPeriod }) {
   const change = patch => setPeriod(value => changePeriod(value, patch));
@@ -25,17 +27,74 @@ export function PeriodControls({ period, setPeriod }) {
   </section>;
 }
 
+function DisciplinePicker({ value, onChange }) {
+  const [expanded, setExpanded] = useState(false);
+  const button = useRef(null);
+  const choicesId = useId();
+  const summaryId = useId();
+  const { disciplines, types } = value;
+  const selectedNames = Object.entries(SPORTS)
+    .filter(([code]) => disciplines.includes(code))
+    .map(([, label]) => label);
+  const summary = [
+    selectedNames.join(', ') || 'Toutes les disciplines',
+    ...types.map(code => TYPES[code][1]),
+  ].join(' · ');
+  const typesNarrowOtherSports = types.length > 0 && disciplines.some(
+    discipline => !types.some(code => TYPES[code][0] === discipline),
+  );
+
+  function toggleDiscipline(code) {
+    const checked = disciplines.includes(code);
+    const next = checked ? disciplines.filter(discipline => discipline !== code) : [...disciplines, code];
+    onChange({ disciplines: next, types: types.filter(type => next.includes(TYPES[type][0])) });
+  }
+
+  function closeOnEscape(event) {
+    if (expanded && event.key === 'Escape') {
+      event.stopPropagation();
+      setExpanded(false);
+      button.current.focus();
+    }
+  }
+
+  return <div className="discipline-picker" onKeyDown={closeOnEscape}>
+    <button ref={button} type="button" className="discipline-trigger" aria-label="Discipline" aria-describedby={summaryId} aria-expanded={expanded} aria-controls={choicesId} onClick={() => setExpanded(!expanded)}>
+      <span><strong>Discipline</strong><small id={summaryId}>{summary}</small></span>
+      <span className="discipline-chevron" aria-hidden="true" />
+    </button>
+    <div id={choicesId} className="discipline-choices" hidden={!expanded}>
+      <fieldset aria-label="Disciplines">
+        {Object.entries(SPORTS).map(([code, label]) => <label key={code} className="discipline-option">
+          <input type="checkbox" checked={disciplines.includes(code)} onChange={() => toggleDiscipline(code)} />
+          {label}
+        </label>)}
+      </fieldset>
+      {Object.entries(SPORTS).filter(([code]) => disciplines.includes(code)).map(([sport, label]) => {
+        const sportTypes = Object.entries(TYPES).filter(([, [discipline]]) => discipline === sport);
+        if (!sportTypes.length) return null;
+        return <fieldset key={sport} className="discipline-types">
+          <legend>Types d’épreuve · {label}</legend>
+          {sportTypes.map(([code, [, name]]) => <label key={code} className="discipline-option">
+            <input type="checkbox" checked={types.includes(code)} onChange={() => onChange({
+              types: types.includes(code) ? types.filter(type => type !== code) : [...types, code],
+            })} />
+            {name}
+          </label>)}
+        </fieldset>;
+      })}
+      {typesNarrowOtherSports && <p className="hint discipline-type-hint" role="status">Seules les courses correspondant à un type coché apparaissent.</p>}
+    </div>
+  </div>;
+}
+
 export function Filters({ value, onChange, options, optionsError, retryOptions, chooseCenter, setChooseCenter, center }) {
   const set = patch => onChange({ ...value, ...patch });
   const toggle = (key, item) => set({ [key]: value[key].includes(item) ? value[key].filter(code => code !== item) : [...value[key], item] });
   const geography = value.geography;
   return <>
     <label className="search-label"><span>Rechercher une course</span><input type="search" placeholder="Course, commune ou club…" value={value.query} onChange={event => set({ query: event.target.value })} maxLength={200} /></label>
-    <fieldset><legend>Votre discipline</legend><div className="check-grid">{Object.entries(SPORTS).map(([code, name]) => <label key={code}><input type="checkbox" checked={value.disciplines.includes(code)} onChange={() => {
-      const disciplines = value.disciplines.includes(code) ? value.disciplines.filter(item => item !== code) : [...value.disciplines, code];
-      set({ disciplines, types: value.types.filter(item => !disciplines.length || disciplines.includes(TYPES[item][0])) });
-    }} />{name}</label>)}</div></fieldset>
-    <details><summary>Type d’épreuve</summary><div className="check-grid">{Object.entries(TYPES).filter(([, [sport]]) => !value.disciplines.length || value.disciplines.includes(sport)).map(([code, [, name]]) => <label key={code}><input type="checkbox" checked={value.types.includes(code)} onChange={() => toggle('types', code)} />{name}</label>)}</div></details>
+    <DisciplinePicker value={value} onChange={set} />
     <fieldset><legend>Catégories acceptées</legend>
       <div className="segmented category-mode">{[['or', 'Au moins une'], ['and', 'Toutes ensemble']].map(([code, name]) => <button key={code} aria-pressed={value.category_operator === code} onClick={() => set({ category_operator: code })}>{name}</button>)}</div>
       <p className="hint">« Toutes » doit correspondre à une même liste d’engagement.</p>

@@ -3,7 +3,7 @@
 from dataclasses import dataclass
 from datetime import date, datetime
 
-NORMALIZATION_VERSION = "ffc-observation-1.0.0"
+NORMALIZATION_VERSION = "ffc-observation-1.1.0"
 DEPARTMENTS = frozenset("01 03 07 15 26 38 42 43 63 69 73 74".split())
 
 

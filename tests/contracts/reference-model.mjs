@@ -1,7 +1,7 @@
 // Oracle de conception local ; jamais un module applicatif ou importeur.
 import assert from 'node:assert/strict';
 const aura=new Set(['01','03','07','15','26','38','42','43','63','69','73','74']);
-const compatible={road:['road_race','time_trial'],gravel:['gravel_race'],mtb:['xco','enduro','downhill'],cyclocross:['cyclocross']};
+const compatible={road:['road_race','time_trial','hill_climb'],track:[],gravel:['gravel_race'],mtb:['xco','enduro','downhill'],cyclocross:['cyclocross']};
 const normalize=s=>s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
 const coordinates=r=>Array.isArray(r.location?.coordinates);
 const day=d=>Date.parse(d)/86400000;

@@ -1,4 +1,5 @@
 import os
+from datetime import date, datetime, timezone
 from pathlib import Path
 
 import pytest
@@ -56,6 +57,60 @@ def seeded(session):
     seed_synthetic(session)
     session.commit()
     return session
+
+
+@pytest.fixture()
+def sport_examples(seeded):
+    from raceatlas.models import EntryScope, Race, RaceType, SourceRecord
+
+    day = date(2026, 11, 11)
+    examples = (
+        ("track", "Épreuve fictive sur piste", "track", []),
+        ("hill-climb", "Grimpée fictive", "road", ["hill_climb"]),
+    )
+    races = []
+    for code, name, discipline, types in examples:
+        races.append(
+            Race(
+                id=f"race-{code}",
+                name=name,
+                discipline=discipline,
+                start_date=day,
+                end_date=day,
+                department="69",
+                commune_id="commune-synthetic-a",
+                status="scheduled",
+                source_presence="present",
+                types=[RaceType(code=sport_type) for sport_type in types],
+                scopes=[
+                    EntryScope(
+                        id=f"scope-{code}",
+                        position=0,
+                        kind="race",
+                        identity_status="unverified",
+                        eligibility_status="unknown",
+                        raw_label="Épreuve synthétique",
+                    )
+                ],
+                source=SourceRecord(
+                    provider="synthetic",
+                    source_season=2026,
+                    race_number=f"SYN-{code}",
+                    source_url=f"https://example.test/races/{code}",
+                    checked_at=datetime(2026, 11, 1, tzinfo=timezone.utc),
+                ),
+            )
+        )
+    seeded.add_all(races)
+    seeded.commit()
+    try:
+        yield
+    finally:
+        # Remove the two added examples so the next run can test downgrade on this database.
+        seeded.rollback()
+        for race in races:
+            seeded.delete(race)
+        seeded.commit()
 
 
 @pytest.fixture()

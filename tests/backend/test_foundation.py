@@ -72,6 +72,8 @@ def test_seed_idempotent_and_identity_stable(seeded):
         "UPDATE commune SET latitude = NULL WHERE id = 'commune-synthetic-a'",
         "INSERT INTO race_type(race_id,discipline,code) "
         "VALUES ('race-gravel','gravel','time_trial')",
+        "INSERT INTO race_type(race_id,discipline,code) "
+        "VALUES ('race-gravel','gravel','hill_climb')",
     ],
 )
 def test_postgresql_rejects_invalid_business_data(seeded, statement):

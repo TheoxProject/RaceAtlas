@@ -22,6 +22,7 @@ FILTER_VALIDATOR = Draft202012Validator(
 TYPE_DISCIPLINE = {
     "road_race": "road",
     "time_trial": "road",
+    "hill_climb": "road",
     "gravel_race": "gravel",
     "xco": "mtb",
     "enduro": "mtb",

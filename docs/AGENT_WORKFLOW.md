@@ -1,7 +1,7 @@
 # RaceAtlas — Autonomous Codex agent workflow (V1.0)
 
 > Detailed operating procedure for the **Coordinator / Developer / Tester** team.
-> **`AGENTS.md` is the authoritative project-wide policy.** If these documents appear to conflict, follow the more restrictive safety rule and resolve the inconsistency in the next normal PR. The owner's standing approval covers implementation and **merging the defined V1.0 roadmap**; it does not cover deployment, payments, or unrestricted FFC collection.
+> **`AGENTS.md` is the authoritative project-wide policy.** Its V1.0 merge policy takes precedence over older per-PR approval requirements. Preserve all other safeguards and resolve inconsistencies in the next ordinary feature PR. The owner's standing approval covers implementation and **merging the defined V1.0 roadmap**. Deployment, payments, and unrestricted FFC collection require separate authorization.
 
 ## 1. Mission and scope
 
