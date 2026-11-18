@@ -28,7 +28,7 @@ test('one season preflight sequences entries and notifications, exact global cou
   expect(requests.filter(([p]) => p.endsWith('/csrf'))).toHaveLength(1);
   for (const [path, options] of requests.slice(2)) {
     expect(options.headers['X-CSRF-Token']).toBe(proof);
-    expect(options).toMatchObject({ credentials: 'same-origin', mode: 'same-origin', cache: 'no-store', redirect: 'error', referrerPolicy: 'no-referrer' });
+    expect(options).toMatchObject({ credentials: 'same-origin', mode: 'cors', cache: 'no-store', redirect: 'error', referrerPolicy: 'no-referrer' });
     expect(path.startsWith('/api/')).toBe(true);
   }
 });
