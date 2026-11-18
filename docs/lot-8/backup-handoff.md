@@ -39,3 +39,10 @@ EnfantHTTP stdinIDsfictifs seulement, envsystèmeminimal/DBURLrestore/PGparamèt
 Reprise sans relance : six documents préservés, aucun nouveau test/SQL/proof/GUI. Empreinte des outils comparée au rapport natif5 : identique ; diff nul sur ops/tests/CI et tout code applicatif depuis0f9. Statut natif seulement : PG9780 actif sur clusteradd4/127.0.0.1:55434, aucun démarrage/réensemencement. Aucun Python/Chrome actif à la reprise.
 
 Cette publication modifie uniquement la documentation. Le SHA exact final est transmis au Coordinateur après push, puis GEL/STOP et libération du worktree pour revue B. Rapport borné : `.local-tools/ops-b-native5-public-result.json` ; checkpoint local ignoré : `.local-tools/developer-backup-current.md`. Aucune archive ni donnée privée publiée. Reviewer utilise un nonce neuf, pas celui déjà existant de la commande historique ci-dessus.
+
+
+## Correction OPS-B-F1 (18 novembre, avant nouvelle native)
+
+Reviewer REQUEST CHANGES P2 au39c879e : is_symlink seul omettait les jonctions Win32. La tentative native Reviewer au39c n’a PAS été exécutée, nonce20261118c0000001 non consommé. Correction : guard_path commun inspecte chaque composant depuis la racine avant résolution/accès, refuse symlink+jonction via pathlib3.12 et erreurs d’inspection. Output/datadir/binaires/archive/passfile couverts ; worker garde le passfile avant toute lecture. Pas protection contre administrateur hostile ni course TOCTOU revendiquée.59unités pures PASS3,28s, sans privilège de création de liens, réseau ou SQL.
+
+La native Developer0f9/nonce0005 reste historique distincte, pas automatiquement validation de F1. Nouveau code propre à publier avant native nonce20261118b0000001 sur deux bases inédites ; résultat encore à acquérir. CI39c44258674236 : FAIL1068/3 en462,99s +138front, trois GUI immuables et aucun testBFAIL ; diagnosticGUI séparé par Root, aucun correctif de ce périmètre ici.

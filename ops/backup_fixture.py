@@ -14,7 +14,7 @@ from sqlalchemy.engine import make_url
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from ops.backup_common import ROOT, ProofError, require
+from ops.backup_common import ROOT, ProofError, guard_path, require
 from raceatlas import create_app
 from raceatlas.auth.passwords import hash_password
 from raceatlas.calendar_store import materialize_calendar
@@ -390,10 +390,8 @@ def worker_parameters(environ, fixture):
     nonce = match.group(1)
     output = ROOT / ".local-tools/backup-proof" / nonce
     passfile = output / "empty.pgpass"
+    guard_path(passfile, "worker_passfile")
     require(passfile.is_file() and passfile.read_bytes() == b"", "worker_passfile")
-    require(
-        not any(parent.is_symlink() for parent in (passfile, *passfile.parents)), "worker_passfile"
-    )
     config = ProofConfig(
         Path("."),
         ROOT / ".local-tools/pgdata-lot2-native",

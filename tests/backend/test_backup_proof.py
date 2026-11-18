@@ -11,6 +11,7 @@ from types import SimpleNamespace
 import pytest
 
 from ops import backup_proof as proof
+from ops.backup_common import guard_path
 
 
 @pytest.fixture
@@ -439,3 +440,78 @@ def test_worker_target_guard_before_connection(config, monkeypatch, patch):
     else:
         with pytest.raises(proof.ProofError, match="worker_"):
             backup_fixture.worker_parameters(env, fixture)
+
+
+def test_output_ancestor_junction_is_rejected_before_resolution_or_connection(config, monkeypatch):
+    ancestor = config.output_directory.parent
+    visited = []
+
+    def junction(path):
+        visited.append(path)
+        return path == ancestor
+
+    with monkeypatch.context() as scoped:
+        scoped.setattr(Path, "is_junction", junction)
+        scoped.setattr(
+            Path, "resolve", lambda self, *args, **kwargs: pytest.fail("Resolution before guard")
+        )
+        scoped.setattr(proof.psycopg, "connect", lambda **kwargs: pytest.fail("Must not connect"))
+        with pytest.raises(proof.ProofError, match="^symlink_path$"):
+            proof.validate_config(config, {})
+    assert ancestor in visited and config.output_directory not in visited
+    assert not config.output_directory.exists()
+
+
+def test_worker_passfile_parent_junction_rejected_before_read(config, monkeypatch):
+    from ops import backup_fixture
+
+    monkeypatch.setattr(backup_fixture, "ROOT", proof.ROOT)
+    config.output_directory.mkdir(parents=True)
+    passfile = config.output_directory / "empty.pgpass"
+    passfile.write_bytes(b"")
+    url = proof.database_url(config, passfile, config.restore_name)
+    env = proof.child_environment({}, config, passfile, config.restore_name)
+    env.update(DATABASE_URL=url.render_as_string(hide_password=False), RACEATLAS_ENV="test")
+    with monkeypatch.context() as scoped:
+        scoped.setattr(Path, "is_junction", lambda path: path == config.output_directory.parent)
+        scoped.setattr(Path, "read_bytes", lambda self: pytest.fail("Passfile read before guard"))
+        scoped.setattr(Path, "is_file", lambda self: pytest.fail("File access before guard"))
+        with pytest.raises(proof.ProofError, match="^worker_passfile$"):
+            backup_fixture.worker_parameters(env, {"alice": "a", "bob": "b"})
+
+
+@pytest.mark.parametrize("surface", ["datadir", "bin_parent", "binary"])
+def test_junction_on_guarded_configuration_surface_is_rejected(config, monkeypatch, surface):
+    path = {
+        "datadir": config.expected_data_directory,
+        "bin_parent": config.pg_bin,
+        "binary": proof.executable(config, "pg_dump"),
+    }[surface]
+    with monkeypatch.context() as scoped:
+        scoped.setattr(Path, "is_junction", lambda candidate: candidate == path)
+        with pytest.raises(proof.ProofError, match="^symlink_path$"):
+            proof.validate_config(config, {})
+
+
+@pytest.mark.parametrize("kind", ["is_symlink", "is_junction"])
+def test_archive_ancestor_rejected_before_file_read(tmp_path, monkeypatch, kind):
+    parent = tmp_path / "archive-directory"
+    archive = parent / "synthetic.dump"
+    with monkeypatch.context() as scoped:
+        scoped.setattr(Path, kind, lambda path: path == parent)
+        scoped.setattr(Path, "read_bytes", lambda self: pytest.fail("Archive read before guard"))
+        scoped.setattr(Path, "is_file", lambda self: pytest.fail("File access before guard"))
+        with pytest.raises(proof.ProofError, match="^archive_path$"):
+            proof.verify_archive(archive, "0" * 64)
+
+
+def test_component_guard_allows_absent_leaf_and_fails_closed_on_inspection_error(
+    tmp_path, monkeypatch
+):
+    absent = tmp_path / "not-created" / "leaf"
+    guard_path(absent)
+    assert not absent.exists()
+    with monkeypatch.context() as scoped:
+        scoped.setattr(Path, "is_junction", lambda path: (_ for _ in ()).throw(PermissionError()))
+        with pytest.raises(proof.ProofError, match="^symlink_path$"):
+            guard_path(absent)

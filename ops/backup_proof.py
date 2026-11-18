@@ -15,7 +15,7 @@ from psycopg import sql
 from sqlalchemy import create_engine
 from sqlalchemy.engine import URL
 
-from ops.backup_common import ROOT, ProofError, require
+from ops.backup_common import ROOT, ProofError, guard_path, require
 
 CLUSTER = ROOT / ".local-tools" / "pgdata-lot2-native"
 MIGRATION = "b806e44f7901"
@@ -39,16 +39,22 @@ def validate_config(config, environ):
     require(not any(key.upper().startswith("PG") for key in environ), "ambient_libpq")
     require(config.host == config.hostaddr == "127.0.0.1", "loopback_required")
     require(config.port == 55434 and config.user == "raceatlas_local", "local_identity")
-    require(config.expected_data_directory.resolve() == CLUSTER.resolve(), "cluster_path")
     match = re.fullmatch(r"raceatlas_backup_src_([a-f0-9]{16})", config.source_name)
     require(match is not None, "source_namespace")
     nonce = match.group(1)
     require(config.restore_name == "raceatlas_backup_dst_" + nonce, "restore_namespace")
     expected_output = ROOT / ".local-tools" / "backup-proof" / nonce
+    for path in (
+        config.output_directory,
+        expected_output,
+        config.expected_data_directory,
+        CLUSTER,
+        config.pg_bin,
+    ):
+        guard_path(path)
+    require(config.expected_data_directory.resolve() == CLUSTER.resolve(), "cluster_path")
     require(config.output_directory.resolve() == expected_output.resolve(), "output_path")
     require(not config.output_directory.exists(), "existing_output")
-    for path in (config.output_directory, config.expected_data_directory, config.pg_bin):
-        require(not any(parent.is_symlink() for parent in (path, *path.parents)), "symlink_path")
     require(config.expected_data_directory.is_dir() and config.pg_bin.is_dir(), "missing_path")
     for name in ("pg_dump", "pg_restore"):
         binary = executable(config, name)
@@ -57,7 +63,9 @@ def validate_config(config, environ):
 
 
 def executable(config, name):
-    return config.pg_bin / (name + (".exe" if os.name == "nt" else ""))
+    path = config.pg_bin / (name + (".exe" if os.name == "nt" else ""))
+    guard_path(path)
+    return path
 
 
 def child_environment(environ, config, passfile, database):
@@ -94,6 +102,7 @@ def child_environment(environ, config, passfile, database):
 
 
 def connection_parameters(config, passfile, database="postgres"):
+    guard_path(passfile, "worker_passfile")
     return dict(
         host=config.host,
         hostaddr=config.hostaddr,
@@ -140,6 +149,8 @@ def validate_server(connection, config, *, database_name="postgres"):
         "current_user, current_database(), host(inet_server_addr()), inet_server_port()"
     ).fetchone()
     require(170000 <= int(version) < 180000, "server_version")
+    guard_path(Path(directory), "server_cluster")
+    guard_path(config.expected_data_directory, "server_cluster")
     require(Path(directory).resolve() == config.expected_data_directory.resolve(), "server_cluster")
     require(user == config.user and database == database_name, "server_identity")
     require(address == "127.0.0.1" and port == config.port, "server_endpoint")
@@ -253,6 +264,7 @@ def manifest(engine):
 def write_constraint_definitions(engine, path):
     # PostgreSQL re-parses dump DDL and may move text[] casts onto ARRAY elements.
     # Preserve both deparses for review; do not claim byte equality proves semantics.
+    guard_path(path)
     with engine.connect() as connection:
         rows = connection.exec_driver_sql(
             "SELECT conrelid::regclass::text, conname, pg_get_constraintdef(oid) "
@@ -267,6 +279,7 @@ def compare_manifests(before, after):
 
 
 def verify_archive(archive, digest):
+    guard_path(archive, "archive_path")
     require(archive.is_file() and not archive.is_symlink(), "archive_path")
     require(hashlib.sha256(archive.read_bytes()).hexdigest() == digest, "archive_changed")
 
@@ -317,6 +330,7 @@ def run_proof(config):
         config.output_directory.mkdir(mode=0o700, parents=True, exist_ok=False)
         output_created = True
         passfile = config.output_directory / "empty.pgpass"
+        guard_path(passfile, "worker_passfile")
         with passfile.open("x", encoding="utf-8"):
             pass
         passfile.chmod(0o600)
@@ -359,6 +373,7 @@ def run_proof(config):
             (config.output_directory / "manifest-source.json").write_bytes(canonical(before))
             phase = "dump"
             archive = config.output_directory / "synthetic.dump"
+            guard_path(archive, "archive_path")
             command(dump_arguments(config, archive), migrate_env, "dump")
             report["archive_sha256"] = hashlib.sha256(archive.read_bytes()).hexdigest()
             phase = "create_restore"
