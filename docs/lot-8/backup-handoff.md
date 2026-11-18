@@ -1,36 +1,41 @@
-# OPS-B — handoff WIP, preuve entière encore en attente
+# OPS-B — handoff ciblé
 
-PR17 / feature/operations-final-readiness / base1f1d50b1395eaf271d1a22e255555cc027f34bf1. E ciblé APPROVE6958216564 et CI44154102929 acquis, pas verdict B/V. Writer unique Developer, Reviewer indépendant au SHA figé obligatoire ; aucun ancien verdict transféré.
+PR17, `feature/operations-final-readiness`, base `1f1d50b1395eaf271d1a22e255555cc027f34bf1`. Preuve native Developer complète au codepropre **0f9af1b3a68601b7248d4e4ef2a1c4da9e760886** ; finalisation docs seule ensuite, SHA final communiqué au gel. Aucun APPROVE B présumé ; Reviewer doit refaire sur DEUX bases neuves/autrenonce au SHA figé.
 
-## Interfaces
+Fichiers : ops/backup_proof.py CLI et machineàétapes ; backup_fixture.py fixtures/domaines/contrôlesHTTPworker ; backup_common.py codeserreurs partagés ; test_backup_proof.py gardes sansSQL/skip ; CI seuleextensionRuff versops ; docsB/checkpoint et précisionhosting. Produit/auth/source/UI/DBschema/pins/selectionCI/permissions inchangés.
 
-`ops/backup_proof.py` : ProofConfig, validations pures, préflight identité/absence/versions, targetcurrent_database avantmigration/API, machineàétapes run_proof et CLI. `backup_common.py` partage les erreurs à codes fixes entre exécution -m et helper sans exception brute ; `backup_fixture.py` construit un jeu strictement synthétique, compare domaines des CHECKdéparsesdifférents et teste contraintes/APIs. Aucun import de tests comme bibliothèque, aucun runtimeweb/route/migration/pin changé. CI limité à Ruffops élargi ; sélection/permissions/gardes/artefacts inchangés.
+## Commandes et résultats
 
-Les gardes ne prétendent pas résister à un administrateur local hostile ou à du code serveur arbitrairement saboté. Le CLI n’est pas un outil production : clusteradd4/loopback55434/userlocal/PG17 seulement, nouveauxnoms+nonce commun, refusPG*ambiants/passfilevide explicite/aucun--clean/drop/existingTarget. Voir backup-local-development.md pour commande complète. Archives et manifestes ignorés privés, pas Git/CIpublic ; pas chiffrement opérationnel prétendu.
+Pythonvenv `C:/Users/theop/.codex/worktrees/1a1e/RaceAtlas/.venv/Scripts/python.exe`, binPG17.11 existants1a1e. Aucune réinstallation, _test/_review/preview nonmutés pour B.
 
-## Commandes et preuves acquises
+```powershell
+python -m ops.backup_proof --pg-bin C:/Users/theop/.codex/worktrees/1a1e/RaceAtlas/.local-tools/pgsql/bin --expected-data-directory C:/Users/theop/.codex/worktrees/add4/RaceAtlas/.local-tools/pgdata-lot2-native --source-name raceatlas_backup_src_20261117b0000005 --restore-name raceatlas_backup_dst_20261117b0000005 --output-directory C:/Users/theop/.codex/worktrees/add4/RaceAtlas/.local-tools/backup-proof/20261117b0000005
+```
 
-Python existant `C:/Users/theop/.codex/worktrees/1a1e/RaceAtlas/.venv/Scripts/python.exe` ; pas installation. `python -m pytest tests/backend/test_backup_proof.py -q --tb=short --junitxml=.local-tools/ops-b-unit-final.xml` : **39PASS1,29s**. Unités sansSQL/CREATE/skip, gardes/argv/préflight/domaine/archives ; elles ne prouvent pas à elles seules la restauration. Groupes antérieurs :31PASS2,15s,32PASS2,22s puis4,11s,38PASS1,41s ; chevauchants, ne pas additionner. Ruffinitial imports/longues lignes échoués puis corrigés ; Ruff106/formatPASS sur code récent. Contrats26E réutilisés après diffnul, pas full1020 ni browsers N2 locaux.
+**PASS exit0**, session17219, pas durée native inventée. Ne pas recopier ces noms existants : Reviewer choisit autre16hex inédit.30tables/hashs/4séquences/144structurescontraintes égales,25CHECKdéparses déclarés/336domainesPASS,7DML+rollbackPASS,21APIrestauréesPASS. [Validation et checksum](backup-validation.md), [procédure Windows](backup-local-development.md). Empreinte des trois fichiers outils identique à la preuve pendant docs : `e0317993d87cb8d63e85f28c123e506fdf5b118214cc924c934acaa7ffc9ca25`.
 
-Essais natifs conservés :
+Unités exécutées : `pytest tests/backend/test_backup_proof.py -q --tb=short --junitxml=.local-tools/ops-b-unit-final.xml`39PASS1,29s ; `-k restored_factory`3PASS1,56s ; dernier `-k 'worker or explicit_local_parameters'`10PASS1,09s (`ops-b-worker-exit-final.xml`).51cas distincts au total, groupes chevauchants d’un testenv. Autres groupes31/32/38 sont historiques chevauchants, pas passes additionnelles. Ruffcheck/format `raceatlas migrations tests/backend ops` PASS106 ; diffcheck complet base..HEAD à renouveler aprèscommit. Contrats26E réutilisés à diffnul, app/runtimes immuables ; pas fullbackend local ni N2browsers répétés.
 
-- Nonce20261117b0000001 : FAIL préflight server_endpoint, avantCREATE ; PostgreSQL inet::text avait/32. Corrigé précisément host(inet_server_addr()). Zéro DB confirmée pour cesnoms, dossierreport ignoré gardé.
-- Nonce20261117b0000002 : FAIL manifest_mismatch après dump/restore ; toutes tables/hashs et4séquences égales,144structurescontraintes (72CHECK/30PK/15UQ/27FK),119DDLégaux/25CHECKreformulés (24castsARRAY+1ANDquota). Rapports1/2 portaient SHAdebaseb338 avecCLI WIP et empreintes, PAS preuve d’outil revu àb338. Dossiers/DB/archives conservés, aucune réutilisation.
-- Nonce20261117b0000003 : FAIL DataError22001 àSHA PROPRE a750686df80a5e7a9412cabd99d26599e86d8257, phasemanifest ; sonde enum invalide21char débordait VARCHAR16 avantCHECK. Tables/structure/séquences comparées, pas contraintesDML/API. Correctif sentinelle !1char horsdomaines ; deuxunités cibléesPASS1,25s et diagnosticSELECTreadonly sur source/dst0003 :25CHECK/336évaluationsPASS. Ce diagnostic n’est PAS une preuve native entière et ne change pas le statut FAIL3.
+## Quatre échecs préservés (pas relabellisés)
 
-Trois unités factorycible supplémentaires PASS1,56s (nonchevauchantes aux39), refusURLetcurrent_database _test/_review avantHTTP. CIa75044160225621 FAIL1055/3 en491,33s +138frontend : troisbrowsers immuables (seasonJanvier requestfinished, notificationdesktopcount, mobilecentre), aucuntestBFAIL ; logs lus et Rootalerté, aucune causeproduit/GPU revendiquée. Native4 : TODO après commitpropre du correctif, CIprécédente maintenantconclue. Nouveau nonce20261117b0000004, deuxDBnouvelles, aucun reuse/cleanup. Runrapport portera SHA et empreinte des trois fichiers outils ; si seuls docs changent ensuite, réutilisation explicitement nommée et comparaisonbyteoutils avantgel, Reviewer refait au SHAfinal exact avec autre nonce.
+| Nonce | Résultat réel et correction bornée |
+|---|---|
+| 20261117b0000001 | FAILpréflight inet::text incluait/32, aucune DB créée ; host(inet_server_addr()) garde IPexacte |
+| 20261117b0000002 | FAILmanifest textuel après dump/restore, tables/séquences identiques ; comparaisonstructureexacte +DDLbrutprivé+domaines remplace fauxcritère byteDDL ;24casts et1ANDquota constatés indépendamment |
+| 20261117b0000003 | FAILDataError22001 au SHAa750propre : sentinelleenum trop longue pourVARCHAR16 avantCHECK ; !1char corrigé,336sondesSELECTreadonly ensuitePASS, pas preuve entière |
+| 20261117b0000004 | FAILHTTPRuntimeError au SHA771propre après données/336domaines/7DMLPASS : create_app lit DATABASE_URLenvironavantoverride. WorkeràENVminimalRESTOREexplicite corrige le harnais, aucun patchapp/globalENV |
 
-## Critère de fin B
+Rapports1/2 portentbaseb338+empreinteCLI WIP, pas preuve d’outil àb338. Tous dossiers/archives/DBcréées restent privés ignorés, aucune réutilisation/cleanup. Incidentsunitaires : imports/formatRuff corrigés ; workerinitial7PASS1FAIL car make_url ometoptions=vide, canonicalisationattendue corrigée sans autoriseroptionsnonvides/PGOPTIONSambiant. Derniergroupeworker exige exit0 ET resultpassed, rejette exit1mêmesistdoutannoncepassed.
 
-Exiger exit0 complet : versions17/cluster/absence/targetsource, Alembicb806/fixtures, dumpcustomhash vérifié avantrestore, égalité tables/PK/faits/séquences/structurecontraintes, DDLprivés inspectables et rapport check_sql_text_match=false/diffcount/noms-hashes déclaré. Pas équivalence CHECKuniverselle : domaines explicites positifs/négatifs sur expressionsréelles sourceETrestore (enums/bornes1..100/cardinality/tuplesdiscipline-type/geocacherésultat), écartinconnu ou vérité différente FAIL. Ensuite7scénariosDML PK/UQ/FK/CHECK/RESTRICT/cascade avecSQLSTATEexact et rollbackintégral vérifié, puis authentification de deuxhashsrestaurés/cookies/sauvegardesscopeexact/notificationsread-unread/UIDICS/publicAPI. Runtime.close avantEngine.dispose ; tous effetsAPI interviennent APRÈS comparaisoninitiale, sessions/lastseen/ledger peuvent légitimement évoluer.
+## Gates et limites
 
-Pas données réelles, pas email/DNS/remoteDB/liveFFC/service/deploy/achat/tag. Rétention/chiffrement/stockage de sauvegardes réelles externes restent BLOCKED avant exploitation. B ne termine pas V ; Reviewer B exactSHA puis V/acceptation finale/integrated/Ready/main encore requis.
+EAPPROVE6958216564 acquis. CIa75044160225621 FAIL1055/3 en491,33s +138front : seasonrequestfinished15s/notificationsdesktopcount/mobilecentre, Rootdiagnosticdistinct ; aucun correctifGUI effectué ici, aucune cause déclarée résolue par CI77144162444692 SUCCESS1062/138. CI du code exécuté `0f9af1b`, run44164167525/job134325641968 : SUCCESS1071backend374,56s/138frontend, gardes exactes avant/après. Les deux campagnes suivant a750 sont vertes ; les trois échecs GUI historiques restent inexpliqués et demandent une évaluation ciblée distincte. La nouvelle CI documentaire et le verdict B restent à obtenir.
+
+EnfantHTTP stdinIDsfictifs seulement, envsystèmeminimal/DBURLrestore/PGparamètres explicites, parentinchangé, pas DSN/password enargv/logs ni cookie/CSRFstdout. Passfilevide explicite et refusPG*ambients pourparent ; targetsource avantAlembic et restore avantAPI. Aucunprocessus natifpending ; runtimeclose avantEngine. PG9780conservé, DBsynthétiques nouvelles seulement. Pas production/externalbackup/chiffrement/rétention qualifiés ni email/DNS/live/service/remoteDB/deploy/achat/tag. GelB et STOP pourReviewerindépendant ; V/finalPR17 restent TODO.
 
 
-### Après native4, worker HTTP isolé
+## Gel documentaire du 18 novembre
 
-Native4 au SHA7718399fa9ad9baa4d09b4560d0948b94fa789da : FAILHTTPRuntimeError après égalité30tables/4séquences/144structurescontraintes,336domainesCHECK et7probesDML/rollback. L’application lit database_url() global avant son override config ; le CLI ne modifie pas os.environ. Correction autorisée : `python -m ops.backup_fixture` en enfant à ENVminimalDATABASE_URLRESTOREexplicite et PGparamètres exacts, identitétarget revalidée avantfactory. EntréeIDsfictifs via stdinUTF8 borné, cookies/CSRFinternes, sortiecodes/counts seulement ; engine/runtimeclose avantexit. Aucun patchapp/runtime ni globalENVparent.
+Reprise sans relance : six documents préservés, aucun nouveau test/SQL/proof/GUI. Empreinte des outils comparée au rapport natif5 : identique ; diff nul sur ops/tests/CI et tout code applicatif depuis0f9. Statut natif seulement : PG9780 actif sur clusteradd4/127.0.0.1:55434, aucun démarrage/réensemencement. Aucun Python/Chrome actif à la reprise.
 
-Unitésworker/env initiales7PASS1FAIL (options=vide disparaît à make_url), puiscanonicalisation exacte même représentation et PGOPTIONSvide explicite conservé. `pytest tests/backend/test_backup_proof.py -k 'worker or explicit_local_parameters' -q --tb=short --junitxml=.local-tools/ops-b-worker-exit-final.xml` :10PASS1,09s. Ce groupe chevauche l’ancienne gardeenv, ne pas additionner naïvement. Rejet workerexit1mêmes’ilimprimepassed, restaurationURLstrict/parentinchangé/aucunsecretproviderhérité.
-
-CI77144162444692 SUCCESS1062backend374,44s/138frontend, gardes771avantaprès ; l’ancienneCIa7501055/3 reste un blocage global à diagnostic attribué par Root, pas résolution causale depuis un nouveauPASS. Native5 : TODO au prochain codepropre avec nonce20261117b0000005.
+Cette publication modifie uniquement la documentation. Le SHA exact final est transmis au Coordinateur après push, puis GEL/STOP et libération du worktree pour revue B. Rapport borné : `.local-tools/ops-b-native5-public-result.json` ; checkpoint local ignoré : `.local-tools/developer-backup-current.md`. Aucune archive ni donnée privée publiée. Reviewer utilise un nonce neuf, pas celui déjà existant de la commande historique ci-dessus.
