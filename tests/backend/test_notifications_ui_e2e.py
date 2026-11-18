@@ -14,7 +14,13 @@ from browser_diagnostics import (
     install_mobile_camera_diagnostic,
     public_search_kind,
 )
-from map_support import camera, camera_diagnostic, install_camera_diagnostic, launch
+from map_support import (
+    camera,
+    camera_diagnostic,
+    install_camera_diagnostic,
+    launch,
+    limit_software_map_framebuffer,
+)
 from playwright.sync_api import expect, sync_playwright
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -190,6 +196,7 @@ def test_notifications_real_sync_offpage_ack_two_actors_scope_readd_desktop(
         try:
             open_source_map(page, origin)
             page.get_by_role("button", name="Fermer les détails", exact=True).click()
+            limit_software_map_framebuffer(page)
             assert install_camera_diagnostic(page) and "snapshot" in camera_diagnostic(page)
             page.get_by_role("button", name="Summit", exact=False).click()
             wait_camera_pitch(page, 60)
