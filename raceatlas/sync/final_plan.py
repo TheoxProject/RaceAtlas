@@ -4,6 +4,7 @@ import json
 from dataclasses import dataclass, replace
 from datetime import date, datetime
 
+COVERAGE_UNVERIFIED = "coverage_unverified"
 BUSINESS_KEYS = (
     "name",
     "discipline",
@@ -165,6 +166,7 @@ def plan_finalization(inputs):
                     if item.window_id == original.id
                     and item.diagnostic not in {None, "historical_duplicate"}
                 }
+                | ({COVERAGE_UNVERIFIED} & set(original.diagnostics))
             )
             windows[original.id] = replace(
                 original,

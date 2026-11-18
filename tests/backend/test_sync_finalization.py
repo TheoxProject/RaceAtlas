@@ -132,12 +132,17 @@ def test_non_admissible_windows_do_not_infer_missing_and_coverage_is_incomplete(
     assert coverage(session)["status"] == "incomplete"
 
 
-def test_final_planner_is_pure_frozen_and_preserves_historical_promotions(session, database):
+@pytest.mark.parametrize("positive_only", [False, True])
+def test_final_planner_is_pure_frozen_and_preserves_historical_promotions(
+    session, database, positive_only
+):
     _, race_id, _ = initial(session, database)
     item = session.scalar(select(ImportItem))
     window = session.get(ImportWindow, item.window_id)
     item.status, item.diagnostic = "error", "stale_observation"
-    window.status, window.diagnostics = "partial", ["stale_observation"]
+    window_diagnostics = ("coverage_unverified",) if positive_only else ()
+    window.status = "partial"
+    window.diagnostics = ["stale_observation", *window_diagnostics]
     run_id = window.run_id
     session.commit()
     inputs = service._load_final_inputs(session, run_id, source.NOW, {race_id})
@@ -152,9 +157,10 @@ def test_final_planner_is_pure_frozen_and_preserves_historical_promotions(sessio
         assert statements == [] and not session.dirty and not session.new and not session.deleted
     finally:
         event.remove(database, "before_cursor_execute", observed)
-    assert plan.run_status == "success" and not plan.transitions and not plan.scope_ids
+    expected = "partial" if positive_only else "success"
+    assert plan.run_status == expected and not plan.transitions and not plan.scope_ids
     assert plan.items[0].diagnostic == "historical_duplicate"
-    assert plan.windows[0].status == "success" and plan.windows[0].diagnostics == ()
+    assert plan.windows[0].status == expected and plan.windows[0].diagnostics == window_diagnostics
     assert inputs.windows[0].status == session.get(ImportWindow, window.id).status == "partial"
     with pytest.raises(FrozenInstanceError):
         plan.run_status = "failed"

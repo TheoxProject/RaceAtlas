@@ -41,6 +41,7 @@ from raceatlas.serialization import race_document
 from .change_facts import deltas, snapshot
 from .final_plan import (
     BUSINESS_KEYS,
+    COVERAGE_UNVERIFIED,
     FinalInputs,
     ItemState,
     RaceState,
@@ -682,7 +683,7 @@ def _import_window(
             )
         )
     if positive_only:
-        codes.append("coverage_unverified")
+        codes.append(COVERAGE_UNVERIFIED)
     window.status = "partial" if codes else "success"
     window.diagnostics = sorted(set(codes))
     session.flush()
