@@ -218,6 +218,7 @@ def _apply(
     approved_alias=None,
     baseline=None,
     guard=None,
+    allow_incomplete_replay=False,
 ):
     existing, new_alias = _alias_target(
         session, observation, alias, now, approved_target=approved_alias
@@ -268,12 +269,14 @@ def _apply(
     facts["competition_id"] = competition_id
     facts["location"] = _location(commune or (existing.commune if existing else None))
     current = _model_facts(existing) if existing else None
+    same_facts = existing is not None and fingerprint(current) == fingerprint(facts)
     # Having passed the immutable pre-run cutoff, an older item can only be behind
     # a successful mutation of this run. Identical duplicates never advance evidence.
-    if stale and fingerprint(current) != fingerprint(facts):
+    if stale and not same_facts:
         _error("stale_observation")
     if existing and (
         observation.diagnostics
+        and not (allow_incomplete_replay and same_facts)
         or existing.organizer is not None
         and observation.organizer is None
         or existing.types
@@ -299,7 +302,7 @@ def _apply(
         action = "updated"
     else:
         model = existing
-        action = "unchanged" if fingerprint(current) == fingerprint(facts) else "updated"
+        action = "unchanged" if same_facts else "updated"
         for field in (
             "name",
             "discipline",
@@ -515,7 +518,16 @@ def _preflight(session, batches, now):
 
 
 def _import_window(
-    session, batch, run_id, now, provider, preflight, *, guard=None, guard_error=False
+    session,
+    batch,
+    run_id,
+    now,
+    provider,
+    preflight,
+    *,
+    guard=None,
+    guard_error=False,
+    positive_only=False,
 ):
     calendar = batch.calendar
     window = ImportWindow(
@@ -621,6 +633,7 @@ def _import_window(
                         approved_alias=preflight.approved_aliases.get(key),
                         baseline=preflight.baselines.get(preflight.targets.get(key)),
                         guard=guard,
+                        allow_incomplete_replay=positive_only,
                     )
                 present.add(race_id)
             except AdapterError as error:
@@ -668,6 +681,8 @@ def _import_window(
                 observed=observed,
             )
         )
+    if positive_only:
+        codes.append("coverage_unverified")
     window.status = "partial" if codes else "success"
     window.diagnostics = sorted(set(codes))
     session.flush()
@@ -960,6 +975,44 @@ def synchronize(engine, batches, *, checked_at=None, provider=None, synthetic=Tr
     """
     if engine.url.host not in {"127.0.0.1", "localhost", "::1"}:
         _error("local_database_required")
+    return _synchronize(
+        engine, batches, checked_at=checked_at, provider=provider, synthetic=synthetic
+    )
+
+
+def bootstrap_catalog_2027(engine, batches, *, target_host, target_database, provider=None):
+    """Apply verified positive observations to the operator's explicit Neon target."""
+    url = engine.url
+    if (
+        url.drivername != "postgresql+psycopg"
+        or url.host != target_host
+        or not isinstance(target_host, str)
+        or not re.fullmatch(r"ep-[a-z0-9-]+\.[a-z0-9.-]+\.neon\.tech", target_host)
+        or "-pooler." in target_host
+        or url.database != target_database
+        or not target_database
+        or url.port not in (None, 5432)
+        or url.query.get("sslmode") != "verify-full"
+        or set(url.query) - {"sslmode", "sslrootcert", "channel_binding"}
+    ):
+        _error("invalid_bootstrap_database")
+    batches = tuple(batches)
+    if not batches or any(
+        batch.calendar.requested.start.year != 2027
+        or batch.calendar.requested.end.year != 2027
+        or batch.aliases
+        or batch.competitions
+        or batch.identities
+        or any(observation.start_date.year != 2027 for observation in batch.details)
+        for batch in batches
+    ):
+        _error("invalid_bootstrap_scope")
+    return _synchronize(engine, batches, provider=provider, synthetic=False, positive_only=True)
+
+
+def _synchronize(
+    engine, batches, *, checked_at=None, provider=None, synthetic, positive_only=False
+):
     now = checked_at or datetime.now(timezone.utc)
     if not isinstance(now, datetime) or now.tzinfo is None or now.utcoffset() is None:
         _error("invalid_timestamp")
@@ -999,12 +1052,26 @@ def synchronize(engine, batches, *, checked_at=None, provider=None, synthetic=Tr
                             # waiting. Reload under the lock before taking immutable facts.
                             session.expire_all()
                             _, seen = _import_window(
-                                session, batch, run_id, now, provider, preflight, guard=guard
+                                session,
+                                batch,
+                                run_id,
+                                now,
+                                provider,
+                                preflight,
+                                guard=guard,
+                                positive_only=positive_only,
                             )
                     except (ChangeError, OperationalError):
                         session.rollback()
                         _, seen = _import_window(
-                            session, batch, run_id, now, provider, preflight, guard_error=True
+                            session,
+                            batch,
+                            run_id,
+                            now,
+                            provider,
+                            preflight,
+                            guard_error=True,
+                            positive_only=positive_only,
                         )
                     present.update(seen)
                     session.commit()

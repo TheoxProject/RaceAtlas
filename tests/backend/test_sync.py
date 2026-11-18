@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 from jsonschema import Draft202012Validator, FormatChecker
-from sqlalchemy import func, select, text
+from sqlalchemy import create_engine, func, select, text
 from sqlalchemy.orm import Session
 
 from raceatlas.ffc import (
@@ -15,7 +15,7 @@ from raceatlas.ffc import (
     parse_calendar,
     parse_race,
 )
-from raceatlas.ffc.types import SourceKey
+from raceatlas.ffc.types import Diagnostic, SourceKey
 from raceatlas.models import (
     Competition,
     GeocodeCache,
@@ -28,7 +28,7 @@ from raceatlas.models import (
 )
 from raceatlas.sync import AliasProof, CompetitionProof, LocationFact, WindowBatch, synchronize
 from raceatlas.sync.geocoding import CenterCandidate, OfflineProvider
-from raceatlas.sync.service import LOCK_KEY
+from raceatlas.sync.service import LOCK_KEY, _synchronize, bootstrap_catalog_2027
 
 ROOT = Path(__file__).resolve().parents[2]
 HTML = (ROOT / "fixtures/ffc/race.synthetic.html").read_text(encoding="utf-8")
@@ -239,6 +239,62 @@ def test_partial_independent_window_imports_positives_but_defers_all_absence(ses
     retry = synchronize(database, [batch(first, old, new)], checked_at=NOW)
     assert retry.status == "success"
     assert count(session, Race) == count(session, SourceRevision) == 3
+
+
+def test_positive_only_import_stores_items_without_inferring_absence(session, database):
+    first, old, new = observation(), observation("OLD"), observation("NEW")
+    synchronize(database, [batch(first, old)], checked_at=NOW)
+    later = NOW + timedelta(hours=1)
+    uncertain = Diagnostic("unknown_eligibility", "scope", "Unconfirmed source criteria")
+    partial = replace(new, checked_at=later, diagnostics=(uncertain,))
+    orders = [batch(observation(checked=later), partial, checked=later)]
+    for replay in (False, True):
+        result = _synchronize(
+            database, orders, checked_at=later, synthetic=True, positive_only=True
+        )
+        assert result.status == "partial"
+        assert result.missing_marked == 0
+        session.expire_all()
+        window = session.scalar(select(ImportWindow).where(ImportWindow.run_id == result.run_id))
+        assert window.status == "partial"
+        assert window.diagnostics == ["coverage_unverified"]
+        assert count(session, Race) == count(session, SourceRevision) == 3
+        assert (
+            session.scalar(select(Race).where(Race.source.has(race_number="OLD"))).source_presence
+            == "present"
+        )
+        statuses = session.scalars(
+            select(ImportItem.status).where(ImportItem.window_id == window.id)
+        ).all()
+        assert sorted(statuses) == (["unchanged"] * 2 if replay else ["created", "unchanged"])
+
+    latest = later + timedelta(hours=1)
+    changed = replace(partial, checked_at=latest, name="Détail incomplet et différent")
+    rejected = _synchronize(
+        database,
+        [batch(changed, checked=latest)],
+        checked_at=latest,
+        synthetic=True,
+        positive_only=True,
+    )
+    assert rejected.status == "failed" and rejected.missing_marked == 0
+    session.expire_all()
+    assert session.scalar(select(Race).where(Race.source.has(race_number="NEW"))).name == new.name
+
+
+@pytest.mark.parametrize(
+    "host,query",
+    [
+        ("localhost", "sslmode=verify-full"),
+        ("ep-fake.home.aws.neon.tech", "sslmode=require"),
+        ("ep-fake-pooler.home.aws.neon.tech", "sslmode=verify-full"),
+        ("ep-fake.home.aws.neon.tech", "sslmode=verify-full&host=localhost"),
+    ],
+)
+def test_operator_bootstrap_rejects_an_unsafe_url_before_connecting(host, query):
+    engine = create_engine(f"postgresql+psycopg://{host}/neondb?{query}")
+    with pytest.raises(AdapterError, match="invalid_bootstrap_database"):
+        bootstrap_catalog_2027(engine, (), target_host=host, target_database="neondb")
 
 
 def test_global_presence_prevents_overlap_false_absence(session, database):
