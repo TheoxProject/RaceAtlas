@@ -22,10 +22,17 @@ from .types import (
     SourceKey,
 )
 
-DISCIPLINES = {"route": "road", "gravel": "gravel", "vtt": "mtb", "cyclo-cross": "cyclocross"}
+DISCIPLINES = {
+    "route": "road",
+    "piste": "track",
+    "gravel": "gravel",
+    "vtt": "mtb",
+    "cyclo-cross": "cyclocross",
+}
 TYPES = {
     "course en ligne": ("road", "road_race"),
     "clm": ("road", "time_trial"),
+    "grimpée": ("road", "hill_climb"),
     "gravel": ("gravel", "gravel_race"),
     "xco": ("mtb", "xco"),
     "enduro": ("mtb", "enduro"),

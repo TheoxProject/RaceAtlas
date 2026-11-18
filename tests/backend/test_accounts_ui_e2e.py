@@ -23,7 +23,7 @@ from map_support import (
 )
 from playwright.sync_api import expect, sync_playwright
 from test_auth_http_sessions import PASSWORD, identity
-from test_e2e import assert_camera_unchanged, wait_camera_pitch
+from test_e2e import assert_camera_unchanged, open_discipline_picker, wait_camera_pitch
 from test_private_planning import isolation as isolation
 from werkzeug.serving import make_server
 
@@ -375,6 +375,7 @@ def test_compiled_signup_explicit_confirmation_login_and_late_401_keep_discovery
             )
             page.get_by_role("button", name="Mois", exact=True).click()
             page.get_by_label("Mois", exact=True).select_option("11")
+            open_discipline_picker(page)
             page.get_by_label("Route", exact=True).check()
             page.get_by_placeholder("Course, commune ou club…").fill("race-road-split")
             expect(page.locator(".result-count strong")).to_have_text("1")
@@ -680,6 +681,7 @@ def test_season_scope_actions_map_two_accounts_outside_public_filters(
             )
             page.get_by_role("button", name="Mois", exact=True).click()
             page.get_by_label("Mois", exact=True).select_option("11")
+            open_discipline_picker(page)
             page.get_by_label("Route", exact=True).check()
             page.get_by_placeholder("Course, commune ou club…").fill("race-road-split")
             expect(page.locator(".result-count strong")).to_have_text("1", timeout=15000)
@@ -944,6 +946,7 @@ def test_calendar_download_uses_whole_private_season_and_unknown_response_is_hon
             )
             page.get_by_role("button", name="Mois", exact=True).click()
             page.get_by_label("Mois", exact=True).select_option("1")
+            open_discipline_picker(page)
             page.get_by_label("Route", exact=True).check()
             expect(page.locator(".result-count strong")).to_have_text("0", timeout=15000)
             node = page.locator(".map-canvas").element_handle()

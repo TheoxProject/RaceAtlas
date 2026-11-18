@@ -41,6 +41,13 @@ def open_map(page, server, *, now="2026-11-11T12:00:00Z", **kwargs):
     expect(page.locator(".map-canvas")).to_have_attribute("data-ready", "true", timeout=20000)
 
 
+def open_discipline_picker(page):
+    picker = page.get_by_role("button", name="Discipline", exact=True)
+    if picker.get_attribute("aria-expanded") == "false":
+        picker.click()
+    return picker
+
+
 def assert_camera_unchanged(actual, expected):
     assert actual.keys() == expected.keys()
     for key in expected:
@@ -237,6 +244,7 @@ def test_compiled_mobile_filters_nonlocalized_and_radius(seeded, server):
         assert_attribution_unobscured(page)
         page.get_by_role("button", name="Fermer les détails").click()
         page.get_by_role("button", name=re.compile("Filtres")).click()
+        open_discipline_picker(page)
         page.get_by_label("Route", exact=True).check()
         page.get_by_label("open 1", exact=True).check()
         page.get_by_label("open 2", exact=True).check()

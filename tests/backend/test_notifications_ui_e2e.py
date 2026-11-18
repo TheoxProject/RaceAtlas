@@ -28,7 +28,7 @@ from test_accounts_ui_e2e import account, prepare, select_public_month, sign_in
 from test_accounts_ui_e2e import account_server as _account_server
 from test_accounts_ui_e2e import admission_clock as _admission_clock
 from test_auth_http_sessions import PASSWORD, identity
-from test_e2e import assert_camera_unchanged, wait_camera_pitch
+from test_e2e import assert_camera_unchanged, open_discipline_picker, wait_camera_pitch
 from test_private_planning import isolation as isolation
 
 from raceatlas.models import PersonalNotification, Race, SavedEntry, SourceRecord, SourceRevision
@@ -118,6 +118,7 @@ def open_source_map(page, origin):
     expect(page.locator(".map-canvas")).to_have_attribute("data-ready", "true", timeout=20000)
     page.get_by_role("button", name="Mois", exact=True).click()
     page.get_by_label("Mois", exact=True).select_option("11")
+    open_discipline_picker(page)
     page.get_by_label("Route", exact=True).check()
     page.get_by_placeholder("Course, commune ou club…").fill(PREFIX)
     expect(page.locator(".result-count strong")).to_have_text("1", timeout=15000)
@@ -381,6 +382,7 @@ def test_notifications_calendar_presence_ack_and_mobile_keyboard(
             node, before = page.locator(".map-canvas").element_handle(), camera(page)
             camera_phase(page, "filters")
             page.get_by_role("button", name="☷ Filtres", exact=True).click()
+            open_discipline_picker(page)
             page.get_by_label("Route", exact=True).check()
             page.get_by_placeholder("Course, commune ou club…").fill(PREFIX)
             page.get_by_role("button", name="Voir les courses sur la carte", exact=True).click()

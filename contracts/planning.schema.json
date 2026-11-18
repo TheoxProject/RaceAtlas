@@ -359,6 +359,7 @@
         "discipline": {
           "enum": [
             "road",
+            "track",
             "gravel",
             "mtb",
             "cyclocross"
@@ -370,6 +371,7 @@
             "enum": [
               "road_race",
               "time_trial",
+              "hill_climb",
               "gravel_race",
               "xco",
               "enduro",

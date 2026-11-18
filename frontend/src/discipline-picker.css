@@ -1,0 +1,98 @@
+.discipline-picker {
+  margin: 18px 0 24px;
+}
+
+.discipline-trigger {
+  align-items: center;
+  background: #f6f8fb;
+  border: 1px solid #dce2e9;
+  border-radius: 12px;
+  color: #111f37;
+  display: flex;
+  font-size: 14px;
+  gap: 12px;
+  justify-content: space-between;
+  min-height: 48px;
+  padding: 10px 14px;
+  text-align: left;
+  width: 100%;
+}
+
+.discipline-trigger:hover, .discipline-trigger[aria-expanded='true'] {
+  background: #fff7ee;
+  border-color: #e68d45;
+}
+
+.discipline-trigger small {
+  color: #4c5b71;
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  margin-top: 3px;
+  overflow-wrap: anywhere;
+}
+
+.discipline-chevron {
+  border: solid currentColor;
+  border-width: 0 2px 2px 0;
+  flex: 0 0 8px;
+  height: 8px;
+  margin: -4px 3px 0 0;
+  transform: rotate(45deg);
+}
+
+.discipline-trigger[aria-expanded='true'] .discipline-chevron {
+  margin-top: 4px;
+  transform: rotate(225deg);
+}
+
+.discipline-choices {
+  background: #fff;
+  border: 1px solid #dce2e9;
+  border-radius: 12px;
+  box-shadow: 0 4px 18px #111f3710;
+  margin-top: 6px;
+  padding: 5px 8px;
+}
+
+.discipline-choices fieldset {
+  margin: 0;
+  min-width: 0;
+}
+
+.discipline-choices legend {
+  color: #4c5b71;
+  font-size: 12px;
+  margin: 0 0 3px;
+  padding-inline: 7px;
+}
+
+.discipline-choices .discipline-types {
+  border-top: 1px solid #e6e9ee;
+  margin-top: 9px;
+}
+
+.discipline-option {
+  align-items: center;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  font-size: 13px;
+  gap: 10px;
+  min-height: 36px;
+  padding: 6px 9px;
+}
+
+.discipline-option:hover, .discipline-option:has(input:checked) {
+  background: #fff4e8;
+}
+
+.discipline-type-hint {
+  margin: 7px 9px;
+}
+
+@media (max-width: 760px) {
+  .discipline-option {
+    min-height: 44px;
+  }
+}

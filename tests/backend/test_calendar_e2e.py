@@ -12,6 +12,7 @@ from playwright.sync_api import expect, sync_playwright
 from test_e2e import (
     assert_attribution_unobscured,
     assert_camera_unchanged,
+    open_discipline_picker,
     open_map,
     wait_camera_pitch,
 )
@@ -205,6 +206,7 @@ def test_calendar_shared_scope_filters_and_radius_candidates(seeded, server):
         expect(page.locator(".result-count strong")).to_have_text("12")
         page.get_by_role("button", name="Mois", exact=True).click()
         expect(page.locator(".result-count strong")).to_have_text("11")
+        open_discipline_picker(page)
         page.get_by_label("Route", exact=True).check()
         page.get_by_label("open 1", exact=True).check()
         page.get_by_label("open 2", exact=True).check()
@@ -300,3 +302,40 @@ def test_calendar_mobile_dense_day_and_recoverable_error(seeded, server):
         ready_calendar(page, 1)
         expect(page.get_by_role("heading", name="Décembre 2026")).to_be_visible()
         assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
+
+
+@pytest.mark.e2e
+def test_mobile_discipline_picker_filters_map_and_calendar(sport_examples, server):
+    with calendar_page(server, "discipline-picker-failure.png", mobile=True) as page:
+        page.get_by_role("button", name=re.compile("Filtres")).click()
+        trigger = open_discipline_picker(page)
+        choices = page.get_by_role("group", name="Disciplines", exact=True)
+        expect(choices.get_by_role("checkbox")).to_have_count(5)
+        assert page.evaluate("document.querySelector('.filters-panel').scrollWidth <= innerWidth")
+        choices.get_by_role("checkbox", name="Piste", exact=True).check()
+        expect(trigger).to_contain_text("Piste")
+        page.get_by_label("Piste", exact=True).press("Escape")
+        expect(trigger).to_be_focused()
+        expect(trigger).to_have_attribute("aria-expanded", "false")
+        page.get_by_role("button", name="Voir les courses sur la carte").click()
+        expect(page.locator(".result-count strong")).to_have_text("1")
+        expect(page.locator(".map-canvas .race-marker")).to_have_text("1")
+        page.get_by_role("button", name="Calendrier", exact=True).click()
+        ready_calendar(page, 1)
+        expect(page.locator(".calendar-race")).to_have_text("Épreuve fictive sur piste")
+
+        page.get_by_role("button", name=re.compile("Filtres")).click()
+        open_discipline_picker(page)
+        choices.get_by_role("checkbox", name="Piste", exact=True).uncheck()
+        choices.get_by_role("checkbox", name="Route", exact=True).check()
+        page.get_by_role("checkbox", name="Grimpée", exact=True).check()
+        expect(trigger).to_contain_text("Route · Grimpée")
+        assert page.evaluate("document.querySelector('.filters-panel').scrollWidth <= innerWidth")
+        page.screenshot(path=str(SHOTS / "discipline-picker-mobile.png"))
+        page.get_by_role("button", name="Voir les courses du calendrier").click()
+        ready_calendar(page, 1)
+        expect(page.locator(".calendar-race")).to_have_text("Grimpée fictive")
+        page.get_by_role("button", name="Carte", exact=True).click()
+        expect(page.locator(".result-count strong")).to_have_text("1")
+        page.get_by_role("button", name="Explorer les communes").click()
+        expect(page.locator(".race-row strong")).to_have_text("Grimpée fictive")

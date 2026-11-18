@@ -72,6 +72,47 @@ test('current year selection and dynamic categories are independent of filtered 
   fireEvent.click(screen.getByRole('button', { name: 'Toutes ensemble' }));
   await waitFor(() => expect(loadSelection.mock.lastCall[0]).toMatchObject({ categories: ['u15'], category_operator: 'and' }));
 });
+
+test('one discipline picker shares road types and discipline selections across views', async () => {
+  vi.setSystemTime(new Date('2026-11-11T12:00:00Z'));
+  prepare(data([])); render(<App />);
+  const trigger = screen.getByRole('button', { name: 'Discipline', description: 'Toutes les disciplines' });
+  expect(trigger.getAttribute('aria-expanded')).toBe('false');
+  expect(screen.queryByRole('checkbox', { name: 'Route' })).toBeNull();
+
+  fireEvent.click(trigger);
+  expect(trigger.getAttribute('aria-expanded')).toBe('true');
+  const disciplines = within(screen.getByRole('group', { name: 'Disciplines' }));
+  expect(disciplines.getAllByRole('checkbox').map(checkbox => checkbox.parentElement.textContent))
+    .toEqual(['Route', 'Piste', 'Cyclo-cross', 'Gravel', 'VTT']);
+  expect(screen.queryByRole('checkbox', { name: 'Grimpée' })).toBeNull();
+  fireEvent.click(disciplines.getByRole('checkbox', { name: 'Route' }));
+  const roadTypes = within(screen.getByRole('group', { name: 'Types d’épreuve · Route' }));
+  expect(roadTypes.getAllByRole('checkbox').map(checkbox => checkbox.parentElement.textContent))
+    .toEqual(['Course en ligne', 'CLM', 'Grimpée']);
+  const hillClimb = roadTypes.getByRole('checkbox', { name: 'Grimpée' });
+  fireEvent.click(hillClimb);
+  fireEvent.click(disciplines.getByRole('checkbox', { name: 'Piste' }));
+  expect(screen.getByText('Seules les courses correspondant à un type coché apparaissent.')).toBeTruthy();
+  await waitFor(() => expect(loadSelection.mock.lastCall[0]).toMatchObject({ disciplines: ['road', 'track'], types: ['hill_climb'] }));
+
+  hillClimb.focus();
+  fireEvent.keyDown(hillClimb, { key: 'Escape' });
+  expect(document.activeElement).toBe(trigger);
+  expect(trigger.getAttribute('aria-expanded')).toBe('false');
+  expect(trigger.textContent).toContain('Route, Piste · Grimpée');
+  fireEvent.click(screen.getByRole('button', { name: 'Calendrier', exact: true }));
+  await waitFor(() => expect(loadSelection.mock.lastCall[0]).toMatchObject({ disciplines: ['road', 'track'], types: ['hill_climb'], from: '2026-11-01', to: '2026-11-30' }));
+
+  fireEvent.click(trigger);
+  expect(hillClimb.checked).toBe(true);
+  fireEvent.click(disciplines.getByRole('checkbox', { name: 'Route' }));
+  expect(screen.queryByRole('checkbox', { name: 'Grimpée' })).toBeNull();
+  await waitFor(() => expect(loadSelection.mock.lastCall[0]).toMatchObject({ disciplines: ['track'], types: [] }));
+  fireEvent.click(screen.getByRole('button', { name: 'Réinitialiser les filtres' }));
+  await waitFor(() => expect(loadSelection.mock.lastCall[0]).toMatchObject({ disciplines: [], types: [] }));
+  expect(trigger.textContent).toContain('Toutes les disciplines');
+});
 test('nonlocalized details retain null location and individual scopes', async () => {
   const race = fixture.races.find(race => race.id === 'race-unlocated');
   prepare(data([race])); render(<App />);

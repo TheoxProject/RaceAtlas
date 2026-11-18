@@ -144,7 +144,7 @@ def test_race_restrictions_scopes_and_source_season_are_independent():
     assert all(scope.identity_status == "unverified" for scope in observation.scopes)
     assert "PRIVATE_SENTINEL" not in repr(asdict(observation))
     assert "<html" not in repr(asdict(observation))
-    assert observation.normalization_version == "ffc-observation-1.0.0"
+    assert observation.normalization_version == "ffc-observation-1.1.0"
 
 
 def test_no_sport_or_eligibility_inferred_from_slug_or_list_id():
@@ -373,6 +373,7 @@ def test_attested_revision_preserves_known_provider_list_identity():
     "discipline,sport_type,expected_discipline,expected_type",
     [
         ("Route", "Course en ligne", "road", "road_race"),
+        ("Route", "Grimpée", "road", "hill_climb"),
         ("Gravel", "Gravel", "gravel", "gravel_race"),
         ("VTT", "XCO", "mtb", "xco"),
         ("VTT", "Enduro", "mtb", "enduro"),
@@ -388,6 +389,16 @@ def test_explicit_supported_sports(discipline, sport_type, expected_discipline, 
     )
     assert observation.discipline == expected_discipline
     assert observation.types == (expected_type,)
+
+
+def test_explicit_track_without_a_confirmed_type_stays_untagged():
+    observation = race(
+        RACE_HTML.replace("<dd>Route</dd>", "<dd>Piste</dd>").replace(
+            "<dt>Type sportif</dt><dd>CLM</dd>", ""
+        )
+    )
+    assert observation.discipline == "track"
+    assert observation.types == ()
 
 
 def test_unknown_sport_type_remains_empty_with_diagnostic():
