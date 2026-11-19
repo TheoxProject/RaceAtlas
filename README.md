@@ -7,7 +7,7 @@ RaceAtlas aide à trouver les épreuves cyclistes dans les douze départements d
 - **Carte et calendrier mensuel** avec filtres partagés par période, discipline, type, catégorie, recherche, département ou rayon. Altitude affiche le relief en 2,5D et Summit en 3D. Les marqueurs indiquent les centres de communes. Les épreuves non localisées restent consultables dans les résultats et le calendrier. Une légende identifie les types d’épreuve.
 - **Conditions d’engagement** consultables par liste, avec les libellés et la provenance de la source. Un filtre de catégories en mode ET exige que la même liste accepte toutes les catégories sélectionnées.
 - **Compte personnel et Ma saison** avec confirmation de l’adresse e-mail, récupération du mot de passe, favoris par liste d’engagement et quatre statuts. Le statut « Inscrit » est déclaré par l’utilisateur. Les épreuves prévues ou inscrites peuvent être exportées au format ICS.
-- **Suivi du catalogue** avec import auditable et notifications internes sur les épreuves suivies. Une disparition à la source produit un état « à vérifier ». L’activation d’une collecte récurrente dépend de l’autorisation de la source et du propriétaire.
+- **Suivi du catalogue** avec import auditable et notifications internes sur les épreuves suivies. Après un import complet et réussi, une absence à la source peut faire passer l’épreuve au statut « à vérifier ». L’activation d’une collecte récurrente dépend de l’autorisation de la source et du propriétaire.
 
 React et Vite composent l’interface, MapLibre GL JS affiche la carte et Flask sert l’application compilée et ses API. Le catalogue et les comptes reposent sur PostgreSQL, SQLAlchemy et Alembic.
 
