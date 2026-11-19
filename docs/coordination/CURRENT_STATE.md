@@ -1,16 +1,16 @@
-# Prépublication V1 — filtre Discipline
+# Ouverture publique de RaceAtlas
 
-Point du **18 novembre 2026 à 20:29 UTC**. Le filtre Discipline demandé par le propriétaire reprend les lots 4–6 sur la base distante vérifiée `b9a0c4313c5b93ca014b945bb0c1447ab8cfb9e6`. Le [correctif de rendu desktop](https://github.com/TheoxProject/RaceAtlas/pull/18) avait passé la [CI main](https://github.com/TheoxProject/RaceAtlas/actions/runs/44346863088) au `7f7cd9c`.
+Point du 2026-11-19 07:57:40 UTC. Base GitHub vérifiée `9f9096d04c21c488512969f173a5d81bfbe33bed` ([PR du filtre Discipline](https://github.com/TheoxProject/RaceAtlas/pull/20)). Worktree `C:/Users/theop/.codex/worktrees/d76c/RaceAtlas`, branche `feature/public-raceatlas`. Le propriétaire a demandé la suppression du mode preview, le contrôle des localisations du catalogue 2027 et des couleurs par type d’épreuve.
 
-| Tâche | État | Preuve ou condition restante |
+| Tâche | État | Critère observable |
 |---|---|---|
-| DISC-01 · Développeur | DONE | Un seul bouton Discipline, cinq disciplines sélectionnables et types Route Course en ligne, CLM et Grimpée. Le parcours Chromium 390 px vérifie le filtre commun carte/calendrier et le retour du focus avec Échap. |
-| DISC-02 · Développeur | DONE | Migration `4fc0cc210b83`, 26 tests de contrats et trois cas API sur PostgreSQL pour Piste et Grimpée. Le filtre de type conserve son intersection avec les disciplines. |
-| DISC-03 · Développeur | DONE | `85ae591c67dd033202d0c75bad70a3abe8544ac9` aligne le test de notifications sur le mode `cors` déjà présent sur main. Treize tests ciblés passent. La [CI de la base](https://github.com/TheoxProject/RaceAtlas/actions/runs/44382718254) avait isolé cette assertion. |
-| DISC-04 · Testeur et Coordinateur | IN_PROGRESS | Revue indépendante du SHA figé, contrôle GitHub `integrated`, fusion et contrôle main. |
+| PUBLIC-01 · Développeur | IN_PROGRESS | Démarrer sans identifiants partagés. Ouvrir carte, calendrier et catalogue anonymement, contrôler les API personnelles par session. |
+| PUBLIC-02 · Développeur | IN_PROGRESS | Distinguer les types par des couleurs et des libellés cohérents sur la carte et le calendrier. |
+| PUBLIC-03 · Coordinateur | IN_PROGRESS | Associer uniquement des centres établis à partir d’une commune attestée. Les autres courses restent accessibles parmi les non-localisées. |
+| PUBLIC-04 · Testeur et Coordinateur | TODO | Revue indépendante, CI intégrée sur le SHA figé, fusion, contrôle de main puis déploiement manuel et vérification anonyme. |
 
-**Travail et validation.** Worktree `C:/Users/theop/.codex/worktrees/161d/RaceAtlas`, branche `feature/discipline-picker`, [PR 20](https://github.com/TheoxProject/RaceAtlas/pull/20) en Draft. Handoff développeur au `d08921c554a3cd56ba7204dcf5564689f842eb90` avant ce checkpoint, build et lint réussis. Quatre tests PostgreSQL/Chromium réussis en 35,42 s avec le cycle Alembic de la suite. Le [premier contrôle development](https://github.com/TheoxProject/RaceAtlas/actions/runs/44391007743) porte sur le commit `85ae591`. Aucun SHA approuvé par le testeur à ce stade.
+**Existant.** Render sert la base vérifiée sur le service existant, avec les déploiements automatiques désactivés. Neon est à la révision `b806e44f7901`. La lecture SQL du catalogue 2027 a confirmé 94 courses FFC, zéro centre associé et zéro commune enregistrée dans les observations d’import. Aucune écriture. L’import ponctuel est terminé et ne doit pas être rejoué. [Bilan et observations du catalogue](https://github.com/TheoxProject/RaceAtlas/pull/19#issuecomment-6987381129)
 
-**Environnement.** Node 24.22.1, Python 3.12.14, Chromium 1194 et PostgreSQL 17.11 jetable sur `127.0.0.1:55454` dans `.local-tools/discipline-pg/native-data`. `raceatlas_discipline_test` pour le développeur et `raceatlas_discipline_review` pour le testeur. Garder les bases distinctes. Le premier `initdb` dans le bac à sable a été interrompu. Éviter de le relancer sur le répertoire partiel `data` et de reseeder une base existante. Aucun déploiement ni collecte FFC dans ce chantier.
+**Validation à venir.** Le SHA de travail part de la base ci-dessus. Aucun SHA de cette branche n’a encore été revu. Utiliser des environnements Python/Node locaux et PostgreSQL jetable ou le service PostgreSQL de la CI pour les tests, en séparant les bases du Développeur et du Testeur.
 
-**Prochaine action.** Publier le SHA qui contient ce checkpoint, confirmer la tête de la PR 20 et lancer la revue indépendante et le contrôle `integrated` sur ce même SHA. Consigner les résultats dans la PR pendant le gel.
+**Prochaine action.** Publier ce checkpoint et ouvrir la Draft PR, puis examiner les premières modifications du Développeur.
