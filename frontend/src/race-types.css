@@ -1,0 +1,80 @@
+.view-controls {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  position: relative;
+}
+
+.race-legend {
+  position: relative;
+  z-index: 6;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.race-legend summary {
+  padding: 10px 8px;
+  margin: 0;
+  color: #48566c;
+}
+
+.race-legend ul {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  width: max-content;
+  max-width: calc(100vw - 28px);
+  margin: 0;
+  padding: 12px 16px;
+  list-style: none;
+  border: 1px solid #dbe1e7;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 4px 18px #111f3725;
+}
+
+.race-legend li,
+.race-row .race-row-type {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.race-legend li + li {
+  margin-top: 6px;
+}
+
+.race-type-swatch {
+  width: 9px;
+  height: 9px;
+  flex: 0 0 9px;
+  border-radius: 50%;
+  background: var(--race-type-color);
+}
+
+.map-canvas .race-marker,
+.map-canvas .race-marker:hover {
+  color: #fff;
+  background: var(--race-type-color);
+}
+
+.calendar-view .calendar-race {
+  background: color-mix(in srgb, var(--race-type-color) 12%, white);
+  color: #111f37;
+  border-color: var(--race-type-color);
+}
+
+@media (max-width: 350px) {
+  .view-controls {
+    gap: 4px;
+  }
+
+  .view-controls .view-switch button {
+    min-width: 72px;
+  }
+
+  .race-legend summary {
+    padding-inline: 2px;
+  }
+}

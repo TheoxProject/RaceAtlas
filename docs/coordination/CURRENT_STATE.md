@@ -1,16 +1,18 @@
-# Prépublication V1 — filtre Discipline
+# Ouverture publique de RaceAtlas
 
-Point du **18 novembre 2026 à 20:29 UTC**. Le filtre Discipline demandé par le propriétaire reprend les lots 4–6 sur la base distante vérifiée `b9a0c4313c5b93ca014b945bb0c1447ab8cfb9e6`. Le [correctif de rendu desktop](https://github.com/TheoxProject/RaceAtlas/pull/18) avait passé la [CI main](https://github.com/TheoxProject/RaceAtlas/actions/runs/44346863088) au `7f7cd9c`.
+Point du 2026-11-19 08:08:11 UTC. Base GitHub vérifiée `9f9096d04c21c488512969f173a5d81bfbe33bed` ([PR du filtre Discipline](https://github.com/TheoxProject/RaceAtlas/pull/20)). Worktree `C:/Users/theop/.codex/worktrees/d76c/RaceAtlas`, branche `feature/public-raceatlas`. Le propriétaire a demandé la suppression du mode preview, le contrôle des localisations du catalogue 2027 et des couleurs par type d’épreuve.
 
-| Tâche | État | Preuve ou condition restante |
+| Tâche | État | Critère observable |
 |---|---|---|
-| DISC-01 · Développeur | DONE | Un seul bouton Discipline, cinq disciplines sélectionnables et types Route Course en ligne, CLM et Grimpée. Le parcours Chromium 390 px vérifie le filtre commun carte/calendrier et le retour du focus avec Échap. |
-| DISC-02 · Développeur | DONE | Migration `4fc0cc210b83`, 26 tests de contrats et trois cas API sur PostgreSQL pour Piste et Grimpée. Le filtre de type conserve son intersection avec les disciplines. |
-| DISC-03 · Développeur | DONE | `85ae591c67dd033202d0c75bad70a3abe8544ac9` aligne le test de notifications sur le mode `cors` déjà présent sur main. Treize tests ciblés passent. La [CI de la base](https://github.com/TheoxProject/RaceAtlas/actions/runs/44382718254) avait isolé cette assertion. |
-| DISC-04 · Testeur et Coordinateur | IN_PROGRESS | Revue indépendante du SHA figé, contrôle GitHub `integrated`, fusion et contrôle main. |
+| PUBLIC-01 · Développeur | DONE | Le lanceur public démarre sans identifiants partagés. L’authentification personnelle dépend des sessions. |
+| PUBLIC-02 · Développeur | DONE | La carte, le calendrier et les résultats partagent les couleurs et les libellés. Un groupe mixte utilise une couleur neutre. |
+| PUBLIC-03 · Coordinateur | DONE | Après accord explicite du propriétaire, trois centres officiels sont associés à neuf courses 2027 dans Neon. |
+| PUBLIC-04 · Testeur et Coordinateur | IN_PROGRESS | Revue indépendante, CI intégrée sur le SHA figé, fusion et contrôle de main. Le propriétaire crée le nouveau service Render. |
 
-**Travail et validation.** Worktree `C:/Users/theop/.codex/worktrees/161d/RaceAtlas`, branche `feature/discipline-picker`, [PR 20](https://github.com/TheoxProject/RaceAtlas/pull/20) en Draft. Handoff développeur au `d08921c554a3cd56ba7204dcf5564689f842eb90` avant ce checkpoint, build et lint réussis. Quatre tests PostgreSQL/Chromium réussis en 35,42 s avec le cycle Alembic de la suite. Le [premier contrôle development](https://github.com/TheoxProject/RaceAtlas/actions/runs/44391007743) porte sur le commit `85ae591`. Aucun SHA approuvé par le testeur à ce stade.
+**Existant.** Le service Render historique sert la base vérifiée, avec les déploiements automatiques désactivés. Le propriétaire créera lui-même le nouveau service public. Neon est à la révision `b806e44f7901`. Le premier contrôle a confirmé 94 courses FFC en 2027, zéro centre associé et zéro commune dans les observations d’import. L’import ponctuel est terminé. [Bilan du chargement](https://github.com/TheoxProject/RaceAtlas/pull/19#issuecomment-6987381129)
 
-**Environnement.** Node 24.22.1, Python 3.12.14, Chromium 1194 et PostgreSQL 17.11 jetable sur `127.0.0.1:55454` dans `.local-tools/discipline-pg/native-data`. `raceatlas_discipline_test` pour le développeur et `raceatlas_discipline_review` pour le testeur. Garder les bases distinctes. Le premier `initdb` dans le bac à sable a été interrompu. Éviter de le relancer sur le répertoire partiel `data` et de reseeder une base existante. Aucun déploiement ni collecte FFC dans ce chantier.
+**Localisations vérifiées.** Une transaction Neon a associé Guilherand-Granges (une course), Montélimar (deux) et Saint-Marcellin (six) à neuf identités FFC exactes encore sans commune. La lecture post-transaction a confirmé neuf courses localisées, 85 non localisées et trois centres officiels en cache. La Faun Drôme Classic reste non localisée à cause d’un désaccord de département. [Faun Ardèche Classic](https://boucles-drome-ardeche.fr/faun-ardeche-classic/) · [Corima](https://www.corimadromeprovencale.com/) · [Saint-Marcellin et sources régionales](https://cyclo-cross.fr/courses/cyclo-cross-saint-marcellin-2027/) · [API officielle](https://geo.api.gouv.fr/decoupage-administratif/communes)
 
-**Prochaine action.** Publier le SHA qui contient ce checkpoint, confirmer la tête de la PR 20 et lancer la revue indépendante et le contrôle `integrated` sur ce même SHA. Consigner les résultats dans la PR pendant le gel.
+**Validation.** [Draft PR 21](https://github.com/TheoxProject/RaceAtlas/pull/21), checkpoint initial `d874327a5e877342d149dc7f44f02bb668f6c081`, [contrôle development réussi](https://github.com/TheoxProject/RaceAtlas/actions/runs/44483808354). Le Développeur a passé 141 tests frontend, le lint, le build et Ruff. PostgreSQL 17.11 jetable sur le port local 55463 avec les bases distinctes `raceatlas_public_test` et `raceatlas_public_review`. Les résultats du SHA figé seront consignés dans la PR.
+
+**Prochaine action.** Publier le commit de livraison et lancer la revue indépendante et le contrôle `integrated` sur ce SHA. La géolocalisation ponctuelle est terminée. Vérifier les associations existantes avant toute opération complémentaire.

@@ -1,5 +1,6 @@
-import { MONTHS, SPORTS } from './catalog.js';
+import { MONTHS } from './catalog.js';
 import { MAX_CALENDAR_YEAR, MIN_CALENDAR_YEAR, moveCalendarMonth, selectCalendarMonth } from './calendar.js';
+import { raceStyle, raceStyleLabel } from './raceTypes.js';
 import './calendar.css';
 
 const WEEKDAYS = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
@@ -14,7 +15,12 @@ export function Calendar({ period, setPeriod, projection, status, onDay, onRace,
     <table className="calendar-grid"><caption className="visually-hidden">Courses de {MONTHS[period.month - 1]} {period.year}, du lundi au dimanche</caption><thead><tr>{WEEKDAYS.map(day => <th key={day} scope="col"><abbr title={day}>{day.slice(0, 3)}</abbr></th>)}</tr></thead><tbody>
       {Array.from({ length: projection.days.length / 7 }, (_, week) => <tr key={week}>{projection.days.slice(week * 7, week * 7 + 7).map(day => <td key={day.date} data-date={day.date} className={day.inMonth ? '' : 'outside-month'}>
         <button className="calendar-day" disabled={!day.inMonth || status !== 'ready'} aria-label={`${dayLabel(day.date)} · ${day.items.length} course${day.items.length !== 1 ? 's' : ''}`} onClick={() => onDay(day)}><span>{day.day}</span>{day.items.length > 0 && <small>{day.items.length} course{day.items.length !== 1 && 's'}</small>}</button>
-        <div className="calendar-chips">{day.items.slice(0, 2).map(item => <button key={item.race.id} className="calendar-race" data-race-id={item.race.id} title={item.race.name} aria-label={`${item.race.name} · ${SPORTS[item.race.discipline]} · ${dayLabel(day.date)}`} onClick={() => onRace(item, day)}>{item.race.name}</button>)}</div>
+        <div className="calendar-chips">{day.items.slice(0, 2).map(item => {
+          const { race } = item;
+          const style = raceStyle(race);
+          const label = `${race.name} · ${raceStyleLabel(race, style)}`;
+          return <button key={race.id} className="calendar-race" data-race-id={race.id} style={{ '--race-type-color': style.color }} title={label} aria-label={`${label} · ${dayLabel(day.date)}`} onClick={() => onRace(item, day)}>{race.name}</button>;
+        })}</div>
       </td>)}</tr>)}
     </tbody></table>
     {status === 'ready' && projection.candidates.length > 0 && <div className="calendar-candidates"><p>Localisations à confirmer : {projection.candidates.length} candidate{projection.candidates.length !== 1 && 's'}, exclues des jours et du total du rayon.</p><button onClick={() => onCandidates(projection.candidates)}>Consulter les localisations à confirmer</button></div>}

@@ -202,9 +202,9 @@ def test_native_basic_header_is_not_account_bearer_and_unverified_account_cannot
     app, database
 ):
     client, _ = actor_client(app, database)
-    preview_header = {"Authorization": "Basic c3ludGhldGljOnByZXZpZXc="}
-    assert client.get(BASE, base_url=ORIGIN, headers=preview_header).status_code == 200
-    anonymous = app.test_client().get(BASE, base_url=ORIGIN, headers=preview_header)
+    unrelated_header = {"Authorization": "Basic c3ludGhldGljOnVucmVsYXRlZA=="}
+    assert client.get(BASE, base_url=ORIGIN, headers=unrelated_header).status_code == 200
+    anonymous = app.test_client().get(BASE, base_url=ORIGIN, headers=unrelated_header)
     assert anonymous.status_code == 401 and "Set-Cookie" not in anonymous.headers
     unverified, _ = actor_client(app, database, "unverified@example.test", verified=False)
     assert unverified.get(BASE, base_url=ORIGIN).status_code == 401

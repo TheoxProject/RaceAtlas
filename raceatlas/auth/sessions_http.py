@@ -110,7 +110,7 @@ def register_session_routes(app, blueprint, runtime, boundary, error_handler):
             return result
 
     def token():
-        # Authorization (including preview Basic) is never an account identity.
+        # Only the session cookie identifies an account.
         return request.cookies.get(runtime.settings.session_cookie)
 
     @blueprint.post("/login", endpoint="login")

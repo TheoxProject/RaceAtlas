@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { getJson, groupCommunes, initialFilters, initialPeriod, loadSelection, periodRange, SPORTS } from './catalog.js';
+import { getJson, groupCommunes, initialFilters, initialPeriod, loadSelection, periodRange } from './catalog.js';
 import { Filters, PeriodControls } from './Filters.jsx';
 import { MapView } from './MapView.jsx';
 import { formatDate, RaceDetails } from './RaceDetails.jsx';
@@ -8,6 +8,22 @@ import { projectCalendar, selectCalendarMonth } from './calendar.js';
 import { AccountPanel } from './AccountPanel.jsx';
 import { useAccount } from './useAccount.js';
 import { clearAccountAction } from './accountBootstrap.js';
+import { RaceTypeLegend } from './RaceTypeLegend.jsx';
+import { raceStyle, raceStyleLabel } from './raceTypes.js';
+
+const emptySelection = [];
+
+function RaceRow({ race, location, onSelect }) {
+  const style = raceStyle(race);
+  return <button className="race-row" onClick={() => onSelect(race.id)}>
+    <span className="race-row-type">
+      <span className="race-type-swatch" style={{ '--race-type-color': style.color }} aria-hidden="true" />
+      {raceStyleLabel(race, style)} · {location}
+    </span>
+    <strong>{race.name}</strong>
+    <span>{formatDate(race.start_date)} <b>↗</b></span>
+  </button>;
+}
 
 export function App({ initialAccountAction = null }) {
   const [account, accountController] = useAccount();
@@ -37,7 +53,7 @@ export function App({ initialAccountAction = null }) {
     return () => { clearTimeout(timeout); controller.abort(); };
   }, [filter, attempt]);
   const data = state.data;
-  const items = data?.items || [], features = data?.features || [];
+  const items = data?.items || emptySelection, features = data?.features || emptySelection;
   const groups = groupCommunes(features);
   const labels = Object.fromEntries((options?.categories || []).map(category => [category.code, category.label]));
   const unlocated = new Set(data?.unlocatedIds || []);
@@ -62,7 +78,10 @@ export function App({ initialAccountAction = null }) {
       </aside>
       <section className="map-workspace" aria-label="Explorer les courses">
         <div className="workspace-toolbar"><div className="toolbar-title"><p className="eyebrow">Le cyclisme, grandeur nature</p><h2>Explorez votre saison.</h2></div>{view === 'map' ? <PeriodControls period={period} setPeriod={setPeriod} /> : <CalendarPeriodControls period={period} setPeriod={setPeriod} />}</div>
-        <div className="segmented view-switch" aria-label="Vue des courses">{[['map', 'Carte'], ['calendar', 'Calendrier']].map(([value, label]) => <button key={value} aria-pressed={view === value} onClick={() => switchView(value)}>{label}</button>)}</div>
+        <div className="view-controls">
+          <div className="segmented view-switch" aria-label="Vue des courses">{[['map', 'Carte'], ['calendar', 'Calendrier']].map(([value, label]) => <button key={value} aria-pressed={view === value} onClick={() => switchView(value)}>{label}</button>)}</div>
+          <RaceTypeLegend />
+        </div>
         <div className={`map-shell ${view === 'calendar' ? 'calendar-active' : ''}`}>
           <div className="map-layer" hidden={view !== 'map'}>
           <MapView visible={view === 'map'} features={features} races={items} mode={mode} setMode={setMode} onReliefError={setTerrainFailed} onSelect={showGroup} chooseCenter={chooseCenter} onCenter={onCenter} />
@@ -82,8 +101,8 @@ export function App({ initialAccountAction = null }) {
             {selectedItem ? <RaceDetails item={selectedItem} labels={labels} showMatches={filters.categories.length > 0} candidate={isRadius && unlocated.has(selectedItem.race.id)} onBack={() => setSelected(null)} account={account} controller={accountController} onConnect={() => { setAccountOpen(true); accountController.refresh(); }} /> : <>
               <p className="hint">{view === 'map' ? 'Les points représentent des centres de communes, pas les départs des courses.' : 'Les courses sont affichées pour chaque jour de leur période.'}</p>
               {visibleItems.length === 0 && <p>Aucune course ce jour.</p>}
-              {visibleItems.filter(item => !unlocated.has(item.race.id)).map(item => <button key={item.race.id} className="race-row" onClick={() => setSelected(item.race.id)}><span>{SPORTS[item.race.discipline]} · {item.race.location?.commune_name}</span><strong>{item.race.name}</strong><span>{formatDate(item.race.start_date)} <b>↗</b></span></button>)}
-              {visibleItems.some(item => unlocated.has(item.race.id)) && <section className="unlocated-section"><h3>{isRadius ? 'Localisations à confirmer' : 'Courses non localisées'} · {visibleItems.filter(item => unlocated.has(item.race.id)).length}</h3><p className="hint">{isRadius ? 'Candidates aux autres filtres, exclues du total du rayon.' : 'Ces courses n’ont pas de centre de commune disponible.'}</p>{visibleItems.filter(item => unlocated.has(item.race.id)).map(item => <button key={item.race.id} className="race-row" onClick={() => setSelected(item.race.id)}><span>{SPORTS[item.race.discipline]} · localisation à préciser</span><strong>{item.race.name}</strong><span>{formatDate(item.race.start_date)} <b>↗</b></span></button>)}</section>}
+              {visibleItems.filter(item => !unlocated.has(item.race.id)).map(({ race }) => <RaceRow key={race.id} race={race} location={race.location?.commune_name} onSelect={setSelected} />)}
+              {visibleItems.some(item => unlocated.has(item.race.id)) && <section className="unlocated-section"><h3>{isRadius ? 'Localisations à confirmer' : 'Courses non localisées'} · {visibleItems.filter(item => unlocated.has(item.race.id)).length}</h3><p className="hint">{isRadius ? 'Candidates aux autres filtres, exclues du total du rayon.' : 'Ces courses n’ont pas de centre de commune disponible.'}</p>{visibleItems.filter(item => unlocated.has(item.race.id)).map(({ race }) => <RaceRow key={race.id} race={race} location="localisation à préciser" onSelect={setSelected} />)}</section>}
             </>}
           </aside>}
         </div>
