@@ -20,23 +20,12 @@ Chaque requête lit version, compteurs, IDs, graphes et couverture dans une seul
 
 `ImportRun.catalog_order` ordonne les tentatives par création en base, indépendamment des UUID et des horloges du fournisseur. La couverture utilise les fenêtres de la dernière tentative ; une tentative échouée/partielle/en cours reste incomplète et conserve la dernière synchronisation réussie. `audit_floor` distingue les audits antérieurs à la migration, dont l'ordre réel ne peut être reconstruit : incomplets jusqu'à un nouveau contrôle. Une enveloppe de dates ne prouve pas la continuité. Même un échantillon synthétique cohérent garde `intrinsic_exhaustiveness=unknown` et une note explicite ; aucune complétude FFC réelle n'en découle.
 
-## Vérification reproductible PowerShell
+## Vérification locale
 
-Préparer les dépendances de `requirements-dev.txt`, Node et `frontend/node_modules` conformément au lot1. Réutiliser l'environnement compatible existant si présent. La base doit être PostgreSQL jetable, suffixée `_test` ou `_review` ; les tests détruisent **leur schéma** et parcourent upgrade/check/downgrade/upgrade/check. Ne jamais utiliser une base distante ou métier.
+Configurer la base PostgreSQL jetable comme indiqué dans le README et exécuter le groupe ciblé depuis la racine. [Installation et tests](../../README.md#vérification-complète)
 
 ```powershell
-$env:TEST_DATABASE_URL = 'postgresql+psycopg://raceatlas_local@127.0.0.1:55434/raceatlas_lot2_test'
-$env:RACEATLAS_DISPOSABLE_DB = '1'
-# Pointer PLAYWRIGHT_BROWSERS_PATH vers les navigateurs locaux déjà installés si nécessaire.
-python -m ruff check raceatlas migrations tests/backend
-python -m ruff format --check raceatlas migrations tests/backend
-node --test tests/contracts/contracts.test.mjs
-Push-Location frontend
-node node_modules/eslint/bin/eslint.js . --max-warnings 0
-node node_modules/vitest/vitest.mjs run --pool=threads --maxWorkers=1
-node node_modules/vite/bin/vite.js build
-Pop-Location
-python -m pytest -q --tb=short
+.\.venv\Scripts\python.exe -m pytest tests/backend/test_catalog.py tests/backend/test_catalog_sync.py tests/backend/test_catalog_validation.py -q
 ```
 
-Tests ciblés : `python -m pytest tests/backend/test_catalog.py tests/backend/test_catalog_sync.py tests/backend/test_catalog_validation.py -q --tb=short`. `test_catalog_sync.py` réutilise uniquement les constructeurs de fixtures synthétiques des tests lot3 ; aucun oracle de sélection n'est importé en production. Aucun client réseau, scheduler, migration distante ou déploiement n'est activé par ce lot.
+Les tests exercent les deux routes et l’effet des imports sur la couverture avec des fixtures synthétiques.

@@ -14,7 +14,7 @@ Base intégrée `1f1d50b1395eaf271d1a22e255555cc027f34bf1`, main CI44150897395 S
 
 `tests/backend/test_ops_errors.py::test_incomplete_detail_preserves_saved_scope_then_real_recovery_notifies_once` utilise PostgreSQL et le vrai `synchronize`. Race retrouvée par SourceRecord provider/saison/clé, scope A par raw_label exact de l’observation connue ; scope frère distinct. Import valide puis sauvegarde planned, calendrier annonce la clé mais détail absent : coverage incomplete et ancien last_success conservé, course present/scheduled, zéro RaceChange et compteur privé0. Vrai changement de nom à la reprise : consistent_sample, une notification virtuelle sur LE scope suivi, cible frère exclue du DTO privé, PN toujours non matérialisées ; replay conserve événement/item/compteur.
 
-Aucun faux HTTPFFC429 : la source est un contrat WindowBatch offline sans transport. Aucun changement runtime, politique, permission, migration, UI ou dépendance. Les sept tests ciblés ont passé en10,20s, JUnit ignoré `.local-tools/ops-e-targeted.xml`. Aucun échec lors de ce groupe. Détails de commande dans [handoff E](errors-handoff.md).
+Aucun faux HTTPFFC429 : la source est un contrat WindowBatch offline sans transport. Aucun changement runtime, politique, permission, migration, UI ou dépendance. Les sept tests ciblés ont passé en10,20s, JUnit ignoré `.local-tools/ops-e-targeted.xml`. Aucun échec lors de ce groupe. Détails des commandes dans le [compte rendu archivé](https://github.com/TheoxProject/RaceAtlas/blob/v1.0.0/docs/lot-8/errors-handoff.md).
 
 ## Limites
 

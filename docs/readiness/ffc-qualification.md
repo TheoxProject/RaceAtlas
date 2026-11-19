@@ -1,8 +1,10 @@
 # Qualification FFC limitée — 11 novembre 2026
 
+Ce relevé décrit les essais du 11 novembre. Le chargement ponctuel FFC 2027 qui a suivi fait l’objet d’un bilan distinct. [Bilan du chargement](https://github.com/TheoxProject/RaceAtlas/pull/19#issuecomment-6987381129)
+
 ## Résultat et portée
 
-**L'adaptateur actuel n'est pas compatible de bout en bout avec les deux exemples réels examinés.** Les erreurs sont explicites, sans import ni mutation. Les fixtures restent un dialecte synthétique ; elles ne deviennent pas des fixtures live validées.
+**L’adaptateur du 11 novembre a échoué sur les deux exemples réels examinés.** Les erreurs sont explicites, sans import ni mutation. Les fixtures restent un dialecte synthétique ; elles ne deviennent pas des fixtures live validées.
 
 Méthode : lecture des mentions légales et de robots, puis deux GET séquentiels ciblés à12:45:38–39UTC. Pages limitées à2Mo en mémoire, détruites ensuite ; aucun HTML brut, jeu de données FFC ou participant archivé. Aucun endpoint d'engagement, login, API ou handler appelé. Seules métadonnées, compteurs structurels et diagnostics sont conservés. Les sondes locales ignorées ne sont pas un mécanisme de synchronisation à réactiver.
 
@@ -14,7 +16,7 @@ Les [mentions FFC](https://velo.ffc.fr/mentions-legales/) décrivent un usage pr
 
 ## Observations techniques
 
-| Exemple et provenance | Faits observés | Adaptateur actuel |
+| Exemple et provenance | Faits observés | Adaptateur testé le 11 novembre |
 |---|---|---|
 | [Calendrier Drôme, 11novembre, un jour](https://competitions.ffc.fr/calendrier/?departement=26&debut=2026-11-11&nbjours=1),12:45:38UTC, HTTP200,131626octets | Un compteur dont l'ID finit par InfoJourSelection ; sept paires saison/numéro distinctes. Aucun input/select avec les noms exacts debut/nbjours/departement attendus par le dialecte. Ces compteurs seuls ne prouvent ni fenêtre effective ni complétude. | `parse_calendar` échoue `layout_changed`, champ `debut`. Aucun constat de disparition ou annulation permis. |
 | [Fiche déjà connue Saint-Sorlin Access](https://competitions.ffc.fr/calendrier/competition/2027/C4126010012/st-sorlin-en-valloire-cyclo-cross-du-moulin-access/),12:45:39UTC, HTTP200,102118octets | #epreuvesDiv et #epreuvesContenu présents une fois, une .epreuve. #raceDetails absent, aucun dl.regle ni canonical dans l'extraction ciblée. | `parse_race` échoue `html_structure`, champ html, avant extraction des faits. Le lecteur strict et le conteneur synthétique ne qualifient pas la fiche réelle. |

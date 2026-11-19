@@ -1,6 +1,6 @@
-# Décisions techniques préparatoires — auth
+# Décisions initiales de sécurité des comptes
 
-Sources primaires consultées le12novembre2026, Argon2/hash/sessions relus le13novembre. ACC-02A possède maintenant un candidat interne testé, décrit dans le [handoff](auth-handoff.md) ; CI/revue exacte restent requises et l'auth complète n'est pas livrée. Les choix produit sont dans [la mission](auth-mission.md). Aucun service/route auth/email réel activé.
+Cette note datée de novembre 2026 conserve les choix initiaux et les mesures locales. Les contrôles livrés figurent dans les preuves d’intégration. [Intégration des comptes](auth-integration.md) · [Revue technique initiale](https://github.com/TheoxProject/RaceAtlas/blob/v1.0.0/docs/lot-7/auth-handoff.md)
 
 ## Hash de mot de passe
 
@@ -21,7 +21,7 @@ Lors de cette recherche du12novembre, Argon était installé seulement dans un d
 
 Ordre transactionnel A : Account FOR UPDATE, relecture fraîche credential/session puis vérification et émission/révocation/changement, jusqu'au commit caller. Le commit décide le résultat durable ; publier le token avant commit est interdit au futur HTTP. Une preuve antérieure ne peut survivre à révocation concurrente ; un login véritablement nouveau après logout-all peut réussir si le mot de passe reste valide. Confirmation/reset B devront garder cet ordre ; aucune I/O email sous verrou. Dates/idle/absolue et version privée sont relues depuis la DB, jamais prouvées par un objet ORM déjà chargé.
 
-## Contrôles à implémenter et vérifier
+## Contrôles prévus lors de la conception
 
 L'[OWASP Authentication](https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html) motive longueur de passphrase, absence de troncature/composition arbitraire, réponses génériques et protection contre abus. Choix initial 15–128 caractères Unicode valides, espaces permis ; la couche HTTP doit borner taille et abus. Une politique de mots courants et ses données/droits devra être explicitée avant acceptation auth complète ; ce premier choix de longueur n'est pas une preuve de robustesse d'un mot particulier.
 
