@@ -1,69 +1,72 @@
 # RaceAtlas
 
-Découvrir et organiser les compétitions cyclistes d'Auvergne-Rhône-Alpes, avec carte Altitude/Summit, calendrier et filtres d'admissibilité.
+RaceAtlas aide à trouver les épreuves cyclistes dans les douze départements d’Auvergne-Rhône-Alpes et à organiser sa saison. La référence de la V1 est le [tag v1.0.0](https://github.com/TheoxProject/RaceAtlas/tree/v1.0.0). Les résultats de recette et les PR de livraison figurent dans la [validation V1](docs/readiness/validation-v1.md).
 
-## État du projet
+## Fonctionnalités V1
 
-Les lots 0–6 sont intégrés : modèle et migrations PostgreSQL, adaptateur HTML hors réseau, synchronisation auditable sur observations autorisées, API de catalogue, carte interactive et calendrier mensuel partagé. Altitude 2,5D s'ouvre par défaut ; Summit active le terrain 3D. Les filtres couvrent périodes civiles/ISO, disciplines/types, catégories OU/ET dans une même liste, recherche, départements et rayon. Les points représentent les centres de communes, jamais des départs inventés ; les courses non localisées restent consultables.
+- **Carte et calendrier mensuel** avec filtres partagés par période, discipline, type, catégorie, recherche, département ou rayon. Altitude affiche le relief en 2,5D et Summit en 3D. Les marqueurs indiquent les centres de communes. Les épreuves non localisées restent consultables dans les résultats et le calendrier. Une légende identifie les types d’épreuve.
+- **Conditions d’engagement** consultables par liste, avec les libellés et la provenance de la source. Un filtre de catégories en mode ET exige que la même liste accepte toutes les catégories sélectionnées.
+- **Compte personnel et Ma saison** avec confirmation de l’adresse e-mail, récupération du mot de passe, favoris par liste d’engagement et quatre statuts. Le statut « Inscrit » est déclaré par l’utilisateur. Les épreuves prévues ou inscrites peuvent être exportées au format ICS.
+- **Suivi du catalogue** avec import auditable et notifications internes sur les épreuves suivies. Une disparition à la source produit un état « à vérifier ». L’activation d’une collecte récurrente dépend de l’autorisation de la source et du propriétaire.
 
-Entrer dans le calendrier depuis Année/Semaine sélectionne le mois civil affiché ; revenir sur la carte conserve ce mois, les filtres et la caméra. Les jours ouvrent toutes leurs courses et les détails communs ; une épreuve multijour ne compte qu'une fois dans le total. Voir les [preuves d'intégration](docs/lot-6/integration.md) et le [guide calendrier](docs/lot-6/local-development.md). Les comptes email/mot de passe, récupération par email et planification/ICS arrivent au lot 7 ; Resend Free est retenu, mais aucun domaine ni expéditeur email n’est encore vérifié. Les notifications internes et l'exploitation arrivent au lot 8. Aucun déploiement ni collecte récurrente n'est activé. **La compatibilité de l'adaptateur avec les pages FFC réelles n'est pas acquise** : deux exemples ciblés échouent explicitement ; les droits de réutilisation restent à clarifier. Voir la [qualification limitée](docs/readiness/ffc-qualification.md).
+React et Vite composent l’interface, MapLibre GL JS affiche la carte et Flask sert l’application compilée et ses API. Le catalogue et les comptes reposent sur PostgreSQL, SQLAlchemy et Alembic.
 
-[Rapport concret de pré-déploiement](docs/readiness/predeployment-report.md), [checkpoint opérationnel](docs/coordination/CURRENT_STATE.md), [préparation hébergement intégrée](docs/readiness/integration.md). Le rapport est préparatoire : comptes/plafonds réels, licences complètes, expéditeur et validations distantes restent ouverts ; aucune activation par fusion ou silence.
+## Développement local sous Windows
 
-Le premier jalon du lot 7 est intégré et fournit uniquement une identité privée et les sauvegardes par liste d'engagement : statuts déclaratifs, révision privée, isolation entre comptes et conservation pendant les imports. Il ne connecte aucun utilisateur et n'ajoute pas encore auth, interface ou ICS. [Intégration ACC-01](docs/lot-7/foundation-integration.md), [prochain jalon auth](docs/lot-7/auth-mission.md), [périmètre et validation ACC-01](docs/lot-7/developer-handoff.md), [guide local](docs/lot-7/local-development.md). Le premier déploiement reste prévu après le lot 8, sous autorisation séparée ; aucun expéditeur email réel n'est validé.
+Prérequis pour PowerShell depuis la racine du dépôt. Installer Python 3.12, Node.js 24, pnpm 10.20.0 et PostgreSQL 17.11. Si nécessaire, installer la version de pnpm avec `npm install --global pnpm@10.20.0`.
 
-## Développement local
+Préparer un rôle PostgreSQL local et deux bases vides, `raceatlas_dev` et `raceatlas_test`, avec pgAdmin par exemple. Avec Docker Desktop, le fichier Compose crée la base de développement et la deuxième commande crée la base de test à la première installation.
 
-Prérequis : Python 3.12, Node.js 24, pnpm 10.20.0 et PostgreSQL 17.11 local. Les [instructions Windows d'installation](docs/lot-1/local-development.md) décrivent la création des bases et les dépendances. Les [commandes et scénarios actuels de carte](docs/lot-5/local-development.md) précisent les tests WebGL hors réseau et leurs limites.
+```powershell
+docker compose up -d --wait postgres
+docker compose exec postgres createdb -U raceatlas raceatlas_test
+```
 
-Après création d'une base locale vide `raceatlas_dev`, depuis la racine, dans PowerShell :
+Adapter les identifiants ci-dessous si le rôle ou le port local diffère. Les valeurs `raceatlas` sont des exemples locaux. Le fichier `.env.example` documente les variables et leur format. PowerShell ne le charge pas automatiquement.
 
 ```powershell
 py -3.12 -m venv .venv
-.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
+.\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
 pnpm --dir frontend install --frozen-lockfile
+
 $env:RACEATLAS_ENV = 'local'
 $env:DATABASE_URL = 'postgresql+psycopg://raceatlas:raceatlas@127.0.0.1:5432/raceatlas_dev'
-.venv\Scripts\python.exe -m alembic upgrade head
-.venv\Scripts\python.exe -m flask --app raceatlas:create_app seed-synthetic
+.\.venv\Scripts\python.exe -m alembic upgrade head
+.\.venv\Scripts\python.exe -m flask --app raceatlas:create_app seed-synthetic
 pnpm --dir frontend build
-.venv\Scripts\python.exe -m waitress --listen=127.0.0.1:5000 --call raceatlas:create_app
+.\.venv\Scripts\python.exe -m waitress --listen=127.0.0.1:5000 --call raceatlas:create_app
 ```
 
-Les identifiants sont des exemples locaux, à adapter. Ouvrir [RaceAtlas local](http://127.0.0.1:5000). Flask sert le React compilé et l'API sur la même origine. Le seed explicite est idempotent et refuse le mode production ; aucune migration ni insertion ne se fait au démarrage. Ne pas utiliser ces commandes contre une base distante sans autorisation.
+Ouvrir [RaceAtlas local](http://127.0.0.1:5000). Choisir 2026 pour consulter la plupart des épreuves fictives. Le chargement synthétique peut être rejoué sans doublons et refuse le mode production. Flask sert l’interface et les API sur la même origine. Pour le rechargement à chaud, garder le backend sur le port 5000 et lancer `pnpm --dir frontend dev` dans un deuxième terminal. Ouvrir alors [Vite local](http://127.0.0.1:5173).
 
-Routes disponibles : `/api/v1/races`, `/api/v1/map`, `/api/v1/races/{id}`, `/api/v1/catalog/options`, `/api/health/live` et `/api/health/ready`. Les sélections paginées partagent les filtres et la version du catalogue. Une fenêtre source manquante signifie « à vérifier », pas « annulée ». Les comptes arrivent au lot 7 ; le statut d'inscription restera déclaré par l'utilisateur.
+## Vérification complète
 
-## Validation et intégration
-
-Les tests PostgreSQL réinitialisent uniquement une base jetable suffixée `_test` ou `_review`, avec `RACEATLAS_DISPOSABLE_DB=1`. Ne jamais fournir une base de développement à conserver ou une base distante. Après installation de Chromium et build :
+Les tests PostgreSQL réinitialisent une base locale jetable suffixée `_test` ou `_review`, avec accord explicite via `RACEATLAS_DISPOSABLE_DB=1`. Utiliser la base de test dédiée. Les parcours navigateur exécutent l’interface React compilée, Flask, PostgreSQL et MapLibre dans Chromium avec des ressources cartographiques et des services externes simulés.
 
 ```powershell
 $env:TEST_DATABASE_URL = 'postgresql+psycopg://raceatlas:raceatlas@127.0.0.1:5432/raceatlas_test'
 $env:RACEATLAS_DISPOSABLE_DB = '1'
-.venv\Scripts\python.exe -m playwright install chromium
+.\.venv\Scripts\python.exe -m pip check
+.\.venv\Scripts\python.exe -m ruff check raceatlas migrations tests/backend ops
+.\.venv\Scripts\python.exe -m ruff format --check raceatlas migrations tests/backend ops
 node --test tests/contracts/contracts.test.mjs
 pnpm --dir frontend lint
 pnpm --dir frontend test
 pnpm --dir frontend build
-.venv\Scripts\python.exe -m ruff check raceatlas migrations tests/backend
-.venv\Scripts\python.exe -m ruff format --check raceatlas migrations tests/backend
-.venv\Scripts\python.exe -m pytest -q
+.\.venv\Scripts\python.exe -m playwright install chromium
+.\.venv\Scripts\python.exe -m pytest -q
 ```
 
-Les E2E exécutent réellement React → Flask → PostgreSQL et MapLibre/Chromium avec fond et DEM synthétiques interceptés. Ils ne qualifient pas les droits FFC, la disponibilité des fournisseurs ou tous les GPU mobiles. La CI contrôle le SHA courant et après fusion ; les résultats effectifs figurent dans le checkpoint et les PR.
+Pour cibler les parcours navigateur, utiliser `.\.venv\Scripts\python.exe -m pytest -m e2e`. Les règles de validation et d’intégration détaillent les contrôles requis sur GitHub. [Guide CI](docs/readiness/ci-validation.md)
 
-La cible préparée est un monolithe Flask/Waitress sur Render Free Frankfurt avec Neon Free proche si disponible. La création des services, les mutations distantes, tout déploiement et la publication finale restent soumis à l'autorisation du propriétaire. Le [rapport après lot 6](docs/readiness/predeployment-report.md) expose les étapes, hypothèses de ressources, limites et trois moments possibles de premier déploiement ; attendre le candidat après lot 8 est recommandé, sans engager cette décision.
+## Documentation
 
-- [Dossier versionné du lot 0](docs/lot-0/README.md)
-- [Contrat JSON Schema](contracts/catalog.schema.json)
-- [Contrat API OpenAPI 3.1](contracts/openapi.json)
-- [Fixtures synthétiques](fixtures/catalog.v1.json)
-- [Orchestration developer → tester](docs/AGENT_WORKFLOW.md)
-- [Hébergement public sur Render Free et Neon Free](docs/readiness/hosting.md)
+- Hébergement public, configuration TLS, migrations et sauvegardes. [Render et Neon](docs/readiness/hosting.md)
+- Configuration de l’envoi des e-mails de confirmation et de récupération. [Resend et Webador](docs/lot-7/resend-guide.md)
+- Développement du catalogue, de l’import et des interfaces. [Catalogue](docs/lot-4/local-development.md) · [Import et communes](docs/lot-3/local-development.md) · [Carte](docs/lot-5/local-development.md) · [Calendrier](docs/lot-6/local-development.md)
+- Contrats et données synthétiques. [Guide des contrats](docs/lot-0/contracts.md) · [OpenAPI](contracts/openapi.json) · [Catalogue synthétique](fixtures/catalog.v1.json)
+- Règles de contribution et historique des lots. [Workflow de l’équipe](docs/AGENT_WORKFLOW.md) · [Archives documentaires v1.0.0](https://github.com/TheoxProject/RaceAtlas/tree/v1.0.0/docs)
 
-Les contrats et fixtures sont synthétiques. Leur validation seule ne remplace pas les tests de l'application ni la revue indépendante du SHA final.
+## Après la V1
 
-Le socle interne d’authentification est revu au jalon9dfd (Argon2id et sessions serveur), sans parcours HTTP encore livré. [Mission Resend](docs/lot-7/resend-mission.md) : SDK officiel, providers Resend/Development, confirmation24h et reset30min, modèles français HTML+texte ; développement entièrement simulé, domaine/clé/envois réels et déploiement soumis à autorisation.
-
-Le jalon email B1 est préparé pour revue : service central, vrai SDK Resend avec transport simulé en tests, modèles français HTML+texte. Voir le [guide Resend/Webador](docs/lot-7/resend-guide.md) et les [preuves et limites B1](docs/lot-7/email-handoff.md). Le sous-domaine d’expédition retenu est `raceatlas.ucthonon.fr`, avec `RaceAtlas <notifications@raceatlas.ucthonon.fr>` après vérification seulement ; aucun DNS/envoi réel effectué. APP_BASE_URL sera l’URL réelle Render indépendante. Inscription, confirmation et reset HTTP restent à développer ; aucun verdict B1 ou achèvement du lot 7 n’est revendiqué.
+Les pistes à cadrer sont l’ajout d’épreuves, la refonte de la gestion des catégories, la simplification de l’application et l’évaluation d’une transition vers Neon Auth. La V1 utilise ses propres comptes et sessions.

@@ -14,7 +14,7 @@
 
 GitHub a confirmé la fusion ; fetch et diff ont confirmé l'identité des arbres. Le rapport indépendant intégral est en description PR et [commentaire final](https://github.com/TheoxProject/RaceAtlas/pull/13#issuecomment-6874589419).
 
-Livré : CRUD privé par scope, snapshots bornés, export statique des courses planned+registered, UID stable et ledger personnel batch avec SEQUENCE/DTSTAMP. Migration `a74d915e3c02`, runtime ICS stdlib ; parseur indépendant réservé aux tests. Source et favoris inchangés par export, erreurs/caps atomiques, isolation et révocation exercées via Flask/PostgreSQL. Voir [mission](planning-mission.md) et [handoff ICS](planning-ics-handoff.md).
+Livré : CRUD privé par scope, snapshots bornés, export statique des courses planned+registered, UID stable et ledger personnel batch avec SEQUENCE/DTSTAMP. Migration `a74d915e3c02`, runtime ICS stdlib ; parseur indépendant réservé aux tests. Source et favoris inchangés par export, erreurs/caps atomiques, isolation et révocation exercées via Flask/PostgreSQL. [Dossier d’export ICS archivé](https://github.com/TheoxProject/RaceAtlas/blob/v1.0.0/docs/lot-7/planning-ics-handoff.md).
 
 Historique conservé : candidat `aa07746` REQUEST CHANGES, 113 PASS/1 FAIL sur le décodage stdin du processus de test Windows CP1252, malgré CI Linux verte. PLAN-F1 a explicitement décodé les bytes UTF-8 et vérifié enfants CP1252/UTF-8 ; aucun changement produit. Le nouveau SHA a reçu sa propre CI et son verdict complet. Aucune preuve échouée n'est relabellisée PASS.
 

@@ -1,4 +1,4 @@
-# Préparation V1 intégrée
+# Intégration historique du premier lanceur de preview
 
 - PR : https://github.com/TheoxProject/RaceAtlas/pull/8.
 - SHA final approuvé : **dd80392605cb41ea995a0226eb89486cf1f00918**.
@@ -9,4 +9,4 @@
 
 Livré : workflow progressif et README actuels ; CI du SHA courant et après merge, diagnostics bornés ; configuration monolithique Render Free/Neon TLS et lanceur de preview obligatoirement privé ; procédures opérateur et70tests. La fusion n'a créé aucun service, payé, déployé ou muté une base distante. Build Render complet, handshake Neon, restauration opérationnelle et autorisations source restent des validations distinctes ; sauvegarde/restauration complète prévue au lot8. Rapport propriétaire de pré-déploiement après lot6.
 
-Les agents/tests ont terminé et le PostgreSQL local est conservé. Le lot6 démarre uniquement après le succès du gate main ci-dessus, depuis8ce46a3.
+Le lanceur public introduit plus tard figure dans le guide actuel. [Hébergement V1](hosting.md)

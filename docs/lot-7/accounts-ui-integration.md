@@ -2,7 +2,7 @@
 
 15 novembre 2026. [PR14](https://github.com/TheoxProject/RaceAtlas/pull/14), tête revue `de4e7c449a0e6f6124d9238381ad9a263a066787`, merge confirmé `c74086365df62bf1c71623e080bb1f649c9981f5`. Arbre identique `1663a7d19bf3610696156156291f5abeb5693154`, fetch et diff réels ; copie personnelle main préservée.
 
-[Tester APPROVE complet](https://github.com/TheoxProject/RaceAtlas/pull/14#issuecomment-6898826817) pour UI-1 + UI-2A + UI-2B au SHA exact. Parcours modifié saison : 1 PASS27,57s ; réutilisation explicite des preuves immuables de signup/confirmation/reset, deux comptes/scopes, réponses tardives, export ICS parsé, révocations et suppression. [Mission](accounts-ui-mission.md), [handoff](accounts-ui-handoff.md), [auth](auth-integration.md), [planning](planning-integration.md).
+[Tester APPROVE complet](https://github.com/TheoxProject/RaceAtlas/pull/14#issuecomment-6898826817) pour UI-1 + UI-2A + UI-2B au SHA exact. Parcours modifié saison : 1 PASS27,57s ; réutilisation explicite des preuves immuables de signup/confirmation/reset, deux comptes/scopes, réponses tardives, export ICS parsé, révocations et suppression. [Dossier UI archivé](https://github.com/TheoxProject/RaceAtlas/blob/v1.0.0/docs/lot-7/accounts-ui-handoff.md) · [Authentification](auth-integration.md) · [Planning](planning-integration.md).
 
 | Contrôle | Résultat réel |
 |---|---|

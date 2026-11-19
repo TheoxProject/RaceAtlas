@@ -1,29 +1,23 @@
-# Lot 3 — Utilisation locale et modèle d'audit
+# Import local et modèle d’audit
 
 Ce lot ajoute une bibliothèque Python d'import **explicite et hors réseau**, sans tâche planifiée, client FFC live ou géocodeur réseau. `synchronize(engine, batches, ...)` possède sa connexion et ses transactions ; il n'accepte pas de Session appelante et ne commite aucun travail externe. Cette entrée de développement refuse les hôtes PostgreSQL autres que localhost/127.0.0.1/::1. Les migrations et tests ci-dessous restent réservés aux bases locales jetables.
 
 ## Vérifier sous Windows
 
-Depuis la racine, réutiliser l'environnement indiqué dans `docs/coordination/CURRENT_STATE.md` :
+Préparer la base PostgreSQL jetable et les dépendances depuis la racine. [Installation et tests](../../README.md#développement-local-sous-windows)
 
 ```powershell
-$python = 'C:/Users/theop/.codex/worktrees/1a1e/RaceAtlas/.venv/Scripts/python.exe'
-$env:TEST_DATABASE_URL='postgresql+psycopg://raceatlas_local@127.0.0.1:55434/raceatlas_lot2_test'
-$env:RACEATLAS_DISPOSABLE_DB='1'
-$env:PLAYWRIGHT_BROWSERS_PATH='C:/Users/theop/.codex/worktrees/1a1e/RaceAtlas/.local-tools/browsers'
-& $python -m pytest -q
-& $python -m ruff check raceatlas migrations tests/backend
-& $python -m ruff format --check raceatlas migrations tests/backend
-node --test tests/contracts/contracts.test.mjs
+.\.venv\Scripts\python.exe -m pytest tests/backend/test_sync.py tests/backend/test_sync_finalization.py -q
 ```
 
-Migration head `8a95eb41f220` : ajoute un repère interne de présence/absence à SourceRecord, après `65107930ec01` inchangée. Backfill des audits réels et réparation conservatrice des anciennes présences erronées ; aucune modification du contrat public ni de sa sérialisation. Les fixtures pytest exécutent upgrade/check/downgrade/upgrade/check et réinitialisent les tables d'audit/cache et métier. Ne jamais pointer une base à conserver. Pour une autre base **locale de développement préalablement autorisée**, appliquer la migration par la commande Alembic documentée au lot 1 ; aucun démarrage ne migre implicitement.
+La migration `8a95eb41f220` introduit le repère interne de présence et d’absence de `SourceRecord`. Les tests exercent les migrations aller-retour et n’utilisent que la base jetable.
 
 ## Construire un import synthétique
 
-Exemple Python à exécuter à la racine avec une base locale jetable migrée. Il ne télécharge rien et ne réinitialise rien :
+Exemple Python à exécuter à la racine avec une base locale jetable migrée. Renseigner `DATABASE_URL` avec l’URL de cette base. Le script utilise exclusivement les fichiers synthétiques du dépôt.
 
 ```python
+import os
 from datetime import date, datetime, timezone
 from pathlib import Path
 from sqlalchemy import create_engine
@@ -43,7 +37,7 @@ details = tuple(parse_race(
     source_url=f'https://competitions.ffc.fr/calendrier/competition/{key.season}/{key.race_number}/synthetic/',
     checked_at=now,
 ) for key in calendar.keys)
-engine = create_engine('postgresql+psycopg://raceatlas_local@127.0.0.1:55434/raceatlas_lot2_test')
+engine = create_engine(os.environ["DATABASE_URL"])
 try:
     result = synchronize(engine, [WindowBatch(calendar, details)], checked_at=now, synthetic=True)
     print(result)
@@ -83,4 +77,4 @@ Le cache persistant est séparé par fournisseur/version/nom normalisé/INSEE/d�
 
 Un contrôle numérique délibérément large (`longitude` 1–8, `latitude` 43–48) écarte les axes inversés et centres manifestement éloignés. **Ce rectangle n'est pas un test polygonal d'appartenance à AURA ou à un département** ; l'identité officielle et la qualité du centre reposent toujours sur la provenance explicitement fournie. Aucun jeu de limites administratives, service GIS ou fournisseur live ajouté. Deux réponses contradictoires pour le même INSEE sont mises en erreur plutôt que de déplacer silencieusement toutes les courses.
 
-Les courses non localisées restent disponibles via l'API détail, `location=null`. Un résultat négatif est valide ; une erreur/ambiguïté de fournisseur conserve son cache/diagnostic mais ne modifie aucun fait, preuve, centre ou présence de l'item. Elle empêche les conclusions d'absence du run ; les fenêtres indépendantes réussies restent exploitables. Le renouvellement/élagage opérationnel des audits relève du lot 8 avant activation récurrente ; aucun stockage de source live ne s'accumule via ordonnanceur dans ce lot.
+Les courses non localisées restent disponibles via l'API détail, `location=null`. Un résultat négatif est valide ; une erreur/ambiguïté de fournisseur conserve son cache/diagnostic mais ne modifie aucun fait, preuve, centre ou présence de l'item. Elle empêche les conclusions d'absence du run ; les fenêtres indépendantes réussies restent exploitables. L’exercice utilise un import explicite. Les preuves d’intégration ultérieures couvrent le journal de changements et les notifications. [Imports et journal](../lot-8/n1-integration.md)

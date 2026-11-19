@@ -1,4 +1,4 @@
-# ACC-01 — fondation intégrée, lot 7 en cours
+# ACC-01 — intégration de la fondation des comptes
 
 [PR11](https://github.com/TheoxProject/RaceAtlas/pull/11) fusionnée et confirmée par GitHub le 12 novembre 2026. SHA approuvé : **d264ae0ac7c5586e65966922caadbfe91abd811d** ; merge main : **5e2c84a99f7795da9cc2e14118549873bf4a42be**. Arbre identique : **58f7a7e23ed3d0626735e2f762066de1ab55a8da**. Base précédente : 51856c9940a2b0e16c9f05d61a9f1726ae8701d9.
 
@@ -17,4 +17,4 @@ Account privé, SavedEntry unique compte+scope, quatre statuts déclaratifs, FK 
 
 Cette fondation ne connecte personne : Account persistant de même Session ORM est le contrat interne, pas une preuve d'authentification. Aucun credential, session, API privée, formulaire ou ICS livré ici. La migration c40a7162b901 reste manuelle hors fixtures jetables ; rien n'est appliqué à distance ou au démarrage/build.
 
-Décisions explicites enregistrées après fusion : **email+mot de passe → confirmation email avant connexion**, export ICS par défaut **Prévues et Inscrit**. Aucun domaine/expéditeur. Premier déploiement privé après lot8/candidat V1, activation et services soumis à autorisation séparée. Suite : [ACC-02](auth-mission.md), puis API planning/ICS et UI ; lot7 reste ouvert.
+Les décisions initiales sont la confirmation de l’adresse e-mail avant connexion et l’export ICS des statuts Prévue et Inscrit. Leur mise en œuvre est décrite dans les preuves d’intégration des jalons suivants. [Authentification](auth-integration.md) · [Planning](planning-integration.md) · [Interface](accounts-ui-integration.md)

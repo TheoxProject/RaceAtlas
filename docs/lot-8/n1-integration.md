@@ -12,7 +12,7 @@
 
 Tous les contrôles complets vérifient les sources avant/après et incluent migrations, contrats, lint/format, build et dépendances. Aucun development utilisé comme gate de fusion. Le connecteur avait refusé ci:full (403) ; l'accès GitHub existant autorisé a posé le label avec vérification du SHA, sans contourner protection ni permission.
 
-Preuves Reviewer :14PG ciblés10,11s et sonde après vrai commit ;44PG/5contrastes/N1A/B1 explicitement réutilisés après diffs nuls. Source→changement→projection, scopes/comptes/statuts, absence/replay/restauration/provenance calendrier, cap1000/1001, rollback et sauvegardes concurrentes exercés. [Mission](sync-notifications-mission.md), [handoff](developer-handoff.md), [commandes](local-development.md).
+Preuves Reviewer :14PG ciblés10,11s et sonde après vrai commit ;44PG/5contrastes/N1A/B1 explicitement réutilisés après diffs nuls. Source→changement→projection, scopes/comptes/statuts, absence/replay/restauration/provenance calendrier, cap1000/1001, rollback et sauvegardes concurrentes exercés. [Dossier historique du lot 8](https://github.com/TheoxProject/RaceAtlas/tree/v1.0.0/docs/lot-8).
 
 Les P2 historiques sont conservés : ordre de verrous entre appels (40P01) corrigé, et faux audit après commit réussi avec accusé perdu corrigé par confirmation durable. Commit confirmé : vrai bilan conservé ; confirmation impossible : outcome_unknown sans faux missing0, sans reprise silencieuse. Ancien b9f REQUEST CHANGES et sonde sont archivés/publiés dans PR15. Les anciens échecs de fixtures, l'installateur Ubuntu26.04 et l'attendu restauration pré-B2 restent distingués des succès actuels.
 

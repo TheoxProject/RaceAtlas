@@ -1,14 +1,14 @@
-# Email RaceAtlas — préparation Resend Free et Webador
+# Configurer les e-mails RaceAtlas avec Resend et Webador
 
-Guide préparatoire B1, sources primaires consultées le **13 novembre 2026**. Aucune des actions de console, DNS, envoi ou déploiement ci-dessous n'a été exécutée. Elles requièrent l'autorisation du propriétaire. Le module n'est pas encore appelé par l'application publique ; inscription, consommation des liens et interface restent aux jalons B2/C.
+RaceAtlas V1 utilise ce transport pour la confirmation de l’adresse et la récupération du mot de passe. L’opérateur vérifie le domaine, les limites et la délivrabilité de son instance. Les changements de console, de DNS et les envois réels requièrent l’accord du propriétaire. [Preuves des parcours V1](accounts-ui-integration.md)
 
 ## Domaine email et adresse du site
 
-Le club possède `ucthonon.fr`, géré via Webador. La cible retenue est **`raceatlas.ucthonon.fr` uniquement pour les emails**, avec **`RaceAtlas <notifications@raceatlas.ucthonon.fr>`** comme From futur. Le sous-domaine n'est pas encore vérifié dans Resend. Il n'héberge aucun site et ne nécessite pas de déplacer le site ou les emails existants du club.
+Le domaine du club, `ucthonon.fr`, est géré via Webador. La cible pour les e-mails est `raceatlas.ucthonon.fr` et l’expéditeur prévu est `RaceAtlas <notifications@raceatlas.ucthonon.fr>`. Vérifier le sous-domaine dans Resend avant de l’utiliser. La configuration d’expédition conserve le site et les e-mails existants du club.
 
-`APP_BASE_URL` sera l'URL **réelle** du service Render, à renseigner après autorisation et création du service. Aucune adresse Render effective n'est présumée. Cette URL est indépendante du domaine d'envoi ; les liens ne sont jamais construits depuis `EMAIL_FROM`, Host ou Forwarded.
+`APP_BASE_URL` est l’origine HTTPS du site RaceAtlas. Les liens utilisent cette origine configurée côté serveur. Le domaine d’envoi est indépendant.
 
-## Procédure future, sans toucher aux services du club
+## Configurer le domaine d’envoi
 
 1. Après accord, ouvrir un compte **Resend Free** détenu par le club/propriétaire, sécuriser ses accès et confirmer les limites affichées. Ne pas activer de plan payant ou de dépassement facturable.
 2. Ajouter uniquement le domaine d'envoi `raceatlas.ucthonon.fr`. Choisir **Ireland (`eu-west-1`)** si toujours disponible dans le compte Free. Les régions d'envoi sont proposées sur Free ; la région détermine le routage/envoi, **pas une résidence européenne des données** : Resend indique stockage des contenus/logs/métadonnées aux États-Unis, rétention Free de 30 jours. Examiner les engagements contractuels/DPA et la confidentialité avant toute donnée réelle ; ce guide ne conclut pas à une conformité juridique.
@@ -25,11 +25,13 @@ Références : [domaines et SPF/DKIM](https://resend.com/docs/add-a-domain), [co
 
 Dans `.env.example`, `EMAIL_PROVIDER=development`, les secrets/From/domaine vérifié restent vides et les deux attestations restent `false`. En local/test, renseigner explicitement une URL loopback, par exemple `http://127.0.0.1:5000`. Le simulateur conserve au plus 20 messages en mémoire, sans réseau, fichier ou log ; ils disparaissent avec le processus. Il est refusé en production.
 
-Après vérification **et autorisation distincte**, configuration cible future :
+Après vérification et autorisation distincte, renseigner les variables serveur suivantes.
 
-| Variable | Valeur ou source future |
+| Variable | Valeur ou source |
 |---|---|
 | `RACEATLAS_ENV` | `production` |
+| `AUTH_ENABLED` | `true` pour activer les comptes |
+| `AUTH_CSRF_KEY`, `AUTH_RATE_KEY` | Deux secrets stables et distincts d’au moins 32 octets UTF-8 chacun |
 | `APP_BASE_URL` | URL HTTPS réelle du site Render, sans chemin, query, fragment ou identifiants |
 | `EMAIL_PROVIDER` | `resend` |
 | `RESEND_API_KEY` | Secret `sending_access` restreint, fourni par la console |
@@ -49,14 +51,14 @@ Modèles français HTML et texte brut, sans mot de passe :
 | Confirmation | Confirmez votre adresse e-mail — RaceAtlas | Confirmer mon adresse e-mail | 24 heures |
 | Réinitialisation | Réinitialisez votre mot de passe — RaceAtlas | Réinitialiser mon mot de passe | 30 minutes |
 
-Formats figés pour la future UI : `${APP_BASE_URL}/#confirm-email=<token>` et `${APP_BASE_URL}/#reset-password=<token>` (une seule barre racine après canonicalisation). Jeton URL-safe de 43 caractères, entrées bornées et échappement HTML. Le fragment n'est pas envoyé dans la requête HTTP ou le Referer ; il reste sensible côté navigateur et ne doit pas être journalisé. B1 ne génère/stocke/expire/consomme pas ces jetons : durées et usage unique seront garantis par B2, pas par le rendu email. Aucun GET ne consomme un jeton à ce jalon.
+Les liens utilisent les formats `${APP_BASE_URL}/#confirm-email=<token>` et `${APP_BASE_URL}/#reset-password=<token>`. Le jeton est à usage unique. Le fragment reste côté navigateur et doit rester hors des journaux. L’interface demande une action explicite pour consommer le jeton.
 
 Le SDK officiel `resend.Emails.send` utilise le transport borné fourni : POST exact `https://api.resend.com/emails`, TLS vérifié, pas de proxy hérité, redirection ou retry ; connect 3,05 s/read 5 s et réponse décompressée limitée à 65 536 octets. Ce ne sont pas une échéance totale ni un SLA. Les globals du SDK sont sérialisés (attente maximale du verrou 1 s) et restaurés sur succès/erreur. Tout futur code doit passer par EmailService, sans écrire ces globals ni appeler le SDK directement.
 
-Un résultat `accepted` signifie seulement acceptation API, jamais réception. Les erreurs restent génériques (`quota`, `rejected`, `busy`, `delivery_failed`), sans exception native, corps, destinataire, clé ou jeton. L'identifiant d'opération UUID est opaque ; conserver le même pour une éventuelle répétition explicitement décidée. B1 ne retente rien et n'offre pas de file persistante. Les futurs flux doivent effectuer l'I/O email hors verrou/transaction métier et ne publier un lien qu'après commit.
+Le résultat `accepted` indique que l’API du fournisseur a accepté le message. Les erreurs restent génériques (`quota`, `rejected`, `busy`, `delivery_failed`). L’envoi a lieu après validation de la transaction métier. La V1 ne retente pas automatiquement un envoi.
 
-## Limites et essais ultérieurs
+## Vérification de l’instance
 
-[Quotas documentés](https://resend.com/docs/knowledge-base/account-quotas-and-limits) et [offre](https://resend.com/pricing), consultés le 13 novembre 2026 : Free **100 emails/jour UTC**, **3 000/mois**, **3 domaines**, **10 requêtes/s par équipe**. Le comptage concerne notamment les destinataires ; vérifier les règles et quotas réels du compte lors de son ouverture. Aucun quota de compte n'a été interrogé. Sur 429/quota, arrêter et signaler, sans boucle, file de retry ou passage payant. Les limites peuvent changer.
+Vérifier les quotas et les règles de comptage du compte avant activation. En cas de réponse 429 ou de quota atteint, arrêter et signaler. Un passage à une offre payante exige l’autorisation du propriétaire. [Quotas documentés](https://resend.com/docs/knowledge-base/account-quotas-and-limits) · [Offres Resend](https://resend.com/pricing)
 
-Après autorisation, puis après implémentation B2/C : vérifier une réception contrôlée HTML/texte, From, SPF/DKIM/DMARC, absence de tracking, URL réelle, confirmation/renvoi/expiration/rejeu, reset distinct et révocation des sessions, erreurs 403/429/5xx sans fuite ni énumération. Vérifier dans le compte les limites avant/après, sans provoquer un dépassement. À ce jour tous ces essais externes restent **non réalisés** ; les tests B1 injectent un HTTP simulé dans le vrai SDK et ne qualifient ni délivrabilité ni réputation du domaine.
+Après autorisation, vérifier sur un compte dédié la réception HTML et texte, l’expéditeur, SPF, DKIM et DMARC, l’absence de tracking et l’URL du site. Tester confirmation, renvoi, expiration, rejeu, réinitialisation et révocation des sessions. Les tests de l’application utilisent un transport simulé. La réception réelle se vérifie sur l’instance configurée.
