@@ -379,6 +379,7 @@ def test_compiled_signup_explicit_confirmation_login_and_late_401_keep_discovery
             page.get_by_label("Route", exact=True).check()
             page.get_by_placeholder("Course, commune ou club…").fill("race-road-split")
             expect(page.locator(".result-count strong")).to_have_text("1")
+            limit_software_map_framebuffer(page)
             assert install_camera_diagnostic(page)
             page.get_by_role("button", name=re.compile("Summit")).click()
             wait_camera_pitch(page, 60)

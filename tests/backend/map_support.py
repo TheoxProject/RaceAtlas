@@ -171,20 +171,26 @@ def limit_software_map_framebuffer(page):
             const canvas = map.getCanvas();
             const gl = canvas.getContext('webgl2');
             if (!gl || gl.isContextLost()) throw new Error('Expected active WebGL2');
+            const camera = () => [
+                map.getCenter().toArray(), map.getZoom(), map.getBearing(), map.getPitch()
+            ];
             const measure = () => ({
                 css: [canvas.clientWidth, canvas.clientHeight],
                 framebuffer: [gl.drawingBufferWidth, gl.drawingBufferHeight],
-                camera: [map.getCenter().toArray(), map.getZoom(), map.getBearing(), map.getPitch()]
+                camera: camera()
             });
+            const initialCamera = camera();
+            // Apply pending container layout before measuring the framebuffer change.
+            map.resize();
             const before = measure();
             map.setPixelRatio(0.5);
-            return {before, after: measure()};
+            return {initialCamera, before, after: measure()};
         }""".replace("FIND_MAP", _FIND_MAP)
     )
     before, after = measured["before"], measured["after"]
     assert after["css"] == before["css"] == before["framebuffer"], measured
     assert after["framebuffer"] == [size // 2 for size in before["css"]], measured
-    assert after["camera"] == before["camera"], measured
+    assert after["camera"] == before["camera"] == measured["initialCamera"], measured
 
 
 def install_camera_diagnostic(page):
