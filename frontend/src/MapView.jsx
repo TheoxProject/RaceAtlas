@@ -2,10 +2,12 @@ import { useEffect, useRef, useState } from 'react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { groupCommunes } from './catalog.js';
+import { neutralStyle, raceStyle, raceStyles } from './raceTypes.js';
 
 const STYLE = 'https://tiles.openfreemap.org/styles/liberty';
 const DEM = 'https://tiles.mapterhorn.com/tilejson.json';
 const empty = { type: 'FeatureCollection', features: [] };
+const pointStyle = ['case', ['==', ['get', 'style_min'], ['get', 'style_max']], ['get', 'style_min'], neutralStyle.id];
 
 export function MapView({ features, races, mode, setMode, onReliefError, onSelect, chooseCenter, onCenter, visible = true }) {
   const container = useRef(null), mapRef = useRef(null), current = useRef({});
@@ -38,8 +40,23 @@ export function MapView({ features, races, mode, setMode, onReliefError, onSelec
         if (!active) return;
         map.addSource('elevation', { type: 'raster-dem', url: DEM, tileSize: 512, encoding: 'terrarium', attribution: '© Mapterhorn' });
         map.addLayer({ id: 'relief', type: 'hillshade', source: 'elevation', paint: { 'hillshade-exaggeration': 0.35, 'hillshade-shadow-color': '#4d5e57', 'hillshade-highlight-color': '#fff8e8' } });
-        map.addSource('communes', { type: 'geojson', data: empty, cluster: true, clusterRadius: 52, clusterMaxZoom: 11, clusterProperties: { race_count: ['+', ['get', 'race_count']] } });
-        map.addLayer({ id: 'race-points', type: 'circle', source: 'communes', paint: { 'circle-radius': 12, 'circle-color': '#F97316', 'circle-stroke-width': 3, 'circle-stroke-color': '#ffffff' } });
+        map.addSource('communes', {
+          type: 'geojson', data: empty, cluster: true, clusterRadius: 52, clusterMaxZoom: 11,
+          clusterProperties: {
+            race_count: ['+', ['get', 'race_count']],
+            style_min: ['min', ['get', 'style_min']],
+            style_max: ['max', ['get', 'style_max']],
+          },
+        });
+        map.addLayer({
+          id: 'race-points', type: 'circle', source: 'communes',
+          paint: {
+            'circle-radius': 12,
+            'circle-color': ['match', pointStyle, ...raceStyles.flatMap(({ id, color }) => [id, color]), neutralStyle.color],
+            'circle-stroke-width': 3,
+            'circle-stroke-color': '#ffffff',
+          },
+        });
         setReady(true);
         container.current.dataset.ready = 'true';
       });
@@ -57,16 +74,20 @@ export function MapView({ features, races, mode, setMode, onReliefError, onSelec
           seen.add(key);
           const ids = properties.cluster ? [] : JSON.parse(properties.race_ids);
           const commune = current.current.races.find(item => ids.includes(item.race.id))?.race.location?.commune_name;
-          visible.push({ feature, properties, key, ids, commune });
+          const style = properties.style_min === properties.style_max ? raceStyles[properties.style_min] : neutralStyle;
+          visible.push({ feature, properties, key, ids, commune, style: style || neutralStyle });
         }
-        const signature = JSON.stringify(visible.map(({ key, properties, commune, feature }) => [key, properties.race_count, properties.race_ids, commune, feature.geometry.coordinates]).sort());
+        const signature = JSON.stringify(visible.map(({ key, properties, commune, feature, style }) => [key, properties.race_count, properties.race_ids, commune, feature.geometry.coordinates, style.id]).sort());
         if (signature === markerSignature) return;
         markerSignature = signature;
         markers.forEach(marker => marker.remove()); markers = [];
-        for (const { feature, properties, ids, commune } of visible) {
+        for (const { feature, properties, ids, commune, style } of visible) {
           const button = document.createElement('button');
           button.className = properties.cluster ? 'race-marker cluster-marker' : 'race-marker';
           button.textContent = properties.race_count;
+          button.style.setProperty('--race-type-color', style.color);
+          button.title = style.label;
+          button.setAttribute('aria-description', style.label);
           button.setAttribute('aria-label', properties.cluster ? `${properties.race_count} courses regroupées, agrandir` : `${properties.race_count} course${properties.race_count > 1 ? 's' : ''} à ${commune || 'cette commune'}`);
           button.addEventListener('click', async event => {
             event.stopPropagation();
@@ -92,8 +113,26 @@ export function MapView({ features, races, mode, setMode, onReliefError, onSelec
   }, [setMode, onReliefError]);
   useEffect(() => {
     if (!ready) return;
-    mapRef.current.getSource('communes').setData({ type: 'FeatureCollection', features: groupCommunes(features).map(group => ({ type: 'Feature', geometry: { type: 'Point', coordinates: group.coordinates }, properties: { commune_id: group.id, race_count: group.raceIds.length, race_ids: JSON.stringify(group.raceIds) } })) });
-  }, [features, ready]);
+    const styles = new Map(races.map(({ race }) => [race.id, raceStyle(race).id]));
+    mapRef.current.getSource('communes').setData({
+      type: 'FeatureCollection',
+      features: groupCommunes(features).map(group => {
+        const firstStyle = styles.get(group.raceIds[0]) ?? neutralStyle.id;
+        const styleId = group.raceIds.every(id => (styles.get(id) ?? neutralStyle.id) === firstStyle) ? firstStyle : neutralStyle.id;
+        return {
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: group.coordinates },
+          properties: {
+            commune_id: group.id,
+            race_count: group.raceIds.length,
+            race_ids: JSON.stringify(group.raceIds),
+            style_min: styleId,
+            style_max: styleId,
+          },
+        };
+      }),
+    });
+  }, [features, races, ready]);
   useEffect(() => {
     if (!ready) return;
     const map = mapRef.current;

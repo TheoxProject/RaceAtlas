@@ -1,28 +1,26 @@
-# Préparer une preview privée Render Free / Neon Free
+# Héberger RaceAtlas sur Render Free et Neon Free
 
-Configuration préparatoire, vérifiée localement le **11 novembre 2026**, références de quotas/régions revérifiées le **12 novembre**. Aucun service, compte payant, déploiement, handshake Neon ou mutation distante n'a été effectué. L'import du Blueprint créerait un service et pourrait lancer son premier déploiement : **ne pas l'importer avant autorisation du propriétaire**, même avec les déploiements automatiques désactivés. Le [rapport de pré-déploiement après le lot 6](predeployment-report.md) rassemble estimations, blocages et trois moments possibles avant cette décision ; il n'autorise aucune activation.
+Cette configuration prépare un nouveau service Render relié à Neon. Le lanceur ouvre la carte, le calendrier et le catalogue aux visiteurs. Les API personnelles conservent leurs contrôles de session. Le [rapport de pré-déploiement après le lot 6](predeployment-report.md) décrit la préparation historique de l’ancienne preview.
 
 ## Architecture et commandes préparées
 
 Un seul Web Service Python sert Flask, les API et `frontend/dist`. Waitress 3.0.2 est déjà épinglé dans les dépendances ; aucun service Node permanent ni base Render n'est ajouté. Le catalogue utilise PostgreSQL standard et les migrations existantes, sans extension PostGIS ou SDK Neon.
 
-- Blueprint : [`ops/render.yaml`](../../ops/render.yaml), branche `main`, plan `free`, région `frankfurt`, `autoDeployTrigger: "off"`, `previews.generation: "off"` à la racine. Le champ des previews du service est omis : il n'accepte pas `off`, et son absence désactive les PR previews. `frankfurt` est une valeur de la [référence officielle](https://render.com/docs/blueprint-spec) ; préparer Neon `aws-eu-central-1` si disponible en Free dans le compte. Rien n'est créé et la proximité n'implique pas de réseau privé inter-fournisseurs.
+- Blueprint [`ops/render.yaml`](../../ops/render.yaml). Le nouveau service `raceatlas` suit la branche `main` sur le plan Free, en région Frankfurt, avec des déploiements manuels. Les previews de PR Render sont désactivées. Importer le Blueprint ou reprendre ses réglages en créant le service sur le tableau de bord. [Référence Blueprint](https://render.com/docs/blueprint-spec)
 - Build : `bash ops/build.sh`. Dépendances Python de production, pnpm 10.20.0 et lockfile gelé, outils frontend de build inclus via `--prod=false`, compilation React. Python 3.12.14 et Node 24.22.1 sont explicites ; les scripts Bash restent en LF grâce à `ops/.gitattributes`.
 - Start : `python -m raceatlas.serve`, Waitress sur `0.0.0.0:$PORT`, quatre threads. **Ni le build ni le démarrage n'exécutent Alembic, seed ou synchronisation.** Le launcher n'ouvre pas de connexion DB à sa création ; les requêtes DB autorisées et la readiness le font ensuite.
 
-Le runtime Python Render inclut Node/npm/pnpm ; ce build monolithique est donc préparé sans Docker. La structure du Blueprint et les commandes sont fondées sur les [runtimes natifs](https://render.com/docs/native-runtimes) et la [référence Blueprint](https://render.com/docs/blueprint-spec). Le script a été contrôlé localement avec des commandes factices et un vrai build frontend est couvert par la CI ; **aucun build Render complet n'est revendiqué**.
+Le runtime Python Render inclut Node, npm et pnpm. La CI compile le frontend en utilisant le lockfile. [Runtimes Render](https://render.com/docs/native-runtimes)
 
 ## Variables et TLS
 
 Les champs `sync: false` du Blueprint attendent une saisie privée par l'opérateur autorisé ; aucune valeur secrète n'est fournie. [`.env.example`](../../.env.example) reste un exemple local non chargé automatiquement, avec les nouveaux secrets laissés vides.
 
-| Variable | Exigence du launcher privé |
+| Variable | Exigence du lanceur |
 |---|---|
 | `RACEATLAS_ENV` | `production`, obligatoire avant la factory Flask |
 | `DATABASE_URL` | URL complète `postgresql+psycopg`, hôte, base et credentials ; ne jamais la publier |
 | Paramètres TLS de cette URL | `sslmode=verify-full` et `sslrootcert` vers une CA absolue, lisible et non vide ; par exemple `/etc/ssl/certs/ca-certificates.crt` sur Render |
-| `PREVIEW_USERNAME` | 1 à 128 caractères imprimables, sans `:` ni espace de bord |
-| `PREVIEW_PASSWORD` | Secret **généré aléatoirement** de 32 à 512 caractères imprimables, sans espace de bord ; aucune valeur par défaut |
 | `PORT` | Fourni par Render, défaut `10000` ; ne pas personnaliser. Les ports réservés `18012`, `18013`, `19099` sont rejetés |
 | `PYTHON_VERSION`, `NODE_VERSION` | Versions épinglées dans le Blueprint |
 | `MIGRATION_DATABASE_URL` | Session de maintenance distincte seulement, jamais injectée dans le Web Service |
@@ -31,15 +29,13 @@ Une configuration incomplète ou TLS affaibli arrête le launcher avant `create_
 
 Le pool catalogue et son `pool_pre_ping`/`connect_timeout=3` restent inchangés. Un seul processus Waitress à quatre threads borne les requêtes simultanées du service ; ce n'est pas une promesse de disponibilité ou de délai maximal après veille.
 
-## Protection de la preview et santé
+## Accès public et santé
 
-Le nouveau launcher applique **obligatoirement** une garde WSGI Basic, sans flag permettant un démarrage public. Elle protège pages, assets, API, readiness, chemins inconnus et autres méthodes. Seuls `GET` et `HEAD` sur le chemin exact `/api/health/live`, sans query ni préfixe de montage, sont publics ; cette route répond uniquement sur la vie du processus et ne consulte pas la DB.
+Le lanceur sert directement Flask. Vérifier dans une session anonyme la page d’accueil et ses assets, le catalogue et la carte pour 2027, puis contrôler qu’une route personnelle refuse la requête sans session. Render termine TLS au load balancer et redirige HTTP vers HTTPS. [Web Services Render](https://render.com/docs/web-services#port-binding)
 
-Credentials absents : aucun démarrage. Header Basic absent, invalide, surdimensionné ou mauvais : réponse `401` générique, challenge UTF-8, aucune réflexion du header et `Cache-Control: no-store`. Les réponses privées autorisées sont aussi `no-store`. Comparaison des deux secrets avec `compare_digest` sur octets UTF-8. Les credentials partagés de preview **ne sont pas les comptes utilisateurs du lot 7**. Leur rotation exige une mise à jour privée puis un redémarrage autorisés ; ne pas compter sur un bouton de déconnexion Basic du navigateur pour révoquer un secret.
+Si les comptes sont activés sur le nouveau service, recopier leur configuration depuis la source de secrets et définir `APP_BASE_URL` sur le nouveau site HTTPS. Cette URL sert aux liens envoyés par e-mail. [Configuration des comptes](../lot-7/resend-guide.md)
 
-Basic doit voyager sur HTTPS. Render termine TLS au load balancer et redirige HTTP vers HTTPS ; Waitress reçoit ensuite HTTP en interne. Aucun TLS direct Waitress ou `ProxyFix` faisant confiance à tous les headers n'est ajouté. L'origine canonique des futurs liens de récupération de compte sera traitée au lot 7. Références : [port et terminaison HTTPS Render](https://render.com/docs/web-services#port-binding), [Waitress pour Flask](https://flask.palletsprojects.com/en/stable/deploying/waitress/), [RFC Basic](https://datatracker.ietf.org/doc/html/rfc7617), [`compare_digest`](https://docs.python.org/3.12/library/secrets.html#secrets.compare_digest).
-
-`healthCheckPath` reste `/api/health/live`. `/api/health/ready` est protégé et vérifie réellement PostgreSQL ; ne pas en faire un keepalive artificiel empêchant la veille Neon. Après cold start, une première requête DB peut renvoyer `503` ; conserver l'erreur claire et réessayer raisonnablement, sans boucle agressive ni upgrade automatique. Un redémarrage perd la mémoire du processus et tout fichier ajouté au filesystem Render ; PostgreSQL assure la persistance future. Les filtres actuels sont en mémoire UI, sans promesse de conservation après rechargement de page.
+`/api/health/live` teste le processus sans requête PostgreSQL. Render utilise cette route comme sonde. `/api/health/ready` vérifie PostgreSQL et renvoie un état générique. Utiliser la readiness pour un diagnostic ponctuel afin de laisser Neon se mettre en veille. En cas de régression du déploiement, rétablir le déploiement Render précédent après avoir vérifié sa compatibilité avec la configuration du service. [Retour arrière Render](https://render.com/docs/rollbacks)
 
 ## Migrations et validation après une future autorisation
 
@@ -55,9 +51,7 @@ python -m alembic check
 
 Vérifier cible, sauvegarde et version attendue avant mutation ; ne pas faire de downgrade automatique de données importantes. Reprendre ensuite une session Web avec son URL d'application, pas avec le secret de maintenance.
 
-La validation distante future utilisera une base de preview dédiée et uniquement des fixtures autorisées. Ne pas contourner l'interdiction du CLI `seed-synthetic` en production en prétendant qu'une DB Neon est locale. L'éventuelle introduction des fixtures distantes exige une procédure de maintenance revue et autorisée séparément.
-
-Après approbation : vérifier HTTPS/redirection et refus anonyme des pages/assets/API, santé minimale, readiness authentifiée, absence de secrets dans les erreurs, puis carte/terrain/replis/filtres et calendrier après lot 6. Contrôler redémarrage, reprise après veille et quotas. Le rapport de pré-déploiement précisera les preuves encore manquantes et les conditions de premier déploiement ; aucune validation distante n'est supposée réussie ici.
+Les tests locaux et la CI utilisent un PostgreSQL jetable et des fixtures synthétiques. Le CLI `seed-synthetic` bloque les bases de production.
 
 ## Sauvegarde et restauration préparées
 
@@ -98,4 +92,4 @@ python -m ruff check raceatlas migrations tests/backend
 python -m ruff format --check raceatlas migrations tests/backend
 ```
 
-Les tests couvrent préflight négatif/TLS/CA/env, credentials et headers malformés, routes/assets/santé, erreurs sans secrets, startup sans connexion/migration/seed, appel Waitress borné simulé et intégration réelle Flask/React compilé/PostgreSQL locale. Les CA synthétiques de tests prouvent la prévalidation de fichiers ; elles ne constituent pas un certificat Neon validé. Résultats et SHA exacts dans le [handoff](developer-handoff.md) et le [checkpoint](../coordination/CURRENT_STATE.md).
+Les tests couvrent la validation TLS et CA, le démarrage sans connexion, migration ou seed, la configuration Waitress et les accès anonymes et personnels. Les tests intégrés exercent Flask, le React compilé et PostgreSQL local. Suivre la validation en cours dans le [checkpoint](../coordination/CURRENT_STATE.md).
